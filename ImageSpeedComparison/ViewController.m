@@ -1,0 +1,408 @@
+//
+//  ViewController.m
+//  ImageSpeedComparison
+//
+//  Created on 9/4/15.
+//  Copyright (c) 2015 Twitter. All rights reserved.
+//
+
+#import <TwitterImagePipeline/TwitterImagePipeline.h>
+
+#import "TIPTestImageFetchDownloadInternalWithStubbing.h"
+
+#import "ViewController.h"
+
+typedef struct {
+    __unsafe_unretained NSString *type;
+    const char *name;
+    const char *file;
+    BOOL isProgressive;
+    BOOL isAnimated;
+} ImageTypeStruct;
+
+static const ImageTypeStruct sImageTypes[] = {
+    { @"public.jpeg",           "JPEG",         "twitterfied.jpg",          NO,     NO  },
+    { @"public.jpeg",           "PJPEG",        "twitterfied.pjpg",         YES,    NO  },
+    { @"public.jpeg-2000",      "JPEG-2000",    "twitterfied.jp2",          NO,     NO  },
+    { @"public.png",            "PNG",          "twitterfied.png",          NO,     NO  },
+    { @"public.tiff",           "TIFF",         "twitterfied.tiff",         NO,     NO  },
+    { @"com.compuserve.gif",    "GIF",          "fireworks_original.gif",   NO,     YES },
+};
+
+static const NSUInteger kBitrate2G = 128 * 1000; // 2G
+static const NSUInteger kBitrate2GPlus = kBitrate2G * 2; // 2.5G
+static const NSUInteger kBitrate3G = kBitrate2GPlus * 2; // 3G
+static const NSUInteger kBitrate3GPlus = kBitrate3G + kBitrate2GPlus; // 3.5G
+static const NSUInteger kBitrate4G = kBitrate3G * 2; // 4G
+static const NSUInteger kBitrate4GPlus = kBitrate4G * 2; // ~LTE
+
+static const NSUInteger sBitrates[] = {
+    kBitrate2G, kBitrate2GPlus,
+    kBitrate3G, kBitrate3GPlus,
+    kBitrate4G, kBitrate4GPlus
+};
+
+static const NSUInteger kDefaultBitrateIndex = 2;
+
+@interface ViewController () <UIPickerViewDataSource, UIPickerViewDelegate, TIPImageFetchRequest, TIPImageFetchDelegate>
+@end
+
+@implementation ViewController
+{
+    IBOutlet UIImageView *_imageView;
+    IBOutlet UIProgressView *_progressView;
+    IBOutlet UIButton *_selectImageTypeButton;
+    IBOutlet UIButton *_selectSpeedButton;
+    IBOutlet UIButton *_startButton;
+    IBOutlet UIPickerView *_pickerView;
+    IBOutlet UILabel *_resultsLabel;
+
+    BOOL _selectingSpeed;
+    UITapGestureRecognizer *_tapper;
+    NSUInteger _imageTypeIndex;
+    NSUInteger _speedIndex;
+    TIPImagePipeline *_imagePipeline;
+    id<TIPImageFetchDownloadProviderWithStubbingSupport> _downloadProvider;
+    TIPImageFetchOperation *_fetchOperation;
+
+    CFAbsoluteTime _startTime;
+    CFAbsoluteTime _firstImageTime;
+    CFAbsoluteTime _finalImageTime;
+    NSUInteger _size;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+
+    _progressView.progress = 0;
+
+    _imageTypeIndex = 0;
+    _speedIndex = kDefaultBitrateIndex;
+
+    [self hidePickerView:NO];
+    [self updateImageTypeButtonTitle];
+    [self updateSpeedButtonTitle];
+
+    _tapper = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(stopSelecting:)];
+    _tapper.enabled = NO;
+    [_imageView addGestureRecognizer:_tapper];
+
+    _imagePipeline = [[TIPImagePipeline alloc] initWithIdentifier:@"ImageSpeedComparison"];
+    _downloadProvider =[[TIPTestImageFetchDownloadProviderInternalWithStubbing alloc] init];
+    [TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider = _downloadProvider;
+
+    [_downloadProvider setDownloadStubbingEnabled:YES];
+}
+
+- (void)viewDidLayoutSubviews
+{
+    CGRect frame;
+
+    frame = _progressView.frame;
+    frame.origin.y = CGRectGetMaxY(_imageView.frame);
+    _progressView.frame = frame;
+
+    frame = _selectImageTypeButton.frame;
+    frame.origin.y = CGRectGetMaxY(_progressView.frame) + 5;
+    _selectImageTypeButton.frame = frame;
+
+    frame = _selectSpeedButton.frame;
+    frame.origin.y = CGRectGetMaxY(_selectImageTypeButton.frame) + 5;
+    _selectSpeedButton.frame = frame;
+
+    frame = _startButton.frame;
+    frame.origin.y = CGRectGetMaxY(_selectSpeedButton.frame) + 5;
+    _startButton.frame = frame;
+
+    frame = _resultsLabel.frame;
+    frame.origin.y = CGRectGetMaxY(_startButton.frame) + 5 ;
+    _resultsLabel.frame = frame;
+
+    [super viewDidLayoutSubviews];
+}
+
+#pragma mark Actions
+
+- (IBAction)start:(id)sender
+{
+    if (_fetchOperation) {
+        return;
+    }
+
+    _startButton.enabled = NO;
+    _fetchOperation = [_imagePipeline operationWithRequest:self context:nil delegate:self];
+    [self registerCannedImage];
+    [_imagePipeline fetchImageWithOperation:_fetchOperation];
+}
+
+- (IBAction)select:(UIButton *)sender
+{
+    if (!_pickerView.userInteractionEnabled) {
+        _selectingSpeed = (sender == _selectSpeedButton);
+        [self showPickerView:YES];
+        _imageView.image = nil;
+        _progressView.progress = 0;
+        _startTime = 0;
+        [self updateResults];
+    }
+}
+
+- (IBAction)stopSelecting:(id)sender
+{
+    if (_pickerView.userInteractionEnabled) {
+        UIButton *button = (_selectingSpeed) ? _selectSpeedButton : _selectImageTypeButton;
+        if (!button.enabled) {
+            [self hidePickerView:YES];
+        }
+    }
+}
+
+#pragma mark UI
+
+- (void)updateResults
+{
+    if (0 == _startTime) {
+        _resultsLabel.text = nil;
+    } else {
+        NSString *firstResult = @"N/A";
+        NSString *finalResult = @"N/A";
+        NSString *totalSize = @"X KBs";
+
+        if (0 != _firstImageTime) {
+            firstResult = [NSString stringWithFormat:@"%.4fs", _firstImageTime - _startTime];
+        }
+
+        if (0 != _finalImageTime) {
+            finalResult = [NSString stringWithFormat:@"%.4fs", _finalImageTime - _startTime];
+        }
+
+        if (0 != _size) {
+            totalSize = [NSByteCountFormatter stringFromByteCount:(long long)_size countStyle:NSByteCountFormatterCountStyleBinary];
+        }
+
+        _resultsLabel.text = [NSString stringWithFormat:@"First Scan: %@\nFinal Scan: %@\nFinal Size: %@", firstResult, finalResult, totalSize];
+    }
+}
+
+- (void)updateImageTypeButtonTitle
+{
+    [_selectImageTypeButton setTitle:[NSString stringWithFormat:@"Type: %@", @(sImageTypes[_imageTypeIndex].name)]
+                            forState:UIControlStateNormal];
+}
+
+- (void)updateSpeedButtonTitle
+{
+    [_selectSpeedButton setTitle:[NSString stringWithFormat:@"Speed: %tu Kbps", sBitrates[_speedIndex] / 1000] forState:UIControlStateNormal];
+}
+
+#pragma mark Canned Image
+
+- (void)registerCannedImage
+{
+    NSString *cannedImagePath = [self cannedImageFilePath];
+    NSURL *imageURL = self.imageURL;
+
+    NSData *imageData = [NSData dataWithContentsOfFile:cannedImagePath options:NSDataReadingMappedIfSafe error:NULL];
+    [_downloadProvider addDownloadStubForRequestURL:imageURL responseData:imageData responseMIMEType:nil shouldSupportResuming:NO suggestedBitrate:sBitrates[_speedIndex]];
+}
+
+- (void)unregisterCannedImage
+{
+    NSURL *imageURL = self.imageURL;
+    [_downloadProvider removeDownloadStubForRequestURL:imageURL];
+}
+
+#pragma mark Picker View
+
+- (void)showPickerView:(BOOL)animated
+{
+    _selectImageTypeButton.enabled = NO;
+    _selectSpeedButton.enabled = NO;
+    _startButton.enabled = NO;
+
+    [_imagePipeline clearMemoryCaches];
+    [_imagePipeline clearDiskCache];
+
+    [_pickerView reloadAllComponents];
+    [_pickerView selectRow:(_selectingSpeed) ? (NSInteger)_speedIndex : (NSInteger)_imageTypeIndex inComponent:0 animated:NO];
+
+    [UIView animateWithDuration:animated ? 0.5 : 0.0
+                     animations:^{
+                         _selectImageTypeButton.alpha = 0;
+                         _selectSpeedButton.alpha = 0;
+                         _startButton.alpha = 0;
+                         _resultsLabel.alpha = 0;
+                         CGRect frame = _pickerView.frame;
+                         frame.origin.y = self.view.bounds.size.height - frame.size.height;
+                         _pickerView.frame = frame;
+                     }
+                     completion:^(BOOL finished) {
+                         _pickerView.userInteractionEnabled = YES;
+                         _tapper.enabled = YES;
+                     }];
+}
+
+- (void)hidePickerView:(BOOL)animated
+{
+    _pickerView.userInteractionEnabled = NO;
+    [UIView animateWithDuration:animated ? 0.5 : 0.0
+                     animations:^{
+                         _selectImageTypeButton.alpha = 1;
+                         _selectSpeedButton.alpha = 1;
+                         _startButton.alpha = 1;
+                         _resultsLabel.alpha = 1;
+                         CGRect frame = _pickerView.frame;
+                         frame.origin.y = self.view.bounds.size.height;
+                         _pickerView.frame = frame;
+                     }
+                     completion:^(BOOL finished) {
+                         _startButton.enabled = YES;
+                         _selectImageTypeButton.enabled = YES;
+                         _selectSpeedButton.enabled = YES;
+                         _tapper.enabled = NO;
+                     }];
+}
+
+- (void)pickerView:(UIPickerView *)pickerView didSelectRow:(NSInteger)row inComponent:(NSInteger)component
+{
+    if (row < 0) {
+        return;
+    }
+
+    if (_selectingSpeed) {
+        _speedIndex = (NSUInteger)row;
+        [self updateSpeedButtonTitle];
+    } else {
+        _imageTypeIndex = (NSUInteger)row;
+        [self updateImageTypeButtonTitle];
+    }
+}
+
+- (NSString *)pickerView:(UIPickerView *)pickerView titleForRow:(NSInteger)row forComponent:(NSInteger)component
+{
+    return (_selectingSpeed) ? [NSString stringWithFormat:@"%tu Kbps", sBitrates[row] / 1000] : @(sImageTypes[row].name);
+}
+
+- (NSInteger)numberOfComponentsInPickerView:(UIPickerView *)pickerView
+{
+    return 1;
+}
+
+- (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component
+{
+    return (_selectingSpeed) ? (sizeof(sBitrates) / sizeof(sBitrates[0])) : (sizeof(sImageTypes) / sizeof(sImageTypes[0]));
+}
+
+#pragma mark Image Fetch Request
+
+- (NSURL *)imageURL
+{
+    NSString *imageName = @(sImageTypes[_imageTypeIndex].file);
+    NSString *imageURLString = [NSString stringWithFormat:@"https://www.twitterfied.com/%@", imageName];
+    NSURL *imageURL = [NSURL URLWithString:imageURLString];
+    return imageURL;
+}
+
+- (CGSize)targetDimensions
+{
+    return _imageView.bounds.size;
+}
+
+- (UIViewContentMode)targetContentMode
+{
+    return _imageView.contentMode;
+}
+
+//- (NSDictionary *)progressiveLoadingPolicies
+//{
+//    if ([sImageTypes[_imageTypeIndex].type isEqualToString:TIPImageTypeJPEG2000] || [sImageTypes[_imageTypeIndex].type isEqualToString:TIPImageTypePNG]) {
+//        if (sImageTypes[_imageTypeIndex].isProgressive) {
+//            return @{ sImageTypes[_imageTypeIndex].type : [[TIPGreedyProgressiveLoadingPolicy alloc] init] };
+//        }
+//    }
+//    return nil;
+//}
+
+- (NSString *)cannedImageFilePath
+{
+    return [[NSBundle mainBundle] pathForResource:@(sImageTypes[_imageTypeIndex].file) ofType:nil];
+}
+
+#pragma mark Image Fetch Operation
+
+- (void)tip_imageFetchOperationDidStart:(TIPImageFetchOperation *)op
+{
+    _progressView.progressTintColor = [UIColor yellowColor];
+    _progressView.progress = 0;
+    _imageView.image = nil;
+    _startTime = 0;
+    [self updateResults];
+    _startTime = CFAbsoluteTimeGetCurrent();
+    _firstImageTime = _finalImageTime = 0;
+    _size = 0;
+}
+
+- (BOOL)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+shouldLoadProgressivelyWithIdentifier:(NSString *)identifier
+                            URL:(NSURL *)URL
+                      imageType:(NSString *)imageType
+             originalDimensions:(CGSize)originalDimensions
+{
+    return sImageTypes[_imageTypeIndex].isProgressive;
+}
+
+- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+      didUpdateProgressiveImage:(id<TIPImageFetchResult>)progressiveResult
+                       progress:(float)progress
+{
+    [_progressView setProgress:progress animated:YES];
+    _imageView.image = progressiveResult.imageContainer.image;
+    if (0 == _firstImageTime) {
+        _firstImageTime = CFAbsoluteTimeGetCurrent();
+    }
+}
+
+- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op didLoadFirstAnimatedImageFrame:(id<TIPImageFetchResult>)progressiveResult progress:(float)progress
+{
+    [_progressView setProgress:progress animated:YES];
+    _imageView.image = progressiveResult.imageContainer.image;
+    _progressView.progress = progress;
+    if (0 == _firstImageTime) {
+        _firstImageTime = CFAbsoluteTimeGetCurrent();
+    }
+}
+
+- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op didUpdateProgress:(float)progress
+{
+    [_progressView setProgress:progress animated:YES];
+}
+
+- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op didLoadFinalImage:(id<TIPImageFetchResult>)finalResult
+{
+    [self unregisterCannedImage];
+    if (0 == _firstImageTime) {
+        _firstImageTime = CFAbsoluteTimeGetCurrent();
+    }
+    _size = [op.metrics metricInfoForSource:finalResult.imageSource].networkImageSizeInBytes;
+    _finalImageTime = CFAbsoluteTimeGetCurrent();
+    _imageView.image = finalResult.imageContainer.image;
+    [_progressView setProgress:1.f animated:YES];
+    _progressView.progressTintColor = [UIColor greenColor];
+    _fetchOperation = nil;
+    _startButton.enabled = YES;
+    _selectImageTypeButton.enabled = YES;
+    [self updateResults];
+}
+
+- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op didFailToLoadFinalImage:(NSError *)error
+{
+    [self unregisterCannedImage];
+    _progressView.progressTintColor = [UIColor redColor];
+    _fetchOperation = nil;
+    _startButton.enabled = YES;
+    _selectImageTypeButton.enabled = YES;
+    [self updateResults];
+}
+
+@end

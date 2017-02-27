@@ -1,0 +1,8 @@
+module TwitterImagePipeline {
+    umbrella header "TwitterImagePipeline.h"
+
+    export *
+    module * {
+        export *
+    }
+}

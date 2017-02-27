@@ -1,0 +1,57 @@
+//
+//  AppDelegate.m
+//  ImageSpeedComparison
+//
+//  Created on 9/4/15.
+//  Copyright (c) 2015 Twitter. All rights reserved.
+//
+
+#import <TwitterImagePipeline/TwitterImagePipeline.h>
+#import "AppDelegate.h"
+
+@interface AppDelegate ()
+@end
+
+@interface AppDelegate (Logger) <TIPLogger>
+@end
+
+@implementation AppDelegate
+
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+{
+    [TIPGlobalConfiguration sharedInstance].logger = self;
+    return YES;
+}
+
+- (void)tip_logWithLevel:(TIPLogLevel)level file:(NSString *)file function:(NSString *)function line:(int)line format:(NSString *)format, ...
+{
+    va_list arguments;
+    va_start(arguments, format);
+    NSString *message = [[NSString alloc] initWithFormat:format arguments:arguments];
+    va_end(arguments);
+
+    NSString *levelString = nil;
+    switch (level) {
+        case TIPLogLevelEmergency:
+        case TIPLogLevelAlert:
+        case TIPLogLevelCritical:
+        case TIPLogLevelError:
+            levelString = @"ERR";
+            break;
+        case TIPLogLevelWarning:
+            levelString = @"WRN";
+            break;
+        case TIPLogLevelNotice:
+        case TIPLogLevelInformation:
+            levelString = @"INF";
+            break;
+        case TIPLogLevelDebug:
+            levelString = @"DBG";
+            break;
+    }
+
+    NSLog(@"[%@]: %@", levelString, message);
+}
+
+@end
