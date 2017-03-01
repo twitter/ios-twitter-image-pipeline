@@ -7,16 +7,16 @@ Pod::Spec.new do |s|
   s.license          = { :type => 'Apache License, Version 2.0', :file => 'LICENSE' }
   s.author           = { 'Twitter' => 'opensource@twitter.com' }
   s.source           = { :git => 'https://github.com/twitter/ios-twitter-image-pipeline.git', :tag => s.version.to_s }
-  s.ios.deployment_target = '8.0'
+  s.ios.deployment_target = '7.0'
 
   s.subspec 'Default' do |sp|
-    sp.source_files = 'Classes/**/*'
-    sp.public_header_files = 'Classes/**/*.h'
+    sp.source_files = 'TwitterImagePipeline/**/*'
+    sp.public_header_files = 'TwitterImagePipeline/**/*.h'
   end
 
   s.subspec 'ObjC' do |sp|
-    sp.source_files = 'Classes/**/*.{h,m,c,cpp,mm}'
-    sp.public_header_files = 'Classes/**/*.h'
+    sp.source_files = 'TwitterImagePipeline/**/*.{h,m,c,cpp,mm}'
+    sp.public_header_files = 'TwitterImagePipeline/**/*.h'
   end
 
   s.default_subspec = 'Default'
