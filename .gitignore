@@ -17,6 +17,9 @@ DerivedData
 !default.perspectivev3
 xcuserdata
 
+TwitterImagePipeline.xcodeproj/project.xcworkspace/xcuserdata
+TwitterImagePipeline.xcodeproj/xcuserdata
+
 ## Other
 *.xccheckout
 *.moved-aside
