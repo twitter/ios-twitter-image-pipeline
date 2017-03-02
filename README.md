@@ -5,7 +5,7 @@
 The __Twitter Image Pipeline__ is a streamlined framework for _fetching_ and
 _storing_ images in an application.  The high level concept is that all
 requests to fetch or store an image go through an _image pipeline_ which
-encapsulates the work of checking an _in memory cache_ and an _on disk
+encapsulates the work of checking the _in memory caches_ and an _on disk
 cache_ before retrieving the image from over the _network_ as well as
 keeping the caches both up to date and pruned.
 
