@@ -291,7 +291,7 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
 
     TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
-    NSUInteger byteCount = data.length;
+    const NSUInteger byteCount = data.length;
 
 #if TIP_LOG_DOWNLOAD_PROGRESS
     TIPLogDebug(@"(%@)[%p] - downloaded %tu bytes", context.originalRequest.URL, download, byteCount);
