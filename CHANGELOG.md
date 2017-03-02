@@ -2,13 +2,17 @@
 
 ## Info
 
-**Document version:** 2.2.1
+**Document version:** 2.2.2
 
-**Last updated:** 02/08/2017
+**Last updated:** 03/02/2017
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.2.2
+
+- Fix decoder bug on iOS 9 that prevented images from decoding
 
 ### 2.2.1
 

@@ -594,7 +594,7 @@
 
         // Check the status first
 
-        const CGImageSourceStatus status = CGImageSourceGetStatusAtIndex(_imageSourceRef, 0);
+        const CGImageSourceStatus status = CGImageSourceGetStatus(_imageSourceRef);
 
         switch (status) {
             case kCGImageStatusUnexpectedEOF:
