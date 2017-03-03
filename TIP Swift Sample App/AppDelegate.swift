@@ -130,7 +130,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
 
     @objc func apiWorkFinished(_ api: TwitterAPI)
     {
-        self.incrementNetworkOperations()
+        self.decrementNetworkOperations()
     }
 
     // MARK: Observer
