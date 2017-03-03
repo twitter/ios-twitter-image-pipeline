@@ -24,6 +24,16 @@
 
 @implementation AppDelegate
 
+- (BOOL)isDebugInfoVisible
+{
+    return [TIPImageViewFetchHelper isDebugInfoVisible];
+}
+
+- (void)setDebugInfoVisible:(BOOL)debugInfoVisible
+{
+    [TIPImageViewFetchHelper setDebugInfoVisible:debugInfoVisible];
+}
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     [TIPGlobalConfiguration sharedInstance].logger = self;
@@ -77,7 +87,7 @@
 
 - (void)_private_incrementNetworkOperations
 {
-    if (++_opCount > 0) {
+    if ((++_opCount) > 0) {
         [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
     }
 }
@@ -133,13 +143,8 @@
 
 #pragma mark Logger
 
-- (void)tip_logWithLevel:(TIPLogLevel)level file:(NSString *)file function:(NSString *)function line:(int)line format:(NSString *)format, ...
+- (void)tip_logWithLevel:(TIPLogLevel)level file:(NSString *)file function:(NSString *)function line:(int)line message:(NSString *)message
 {
-    va_list arguments;
-    va_start(arguments, format);
-    NSString *message = [[NSString alloc] initWithFormat:format arguments:arguments];
-    va_end(arguments);
-
     NSString *levelString = nil;
     switch (level) {
         case TIPLogLevelEmergency:

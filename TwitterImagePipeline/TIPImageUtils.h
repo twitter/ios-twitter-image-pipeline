@@ -48,7 +48,7 @@ NS_INLINE CGSize TIPDimensionsFromSizeScaled(CGSize size, CGFloat scale)
 }
 
 //! Get dimensions (in pixels) from `UIView`
-NS_INLINE CGSize TIPDimensionsFromView(UIView *view)
+NS_INLINE CGSize TIPDimensionsFromView(UIView * __nullable view)
 {
     if (!view) {
         return CGSizeZero;

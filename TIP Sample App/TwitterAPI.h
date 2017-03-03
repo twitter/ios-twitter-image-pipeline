@@ -6,8 +6,10 @@
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
-#import <CoreGraphics/CGGeometry.h>
 #import <Foundation/Foundation.h>
+#import <UIKit/UIView.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 @interface TweetImageInfo : NSObject
 
@@ -44,3 +46,7 @@
 - (void)APIWorkFinished:(TwitterAPI *)api;
 
 @end
+
+FOUNDATION_EXTERN NSString *TweetImageDetermineVariant(CGSize aspectRatio, const CGSize targetDimensions, UIViewContentMode targetContentMode);
+
+NS_ASSUME_NONNULL_END

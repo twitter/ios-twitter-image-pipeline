@@ -209,6 +209,10 @@ image pipeline works.
 
 ## Usage
 
+The simplest way to use *TIP* is with the `TIPImageView` and its `TIPImageViewHelper` counterpart.
+
+For concrete coding samples, look at the *TIP Sample App* and *TIP Swift Sample App* (in Objective-C and Swift, respectively).
+
 Here's a simple example of using *TIP* with a `UIViewController` that has an array of image views to
 populate with images.
 

@@ -42,7 +42,7 @@ typedef NS_ENUM(NSInteger, TIPLogLevel)
 /**
  Method called when logging a message from *TwitterImagePipeline*
  */
-- (void)tip_logWithLevel:(TIPLogLevel)level file:(nonnull NSString *)file function:(nonnull NSString *)function line:(int)line format:(nonnull NSString *)format, ... NS_FORMAT_FUNCTION(5,6);
+- (void)tip_logWithLevel:(TIPLogLevel)level file:(nonnull NSString *)file function:(nonnull NSString *)function line:(int)line message:(nonnull NSString *)message;
 
 @optional
 

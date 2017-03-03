@@ -6,6 +6,7 @@
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
+#import <TwitterImagePipeline/TwitterImagePipeline.h>
 #import "TwitterAPI.h"
 
 @import Accounts;
@@ -280,3 +281,45 @@ FOUNDATION_EXTERN NSString *TIPURLEncodeString(NSString *string);
 }
 
 @end
+
+#define kSMALL  @"small"
+#define kMEDIUM @"medium"
+#define kLARGE  @"large"
+
+typedef struct {
+    void * const name;
+    CGFloat const dim;
+} VariantInfo;
+
+static VariantInfo const sVariantSizeMap[] = {
+    { .name = kSMALL,   .dim = 680 },
+    { .name = kMEDIUM,  .dim = 1200 },
+    { .name = kLARGE,   .dim = 2048 },
+};
+
+
+NSString *TweetImageDetermineVariant(CGSize aspectRatio, const CGSize dimensions, UIViewContentMode contentMode)
+{
+    if (aspectRatio.height <= 0 || aspectRatio.width <= 0) {
+        aspectRatio = CGSizeMake(1, 1);
+    }
+
+    const BOOL scaleToFit = (UIViewContentModeScaleAspectFit == contentMode);
+    const CGSize scaledToTargetDimensions = TIPDimensionsScaledToTargetSizing(aspectRatio, dimensions, (scaleToFit ? UIViewContentModeScaleAspectFit : UIViewContentModeScaleAspectFill));
+
+    NSString * selectedVariantName = nil;
+    for (size_t i = 0; i < (sizeof(sVariantSizeMap) / sizeof(sVariantSizeMap[0])); i++) {
+        const CGSize variantSize = CGSizeMake(sVariantSizeMap[i].dim, sVariantSizeMap[i].dim);
+        const CGSize scaledToVariantDimensions = TIPDimensionsScaledToTargetSizing(aspectRatio, variantSize, UIViewContentModeScaleAspectFit);
+        if (scaledToVariantDimensions.width >= scaledToTargetDimensions.width && scaledToVariantDimensions.height >= scaledToTargetDimensions.height) {
+            selectedVariantName = (__bridge NSString *)sVariantSizeMap[i].name;
+            break;
+        }
+    }
+
+    if (!selectedVariantName) {
+        selectedVariantName = kLARGE;
+    }
+
+    return selectedVariantName;
+}

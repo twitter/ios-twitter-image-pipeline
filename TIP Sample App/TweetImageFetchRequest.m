@@ -10,23 +10,6 @@
 #import "TweetImageFetchRequest.h"
 #import "TwitterAPI.h"
 
-#define kSMALL  @"small"
-#define kMEDIUM @"medium"
-#define kLARGE  @"large"
-
-typedef struct {
-    void * const name;
-    CGFloat const dim;
-} VariantInfo;
-
-static VariantInfo const sVariantSizeMap[] = {
-    { .name = kSMALL,   .dim = 680 },
-    { .name = kMEDIUM,  .dim = 1200 },
-    { .name = kLARGE,   .dim = 2048 },
-};
-
-static NSString *DetermineVariant(CGSize aspectRatio, const CGSize targetDimensions, UIViewContentMode targetContentMode);
-
 @implementation TweetImageFetchRequest
 {
     TweetImageInfo *_tweetImage;
@@ -59,7 +42,7 @@ static NSString *DetermineVariant(CGSize aspectRatio, const CGSize targetDimensi
         } else {
             NSString *URLString = nil;
             if ([_tweetImage.baseURLString hasPrefix:@"https://pbs.twimg.com/media/"]) {
-                NSString *variantName = DetermineVariant(_tweetImage.originalDimensions, _targetDimensions, _targetContentMode);
+                NSString *variantName = TweetImageDetermineVariant(_tweetImage.originalDimensions, _targetDimensions, _targetContentMode);
                 URLString = [NSString stringWithFormat:@"%@?format=%@&name=%@", _tweetImage.baseURLString, (APP_DELEGATE.searchWebP) ? @"webp" : _tweetImage.format, variantName];
             } else {
                 URLString = [NSString stringWithFormat:@"%@.%@", _tweetImage.baseURLString, _tweetImage.format];
@@ -76,30 +59,3 @@ static NSString *DetermineVariant(CGSize aspectRatio, const CGSize targetDimensi
 }
 
 @end
-
-static NSString *DetermineVariant(CGSize aspectRatio, const CGSize dimensions, UIViewContentMode contentMode)
-{
-    if (aspectRatio.height <= 0 || aspectRatio.width <= 0) {
-        aspectRatio = CGSizeMake(1, 1);
-    }
-
-    const BOOL scaleToFit = (UIViewContentModeScaleAspectFit == contentMode);
-    const CGSize scaledToTargetDimensions = TIPDimensionsScaledToTargetSizing(aspectRatio, dimensions, (scaleToFit ? UIViewContentModeScaleAspectFit : UIViewContentModeScaleAspectFill));
-
-    NSString * selectedVariantName = nil;
-    for (size_t i = 0; i < (sizeof(sVariantSizeMap) / sizeof(sVariantSizeMap[0])); i++) {
-        const CGSize variantSize = CGSizeMake(sVariantSizeMap[i].dim, sVariantSizeMap[i].dim);
-        const CGSize scaledToVariantDimensions = TIPDimensionsScaledToTargetSizing(aspectRatio, variantSize, UIViewContentModeScaleAspectFit);
-        if (scaledToVariantDimensions.width >= scaledToTargetDimensions.width && scaledToVariantDimensions.height >= scaledToTargetDimensions.height) {
-            selectedVariantName = (__bridge NSString *)sVariantSizeMap[i].name;
-            break;
-        }
-    }
-
-    if (!selectedVariantName) {
-        selectedVariantName = kLARGE;
-    }
-
-    return selectedVariantName;
-}
-

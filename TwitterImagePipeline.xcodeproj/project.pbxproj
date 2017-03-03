@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1C56F6031E666F350068C780 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C56F6021E666F350068C780 /* XCTest.framework */; };
 		8B0243721E5BF8380058D10A /* InspectorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0243711E5BF8380058D10A /* InspectorViewController.m */; };
 		8B0243751E5CBEB30058D10A /* PipelineInspectorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0243741E5CBEB30058D10A /* PipelineInspectorViewController.m */; };
 		8B0243781E5CC42A0058D10A /* PipelineCacheInspectionResultsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0243771E5CC42A0058D10A /* PipelineCacheInspectionResultsViewController.m */; };
@@ -39,6 +38,21 @@
 		8B5CFE3E1D3820CA00860D40 /* TIPError.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B5CFE3C1D3820CA00860D40 /* TIPError.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B5CFE421D38246500860D40 /* TIPFileUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B5CFE401D38246500860D40 /* TIPFileUtils.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B5CFE431D38246500860D40 /* TIPFileUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B5CFE411D38246500860D40 /* TIPFileUtils.m */; };
+		8B6301831E68F9B400C9A86A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B6301821E68F9B400C9A86A /* AppDelegate.swift */; };
+		8B63018C1E68F9B400C9A86A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8B63018B1E68F9B400C9A86A /* Assets.xcassets */; };
+		8B63018F1E68F9B400C9A86A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8B63018D1E68F9B400C9A86A /* LaunchScreen.storyboard */; };
+		8B6301941E6918C900C9A86A /* placeholder.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8B129A161E519DC4009796AD /* placeholder.jpg */; };
+		8B6301951E69199A00C9A86A /* TwitterAPI.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BB66A2F1E4528EA00A8F241 /* TwitterAPI.m */; };
+		8B63019B1E69224C00C9A86A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BFB14F91C6F80CA00A4DB02 /* UIKit.framework */; };
+		8B63019C1E69225100C9A86A /* TwitterImagePipeline.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BFF176A1DF5B4AD005DE734 /* TwitterImagePipeline.framework */; };
+		8B63019D1E69226600C9A86A /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BA232751DD4F43D0097B1DE /* WebP.framework */; };
+		8B63019F1E69254C00C9A86A /* TIPXWebPCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BA232701DD430D70097B1DE /* TIPXWebPCodec.m */; };
+		8B6301A31E6928CC00C9A86A /* SettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BB66A1C1E450DFB00A8F241 /* SettingsViewController.m */; };
+		8B6301A41E6928D000C9A86A /* PipelineInspectorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0243741E5CBEB30058D10A /* PipelineInspectorViewController.m */; };
+		8B6301A51E6928D200C9A86A /* PipelineCacheInspectionResultsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0243771E5CC42A0058D10A /* PipelineCacheInspectionResultsViewController.m */; };
+		8B6301A61E6928D600C9A86A /* InspectorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0243711E5BF8380058D10A /* InspectorViewController.m */; };
+		8B6301A81E69381500C9A86A /* ZoomingTweetImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B6301A71E69381500C9A86A /* ZoomingTweetImageViewController.swift */; };
+		8B6301AA1E69B5E000C9A86A /* TwitterSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B6301A91E69B5E000C9A86A /* TwitterSearchViewController.swift */; };
 		8B6968D21BC6AC4400ADDAF5 /* TIPImageContainer.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B6968CF1BC6AC4400ADDAF5 /* TIPImageContainer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B6968D41BC6AC4400ADDAF5 /* TIPImageContainer.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B6968D01BC6AC4400ADDAF5 /* TIPImageContainer.m */; };
 		8B6C0C121D7CBD2B00B9FBF3 /* TIPTestImageFetchDownloadInternalWithStubbing.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B56927D1D7329BB00E07D32 /* TIPTestImageFetchDownloadInternalWithStubbing.m */; };
@@ -58,6 +72,7 @@
 		8B96C07E1AA930E500C44222 /* TIPImagePipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B96C0761AA930E500C44222 /* TIPImagePipeline.m */; };
 		8B96C09E1AA934C300C44222 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B96C09D1AA934C300C44222 /* SystemConfiguration.framework */; };
 		8B96C0A11AA934EF00C44222 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B96C0A01AA934EF00C44222 /* libz.dylib */; };
+		8B9B6C151E69EBEF00D9E590 /* TweetImageFetchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9B6C141E69EBEF00D9E590 /* TweetImageFetchRequest.swift */; };
 		8BA232711DD430D70097B1DE /* TIPXWebPCodec.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BA2326F1DD430D60097B1DE /* TIPXWebPCodec.h */; };
 		8BA232721DD430D70097B1DE /* TIPXWebPCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BA232701DD430D70097B1DE /* TIPXWebPCodec.m */; };
 		8BA232761DD4F43D0097B1DE /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BA232751DD4F43D0097B1DE /* WebP.framework */; };
@@ -72,6 +87,7 @@
 		8BA9756C1D77E34D00601D70 /* TIPTests.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BA975621D77E34000601D70 /* TIPTests.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8BA9756D1D77E34D00601D70 /* TIPTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BA975631D77E34000601D70 /* TIPTests.m */; };
 		8BA9756E1D77E34D00601D70 /* TIPUtilitiesTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0D231F1B0307B300DD4C7B /* TIPUtilitiesTests.m */; };
+		8BA975711D77E7A900601D70 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BA9756F1D77E64B00601D70 /* XCTest.framework */; };
 		8BA975751D77EA1800601D70 /* libTwitterImagePipeline.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BFBD3471AA77DB2007A08DD /* libTwitterImagePipeline.a */; };
 		8BA975E41D77F97700601D70 /* TwitterImagePipelineTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BA975E31D77F97700601D70 /* TwitterImagePipelineTests.m */; };
 		8BAD1A261BBAFC44003395F3 /* twitterfied.RLCP.jp2 in Resources */ = {isa = PBXBuildFile; fileRef = 8BAD1A241BBAFC44003395F3 /* twitterfied.RLCP.jp2 */; };
@@ -193,6 +209,13 @@
 			remoteGlobalIDString = 8BFBD3461AA77DB2007A08DD;
 			remoteInfo = TwitterImagePipeline;
 		};
+		8B6301991E69223800C9A86A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8BFBD33F1AA77DB2007A08DD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8BFF17691DF5B4AD005DE734;
+			remoteInfo = TwitterImagePipeline.framework;
+		};
 		8BA9755E1D77E31800601D70 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 8BFBD33F1AA77DB2007A08DD /* Project object */;
@@ -256,7 +279,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		1C56F6021E666F350068C780 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		8B00D5B71CFFDF0800D1728D /* TIPProblematicImagesTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPProblematicImagesTest.m; sourceTree = "<group>"; };
 		8B0243701E5BF8380058D10A /* InspectorViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InspectorViewController.h; sourceTree = "<group>"; };
 		8B0243711E5BF8380058D10A /* InspectorViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = InspectorViewController.m; sourceTree = "<group>"; };
@@ -298,6 +320,14 @@
 		8B5CFE3C1D3820CA00860D40 /* TIPError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPError.h; sourceTree = "<group>"; };
 		8B5CFE401D38246500860D40 /* TIPFileUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPFileUtils.h; sourceTree = "<group>"; };
 		8B5CFE411D38246500860D40 /* TIPFileUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPFileUtils.m; sourceTree = "<group>"; };
+		8B6301801E68F9B400C9A86A /* TIP Swift Sample App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TIP Swift Sample App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8B6301821E68F9B400C9A86A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		8B63018B1E68F9B400C9A86A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8B63018E1E68F9B400C9A86A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		8B6301901E68F9B400C9A86A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		8B63019E1E6922CD00C9A86A /* Sample-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Sample-Bridging-Header.h"; sourceTree = "<group>"; };
+		8B6301A71E69381500C9A86A /* ZoomingTweetImageViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ZoomingTweetImageViewController.swift; sourceTree = "<group>"; };
+		8B6301A91E69B5E000C9A86A /* TwitterSearchViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwitterSearchViewController.swift; sourceTree = "<group>"; };
 		8B6968CF1BC6AC4400ADDAF5 /* TIPImageContainer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageContainer.h; sourceTree = "<group>"; };
 		8B6968D01BC6AC4400ADDAF5 /* TIPImageContainer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageContainer.m; sourceTree = "<group>"; };
 		8B725B611AB73A1000786F5E /* TIPImageFetchDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageFetchDelegate.h; sourceTree = "<group>"; };
@@ -319,12 +349,14 @@
 		8B96C0941AA9311700C44222 /* TIPImageTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageTest.m; sourceTree = "<group>"; };
 		8B96C09D1AA934C300C44222 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		8B96C0A01AA934EF00C44222 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
+		8B9B6C141E69EBEF00D9E590 /* TweetImageFetchRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TweetImageFetchRequest.swift; sourceTree = "<group>"; };
 		8BA2326F1DD430D60097B1DE /* TIPXWebPCodec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPXWebPCodec.h; sourceTree = "<group>"; };
 		8BA232701DD430D70097B1DE /* TIPXWebPCodec.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPXWebPCodec.m; sourceTree = "<group>"; };
 		8BA232751DD4F43D0097B1DE /* WebP.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebP.framework; path = TwitterImagePipelineTests/WebP.framework; sourceTree = "<group>"; };
 		8BA975531D77E2C900601D70 /* TIPTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TIPTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BA975621D77E34000601D70 /* TIPTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPTests.h; sourceTree = "<group>"; };
 		8BA975631D77E34000601D70 /* TIPTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPTests.m; sourceTree = "<group>"; };
+		8BA9756F1D77E64B00601D70 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = ../../Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		8BA975DF1D77F41700601D70 /* TIPTests.Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = TIPTests.Info.plist; sourceTree = "<group>"; };
 		8BA975E31D77F97700601D70 /* TwitterImagePipelineTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TwitterImagePipelineTests.m; sourceTree = "<group>"; };
 		8BAD1A241BBAFC44003395F3 /* twitterfied.RLCP.jp2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = twitterfied.RLCP.jp2; sourceTree = "<group>"; };
@@ -421,13 +453,23 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		8B63017D1E68F9B400C9A86A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8B63019C1E69225100C9A86A /* TwitterImagePipeline.framework in Frameworks */,
+				8B63019B1E69224C00C9A86A /* UIKit.framework in Frameworks */,
+				8B63019D1E69226600C9A86A /* WebP.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8BA9754F1D77E2C900601D70 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8BA975751D77EA1800601D70 /* libTwitterImagePipeline.a in Frameworks */,
 				8BA232761DD4F43D0097B1DE /* WebP.framework in Frameworks */,
-				1C56F6031E666F350068C780 /* XCTest.framework in Frameworks */,
+				8BA975751D77EA1800601D70 /* libTwitterImagePipeline.a in Frameworks */,
+				8BA975711D77E7A900601D70 /* XCTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -481,6 +523,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		8B6301811E68F9B400C9A86A /* TIP Swift Sample App */ = {
+			isa = PBXGroup;
+			children = (
+				8B6301821E68F9B400C9A86A /* AppDelegate.swift */,
+				8B63018B1E68F9B400C9A86A /* Assets.xcassets */,
+				8B6301901E68F9B400C9A86A /* Info.plist */,
+				8B63018D1E68F9B400C9A86A /* LaunchScreen.storyboard */,
+				8B63019E1E6922CD00C9A86A /* Sample-Bridging-Header.h */,
+				8B9B6C141E69EBEF00D9E590 /* TweetImageFetchRequest.swift */,
+				8B6301A91E69B5E000C9A86A /* TwitterSearchViewController.swift */,
+				8B6301A71E69381500C9A86A /* ZoomingTweetImageViewController.swift */,
+			);
+			path = "TIP Swift Sample App";
+			sourceTree = "<group>";
+		};
 		8B9333A11AAA1DAB00D2C5C7 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -488,7 +545,7 @@
 				8B96C09D1AA934C300C44222 /* SystemConfiguration.framework */,
 				8BFB14F91C6F80CA00A4DB02 /* UIKit.framework */,
 				8BA232751DD4F43D0097B1DE /* WebP.framework */,
-				1C56F6021E666F350068C780 /* XCTest.framework */,
+				8BA9756F1D77E64B00601D70 /* XCTest.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -558,7 +615,6 @@
 				8B0243771E5CC42A0058D10A /* PipelineCacheInspectionResultsViewController.m */,
 				8B0243731E5CBEB30058D10A /* PipelineInspectorViewController.h */,
 				8B0243741E5CBEB30058D10A /* PipelineInspectorViewController.m */,
-				8B129A161E519DC4009796AD /* placeholder.jpg */,
 				8BB66A1B1E450DFB00A8F241 /* SettingsViewController.h */,
 				8BB66A1C1E450DFB00A8F241 /* SettingsViewController.m */,
 				8BB66A121E450DFB00A8F241 /* Supporting Files */,
@@ -620,6 +676,7 @@
 		8BE5A8861D8D9830005CF75E /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				8B129A161E519DC4009796AD /* placeholder.jpg */,
 				8BE5A8871D8D9843005CF75E /* AppledocSettings.plist */,
 				8B8607F21D90415A00939554 /* CHANGELOG.md */,
 				8B8607F11D90408700939554 /* LICENSE */,
@@ -637,6 +694,7 @@
 				B3B9EA041C3AFA6C00B8A451 /* Resources */,
 				8BE5A8861D8D9830005CF75E /* Supporting Files */,
 				8BB66A111E450DFB00A8F241 /* TIP Sample App */,
+				8B6301811E68F9B400C9A86A /* TIP Swift Sample App */,
 				8B1A49381D78D1370003F252 /* TIPTestsResources.bundle */,
 				8BFBD3491AA77DB2007A08DD /* TwitterImagePipeline */,
 				8BFF176B1DF5B4AD005DE734 /* TwitterImagePipeline.framework */,
@@ -653,6 +711,7 @@
 				8BA975531D77E2C900601D70 /* TIPTests.framework */,
 				8BFF176A1DF5B4AD005DE734 /* TwitterImagePipeline.framework */,
 				8BB66A101E450DFB00A8F241 /* TIP Sample App.app */,
+				8B6301801E68F9B400C9A86A /* TIP Swift Sample App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -862,6 +921,24 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		8B63017F1E68F9B400C9A86A /* TIP Swift Sample App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8B6301931E68F9B400C9A86A /* Build configuration list for PBXNativeTarget "TIP Swift Sample App" */;
+			buildPhases = (
+				8B63017C1E68F9B400C9A86A /* Sources */,
+				8B63017D1E68F9B400C9A86A /* Frameworks */,
+				8B63017E1E68F9B400C9A86A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8B63019A1E69223800C9A86A /* PBXTargetDependency */,
+			);
+			name = "TIP Swift Sample App";
+			productName = "TIP Swift Sample App";
+			productReference = 8B6301801E68F9B400C9A86A /* TIP Swift Sample App.app */;
+			productType = "com.apple.product-type.application";
+		};
 		8BA975521D77E2C900601D70 /* TIPTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8BA9755C1D77E2CA00601D70 /* Build configuration list for PBXNativeTarget "TIPTests" */;
@@ -980,12 +1057,17 @@
 		8BFBD33F1AA77DB2007A08DD /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 0820;
 				LastUpgradeCheck = 0820;
 				ORGANIZATIONNAME = Twitter;
 				TargetAttributes = {
+					8B63017F1E68F9B400C9A86A = {
+						CreatedOnToolsVersion = 8.2.1;
+						ProvisioningStyle = Automatic;
+					};
 					8BA975521D77E2C900601D70 = {
 						CreatedOnToolsVersion = 7.3.1;
-						DevelopmentTeam = 9YG77X724H;
+						ProvisioningStyle = Automatic;
 					};
 					8BB66A0F1E450DFB00A8F241 = {
 						CreatedOnToolsVersion = 8.2.1;
@@ -1025,11 +1107,22 @@
 				8BFBD3511AA77DB2007A08DD /* TwitterImagePipelineTests */,
 				8BE31C821B9A1BF5009BC0B2 /* ImageSpeedComparison */,
 				8BB66A0F1E450DFB00A8F241 /* TIP Sample App */,
+				8B63017F1E68F9B400C9A86A /* TIP Swift Sample App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		8B63017E1E68F9B400C9A86A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8B63018F1E68F9B400C9A86A /* LaunchScreen.storyboard in Resources */,
+				8B6301941E6918C900C9A86A /* placeholder.jpg in Resources */,
+				8B63018C1E68F9B400C9A86A /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8BA975511D77E2C900601D70 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1085,6 +1178,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		8B63017C1E68F9B400C9A86A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8B6301A61E6928D600C9A86A /* InspectorViewController.m in Sources */,
+				8B6301A41E6928D000C9A86A /* PipelineInspectorViewController.m in Sources */,
+				8B9B6C151E69EBEF00D9E590 /* TweetImageFetchRequest.swift in Sources */,
+				8B6301951E69199A00C9A86A /* TwitterAPI.m in Sources */,
+				8B6301A51E6928D200C9A86A /* PipelineCacheInspectionResultsViewController.m in Sources */,
+				8B6301AA1E69B5E000C9A86A /* TwitterSearchViewController.swift in Sources */,
+				8B6301A81E69381500C9A86A /* ZoomingTweetImageViewController.swift in Sources */,
+				8B6301831E68F9B400C9A86A /* AppDelegate.swift in Sources */,
+				8B63019F1E69254C00C9A86A /* TIPXWebPCodec.m in Sources */,
+				8B6301A31E6928CC00C9A86A /* SettingsViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8BA9754E1D77E2C900601D70 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1196,6 +1306,11 @@
 			target = 8BFBD3461AA77DB2007A08DD /* TwitterImagePipeline */;
 			targetProxy = 3DD6F01D1C84CAE5008F78B8 /* PBXContainerItemProxy */;
 		};
+		8B63019A1E69223800C9A86A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8BFF17691DF5B4AD005DE734 /* TwitterImagePipeline.framework */;
+			targetProxy = 8B6301991E69223800C9A86A /* PBXContainerItemProxy */;
+		};
 		8BA9755F1D77E31800601D70 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 8BFBD3461AA77DB2007A08DD /* TwitterImagePipeline */;
@@ -1224,6 +1339,14 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		8B63018D1E68F9B400C9A86A /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				8B63018E1E68F9B400C9A86A /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
 		8BB66A231E450DFB00A8F241 /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -1251,13 +1374,69 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		8B6301911E68F9B400C9A86A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/TwitterImagePipelineTests",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				INFOPLIST_FILE = "TIP Swift Sample App/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twitter.TIP-Swift-Sample-App";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OBJC_BRIDGING_HEADER = "TIP Swift Sample App/Sample-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
+			};
+			name = Debug;
+		};
+		8B6301921E68F9B400C9A86A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/TwitterImagePipelineTests",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				INFOPLIST_FILE = "TIP Swift Sample App/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twitter.TIP-Swift-Sample-App";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "TIP Swift Sample App/Sample-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 3.0;
+			};
+			name = Release;
+		};
 		8BA975581D77E2CA00601D70 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_NONNULL = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = "";
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
@@ -1290,10 +1469,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_NONNULL = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = "";
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
@@ -1383,7 +1564,6 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = ImageSpeedComparison/Info.plist;
@@ -1405,7 +1585,6 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = ImageSpeedComparison/Info.plist;
@@ -1529,6 +1708,7 @@
 				OTHER_LDFLAGS = "-ObjC";
 				SDKROOT = iphoneos;
 				STRIP_INSTALLED_PRODUCT = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -1658,6 +1838,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		8B6301931E68F9B400C9A86A /* Build configuration list for PBXNativeTarget "TIP Swift Sample App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8B6301911E68F9B400C9A86A /* Debug */,
+				8B6301921E68F9B400C9A86A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		8BA9755C1D77E2CA00601D70 /* Build configuration list for PBXNativeTarget "TIPTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -175,9 +175,7 @@ NS_ASSUME_NONNULL_END
 @interface TIPImageViewFetchHelper (Debugging)
 
 /** make debug info visible or not */
-+ (void)setDebugInfoVisible:(BOOL)debugInfoVisible;
-/** is debug info visible? */
-+ (BOOL)isDebugInfoVisible;
+@property (class, nonatomic, getter=isDebugInfoVisible) BOOL debugInfoVisible;
 
 /** color for image highlight when debug info visible */
 @property (nonatomic, nullable) UIColor *debugImageHighlightColor;

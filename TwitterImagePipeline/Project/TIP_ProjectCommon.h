@@ -68,7 +68,7 @@ do { \
     id<TIPLogger> const __logger = gTIPLogger; \
     TIPLogLevel const __level = (level); \
     if (__logger && (![__logger respondsToSelector:@selector(tip_canLogWithLevel:)] || [__logger tip_canLogWithLevel:__level])) { \
-        [__logger tip_logWithLevel:__level file:@(__FILE__) function:@(__FUNCTION__) line:__LINE__ format:__VA_ARGS__]; \
+        [__logger tip_logWithLevel:__level file:@(__FILE__) function:@(__FUNCTION__) line:__LINE__ message:[NSString stringWithFormat: __VA_ARGS__ ]]; \
     } \
 } while (0)
 

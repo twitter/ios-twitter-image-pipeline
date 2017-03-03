@@ -23,6 +23,7 @@
 @property (nonatomic) NSUInteger searchCount;
 @property (nonatomic) BOOL searchWebP;
 @property (nonatomic) BOOL usePlaceholder;
+@property (nonatomic, getter=isDebugInfoVisible) BOOL debugInfoVisible;
 
 // Methods
 

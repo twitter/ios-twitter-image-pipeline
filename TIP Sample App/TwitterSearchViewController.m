@@ -118,8 +118,6 @@
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar
 {
     NSString *search = searchBar.text;
-    (void)search;
-
     _term = search;
     _searchController.active = NO;
     _searchController.searchBar.userInteractionEnabled = NO;

@@ -129,7 +129,7 @@
         case 'dbg.':
         {
             UISwitch *s = (id)sender;
-            [TIPImageViewFetchHelper setDebugInfoVisible:s.on];
+            APP_DELEGATE.debugInfoVisible = s.on;
             break;
         }
         case 'hldr':
