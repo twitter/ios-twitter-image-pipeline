@@ -197,7 +197,7 @@ NS_ASSUME_NONNULL_END
         } else {
             TIPAssert(imageContainer);
             diskEntry.completeImage = imageContainer;
-            TIPAssert(memoryEntry.completeImage);
+            TIPAssert(diskEntry.completeImage);
         }
     }
 
