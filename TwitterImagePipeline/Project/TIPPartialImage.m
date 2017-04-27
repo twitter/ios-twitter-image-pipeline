@@ -21,7 +21,7 @@
 static const float kUnfinishedImageProgressCap = 0.999f;
 
 @interface TIPPartialImage ()
-@property (nonatomic, readwrite) TIPPartialImageState state;
+@property (atomic, readwrite) TIPPartialImageState state;
 @end
 
 @implementation TIPPartialImage
@@ -33,7 +33,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     dispatch_queue_t _renderQueue;
 }
 
-// the following getters may appear superfluous, and would be if it weren't for the need to
+// the following getters may appear superfluous, and would be, if it weren't for the need to
 // annotate them with __attribute__((no_sanitize("thread")).  the getters make the @synthesize
 // lines necessary.
 //
@@ -118,7 +118,9 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     __block TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
 
     dispatch_sync(_renderQueue, ^{
-        result = [self _tip_appendData:data final:final];
+        @autoreleasepool {
+            result = [self _tip_appendData:data final:final];
+        }
     });
 
     return result;
@@ -151,7 +153,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
 
 - (TIPImageDecoderAppendResult)_tip_appendData:(NSData *)data final:(BOOL)final
 {
-    if (TIPPartialImageStateComplete == _state) {
+    if (TIPPartialImageStateComplete == self.state) {
         return TIPImageDecoderAppendResultDidCompleteLoading;
     }
 
@@ -185,19 +187,19 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     switch (result) {
         case TIPImageDecoderAppendResultDidLoadHeaders:
         case TIPImageDecoderAppendResultDidLoadFrame:
-            if (_state <= TIPPartialImageStateLoadingImage) {
-                _state = TIPPartialImageStateLoadingImage;
+            if (self.state <= TIPPartialImageStateLoadingImage) {
+                self.state = TIPPartialImageStateLoadingImage;
             }
             break;
         case TIPImageDecoderAppendResultDidCompleteLoading:
-            if (_state <= TIPPartialImageStateComplete) {
-                _state = TIPPartialImageStateComplete;
+            if (self.state <= TIPPartialImageStateComplete) {
+                self.state = TIPPartialImageStateComplete;
             }
             break;
         case TIPImageDecoderAppendResultDidProgress:
         default:
-            if (_state <= TIPPartialImageStateLoadingHeaders) {
-                _state = TIPPartialImageStateLoadingHeaders;
+            if (self.state <= TIPPartialImageStateLoadingHeaders) {
+                self.state = TIPPartialImageStateLoadingHeaders;
             }
             break;
     }
@@ -229,9 +231,11 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     __block TIPImageContainer *image = nil;
 
     dispatch_sync(_renderQueue, ^{
-        image = [self->_decoder tip_renderImage:self->_decoderContext mode:mode];
-        if (image && decode) {
-            [image decode];
+        @autoreleasepool {
+            image = [self->_decoder tip_renderImage:self->_decoderContext mode:mode];
+            if (image && decode) {
+                [image decode];
+            }
         }
     });
 

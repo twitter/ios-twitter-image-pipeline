@@ -31,7 +31,7 @@
 
 - (void)appendEntry:(nonnull id<TIPLRUEntry>)entry;
 
-- (void)removeEntry:(nonnull id<TIPLRUEntry>)entry;
+- (void)removeEntry:(nullable id<TIPLRUEntry>)entry;
 
 - (nullable id<TIPLRUEntry>)removeTailEntry;
 
@@ -43,6 +43,7 @@
 
 @optional
 - (void)tip_cache:(nonnull TIPLRUCache *)cache didEvictEntry:(nonnull id<TIPLRUEntry>)entry;
+- (BOOL)tip_cache:(nonnull TIPLRUCache *)cache canEvictEntry:(nonnull id<TIPLRUEntry>)entry;
 
 @end
 

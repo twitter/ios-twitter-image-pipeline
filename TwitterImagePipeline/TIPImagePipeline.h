@@ -21,7 +21,7 @@
 //! Completion block for a `TIPImageFetchOperation` that didn't use a delegate
 typedef void(^TIPImagePipelineFetchCompletionBlock)(id<TIPImageFetchResult> __nullable finalResult,  NSError * __nullable error);
 //! Completion block for an image store
-typedef void(^TIPImagePipelineStoreCompletionBlock)(BOOL succeeded, NSError * __nullable error);
+typedef void(^TIPImagePipelineStoreCompletionBlock)(NSObject<TIPDependencyOperation> * __nonnull storeOp, BOOL succeeded, NSError * __nullable error);
 //! Completion block for copying a file from an image pipeline's disk cache to a _temporaryFilePath_
 typedef void(^TIPImagePipelineCopyFileCompletionBlock)(NSString * __nullable temporaryFilePath, NSError * __nullable error);
 

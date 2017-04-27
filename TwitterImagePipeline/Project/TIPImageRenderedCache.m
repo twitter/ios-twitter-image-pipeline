@@ -101,18 +101,22 @@
 
     // Clear the manifest in the background to avoid main thread stalls
 
-    TIPLRUCache *oldManifest = _manifest;
-    const SInt16 totalCount = (SInt16)oldManifest.numberOfEntries;
-    _manifest = [[TIPLRUCache alloc] initWithEntries:nil delegate:self];
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
-        [oldManifest clearAllEntries];
-    });
+    @autoreleasepool {
+        TIPLRUCache *oldManifest = _manifest;
+        const SInt16 totalCount = (SInt16)oldManifest.numberOfEntries;
+        _manifest = [[TIPLRUCache alloc] initWithEntries:nil delegate:self];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+            @autoreleasepool {
+                [oldManifest clearAllEntries];
+            }
+        });
 
-    [self _tip_addByteCount:0 removeByteCount:(UInt64)self.atomicTotalCost];
-    [TIPGlobalConfiguration sharedInstance].internalTotalCountForAllRenderedCaches -= totalCount;
-    TIPLogInformation(@"Cleared all images in %@", self);
-    if (completion) {
-        completion();
+        [self _tip_addByteCount:0 removeByteCount:(UInt64)self.atomicTotalCost];
+        [TIPGlobalConfiguration sharedInstance].internalTotalCountForAllRenderedCaches -= totalCount;
+        TIPLogInformation(@"Cleared all images in %@", self);
+        if (completion) {
+            completion();
+        }
     }
 }
 
@@ -120,8 +124,10 @@
 {
     TIPAssert(identifier != nil);
     if (identifier != nil && [NSThread isMainThread]) {
-        TIPImageRenderedEntriesCollection *collection = [_manifest entryWithIdentifier:identifier];
-        return [collection imageEntryMatchingDimensions:size contentMode:mode];
+        @autoreleasepool {
+            TIPImageRenderedEntriesCollection *collection = [_manifest entryWithIdentifier:identifier];
+            return [collection imageEntryMatchingDimensions:size contentMode:mode];
+        }
     }
     return nil;
 }
@@ -138,9 +144,11 @@
         return;
     }
 
-    entry = [entry copy];
-    entry.partialImage = nil;
-    entry.partialImageContext = nil;
+    @autoreleasepool {
+        entry = [entry copy];
+        entry.partialImage = nil;
+        entry.partialImageContext = nil;
+    }
 
     if (![NSThread isMainThread]) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -149,38 +157,40 @@
         return;
     }
 
-    TIPGlobalConfiguration *globalConfig = [TIPGlobalConfiguration sharedInstance];
-    NSString *identifier = entry.identifier;
-    TIPImageRenderedEntriesCollection *collection = (TIPImageRenderedEntriesCollection *)[_manifest entryWithIdentifier:identifier];
-    const BOOL hasCollection = (collection != nil);
-    const NSUInteger oldCost = hasCollection ? collection.collectionCost : 0;
+    @autoreleasepool {
+        TIPGlobalConfiguration *globalConfig = [TIPGlobalConfiguration sharedInstance];
+        NSString *identifier = entry.identifier;
+        TIPImageRenderedEntriesCollection *collection = (TIPImageRenderedEntriesCollection *)[_manifest entryWithIdentifier:identifier];
+        const BOOL hasCollection = (collection != nil);
+        const NSUInteger oldCost = hasCollection ? collection.collectionCost : 0;
 
-    // Cap our entry size
-    if ((SInt64)entry.completeImage.sizeInMemory > [globalConfig internalMaxBytesForCacheEntryOfType:self.cacheType]) {
-        // too big, don't cache.
-        return;
-    }
-
-    if (!collection) {
-        collection = [[TIPImageRenderedEntriesCollection alloc] initWithIdentifier:identifier];
-    }
-
-    [collection addImageEntry:entry];
-    const NSUInteger newCost = collection.collectionCost;
-
-    if (!newCost) {
-        if (hasCollection) {
-            [_manifest removeEntry:collection];
+        // Cap our entry size
+        if ((SInt64)entry.completeImage.sizeInMemory > [globalConfig internalMaxBytesForCacheEntryOfType:self.cacheType]) {
+            // too big, don't cache.
+            return;
         }
-    } else {
-        [_manifest addEntry:collection]; // add entry or move to front
-        if (!hasCollection) {
-            globalConfig.internalTotalCountForAllRenderedCaches += 1;
-        }
-    }
 
-    [self _tip_addByteCount:newCost removeByteCount:oldCost];
-    [globalConfig pruneAllCachesOfType:self.cacheType withPriorityCache:self];
+        if (!collection) {
+            collection = [[TIPImageRenderedEntriesCollection alloc] initWithIdentifier:identifier];
+        }
+
+        [collection addImageEntry:entry];
+        const NSUInteger newCost = collection.collectionCost;
+
+        if (!newCost) {
+            if (hasCollection) {
+                [_manifest removeEntry:collection];
+            }
+        } else {
+            [_manifest addEntry:collection]; // add entry or move to front
+            if (!hasCollection) {
+                globalConfig.internalTotalCountForAllRenderedCaches += 1;
+            }
+        }
+
+        [self _tip_addByteCount:newCost removeByteCount:oldCost];
+        [globalConfig pruneAllCachesOfType:self.cacheType withPriorityCache:self];
+    }
 }
 
 - (void)clearImagesWithIdentifier:(NSString *)identifier
@@ -195,8 +205,10 @@
         return;
     }
 
-    TIPImageRenderedEntriesCollection *collection = [_manifest entryWithIdentifier:identifier];
-    [_manifest removeEntry:collection];
+    @autoreleasepool {
+        TIPImageRenderedEntriesCollection *collection = [_manifest entryWithIdentifier:identifier];
+        [_manifest removeEntry:collection];
+    }
 }
 
 #pragma mark Delegate
@@ -217,19 +229,21 @@
         return;
     }
 
-    NSMutableArray *inspectedEntries = [[NSMutableArray alloc] init];
+    @autoreleasepool {
+        NSMutableArray *inspectedEntries = [[NSMutableArray alloc] init];
 
-    for (TIPImageRenderedEntriesCollection *collection in _manifest) {
-        NSArray *allEntries = [collection allEntries];
-        for (TIPImageCacheEntry *cacheEntry in allEntries) {
-            TIPImagePipelineInspectionResultEntry *entry = [TIPImagePipelineInspectionResultEntry entryWithCacheEntry:cacheEntry class:[TIPImagePipelineInspectionResultRenderedEntry class]];
-            TIPAssert(entry != nil);
-            entry.bytesUsed = [entry.image tip_estimatedSizeInBytes];
-            [inspectedEntries addObject:entry];
+        for (TIPImageRenderedEntriesCollection *collection in _manifest) {
+            NSArray *allEntries = [collection allEntries];
+            for (TIPImageCacheEntry *cacheEntry in allEntries) {
+                TIPImagePipelineInspectionResultEntry *entry = [TIPImagePipelineInspectionResultEntry entryWithCacheEntry:cacheEntry class:[TIPImagePipelineInspectionResultRenderedEntry class]];
+                TIPAssert(entry != nil);
+                entry.bytesUsed = [entry.image tip_estimatedSizeInBytes];
+                [inspectedEntries addObject:entry];
+            }
         }
-    }
 
-    callback(inspectedEntries, nil);
+        callback(inspectedEntries, nil);
+    }
 }
 
 @end

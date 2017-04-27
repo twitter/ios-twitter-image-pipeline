@@ -23,7 +23,10 @@ static NSTimeInterval const TIPOperationSafetyGuardCheckForAlreadyFinishedOperat
 
 - (void)tip_safeAddOperation:(NSOperation *)op
 {
-    [[TIPOperationSafetyGuard operationSafetyGuard] addOperation:op];
+    TIPOperationSafetyGuard *guard = [TIPOperationSafetyGuard operationSafetyGuard];
+    if (guard) {
+        [guard addOperation:op];
+    }
     [self addOperation:op];
 }
 

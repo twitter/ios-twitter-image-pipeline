@@ -33,7 +33,7 @@
 }
 
 - (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer supportsProgressiveLoading:(BOOL)supportsProgressive;
-- (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer animated:(BOOL)animated;
+- (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer potentiallyAnimated:(BOOL)animated;
 - (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)init NS_UNAVAILABLE;
@@ -78,13 +78,13 @@
         // JPEG has a special decoder
         decoder = [[TIPJPEGCGImageSourceDecoder alloc] init];
         encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:(NSString *)kUTTypeJPEG];
-    } else if ([imageType isEqualToString:TIPImageTypeGIF]) {
-        // GIF is animated
+    } else if ([imageType isEqualToString:TIPImageTypeGIF] || [imageType isEqualToString:TIPImageTypePNG]) {
+        // GIF & APNG can be animated
         NSString *UTType = TIPImageTypeToUTType(imageType);
         decoder = [[TIPAnimatedCGImageSourceDecoder alloc] initWithUTType:UTType];
         encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:UTType];
         animated = YES;
-    } else if ([imageType isEqualToString:TIPImageTypePNG] || [imageType isEqualToString:TIPImageTypeJPEG2000] || [imageType isEqualToString:TIPImageTypeTIFF] || [imageType isEqualToString:TIPImageTypeBMP] || [imageType isEqualToString:TIPImageTypeTARGA]) {
+    } else if ([imageType isEqualToString:TIPImageTypeJPEG2000] || [imageType isEqualToString:TIPImageTypeTIFF] || [imageType isEqualToString:TIPImageTypeBMP] || [imageType isEqualToString:TIPImageTypeTARGA]) {
         // These are all normal
         NSString *UTType = TIPImageTypeToUTType(imageType);
         decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
@@ -195,7 +195,7 @@
 
 - (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer
 {
-    return [[TIPCGImageSourceDecoderContext alloc] initWithUTType:self.UTType expectedDataLength:expectedDataLength buffer:buffer animated:YES];
+    return [[TIPCGImageSourceDecoderContext alloc] initWithUTType:self.UTType expectedDataLength:expectedDataLength buffer:buffer potentiallyAnimated:YES];
 }
 
 @end
@@ -282,7 +282,7 @@
     return self;
 }
 
-- (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer animated:(BOOL)animated
+- (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer potentiallyAnimated:(BOOL)animated
 {
     if (self = [self initWithUTType:UTType expectedDataLength:expectedDataLength buffer:buffer]) {
         _flags.isPotentiallyAnimated = !!animated;
@@ -661,6 +661,13 @@
                     CFDictionaryRef gifProperties = CFDictionaryGetValue(imageProperties, kCGImagePropertyGIFDictionary);
                     if (gifProperties) {
                         _tip_isAnimated = YES;
+                    }
+                } else if ([_UTType isEqualToString:(NSString *)kUTTypePNG]) {
+                    CFDictionaryRef pngProperties = CFDictionaryGetValue(imageProperties, kCGImagePropertyPNGDictionary);
+                    if (pngProperties && [[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)] /* iOS 8+ */) {
+                        if (CFDictionaryGetValue(pngProperties, kCGImagePropertyAPNGDelayTime) != NULL) {
+                            _tip_isAnimated = YES;
+                        }
                     }
                 }
             }

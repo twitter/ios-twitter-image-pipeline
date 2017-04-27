@@ -38,8 +38,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) SInt64 internalTotalBytesForAllRenderedCaches;
 
 // shared queues
+// The TIP caches can execute a LOT of Cocoa code which can pile up with autoreleases.
+// Since queues don't immediately clear their autorelease pools, the time when these objects
+// will be disposed is undefined and can be very long lived.
+// Given the amount of large objects in TIP (images), we will be agressive with our autoreleasing
+// and will use `tip_dispatch_[a]sync_autoreleasing` functions to wrap TIP cache queue block
+// execution with `@autoreleasepool`.
 @property (nonatomic, readonly) dispatch_queue_t queueForMemoryCaches;
 @property (nonatomic, readonly) dispatch_queue_t queueForDiskCaches;
+- (dispatch_queue_t)queueForCachesOfType:(TIPImageCacheType)type;
 
 // other properties
 @property (atomic, nonnull, readonly) NSArray<id<TIPImagePipelineObserver>> *allImagePipelineObservers;
@@ -47,7 +54,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) BOOL imageFetchDownloadProviderSupportsStubbing;
 
 // per cache type accessors
-- (dispatch_queue_t)queueForCachesOfType:(TIPImageCacheType)type;
 - (SInt16)internalMaxCountForAllCachesOfType:(TIPImageCacheType)type;
 - (SInt16)internalTotalCountForAllCachesOfType:(TIPImageCacheType)type;
 - (SInt64)internalMaxBytesForAllCachesOfType:(TIPImageCacheType)type;

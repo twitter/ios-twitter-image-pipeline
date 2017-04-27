@@ -23,6 +23,8 @@ NSString * const TIPProblemImageFailedToScale = @"TIPProblemImageFailedToScale";
 NSString * const TIPProblemImageContainerHasNilImage = @"TIPProblemImageContainerHasNilImage";
 NSString * const TIPProblemImageFetchHasInvalidTargetDimensions = @"TIPProblemImageFetchHasInvalidTargetDimensions";
 NSString * const TIPProblemImageDownloadedHasGPSInfo = @"TIPProblemImageDownloadedHasGPSInfo";
+NSString * const TIPProblemImageDownloadedCouldNotBeDecoded = @"TIPProblemImageDownloadedCouldNotBeDecoded";
+NSString * const TIPProblemImageTooLargeToStoreInDiskCache = @"TIPProblemImageTooLargeToStoreInDiskCache";
 
 #pragma mark Problem User Info Keys
 
@@ -38,7 +40,7 @@ NSString * const TIPProblemInfoKeyImageIsAnimated = @"animated";
 
 NSString *TIPVersion()
 {
-    return @"2.2";
+    return @"2.3";
 }
 
 void TIPSwizzle(Class cls, SEL originalSelector, SEL swizzledSelector)
