@@ -2,13 +2,22 @@
 
 ## Info
 
-**Document version:** 2.2.2
+**Document version:** 2.3.0
 
-**Last updated:** 03/02/2017
+**Last updated:** 03/24/2017
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.3.0
+
+- Reduce memory pressure w/ `@autoreleasepool` blocks on GCD queues in _TIP_
+- Add "problem" for images not caching because they are too large
+- Add "problem" when downloaded image cannot be decoded
+- Add Animated PNG support (iOS 8+)
+- Add the store operation as an argument to `TIPImagePipelineStoreCompletionBlock`
+- Tightened up some threading race conditions that cropped up with the thread sanitizer
 
 ### 2.2.2
 

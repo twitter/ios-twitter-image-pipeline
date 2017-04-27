@@ -194,6 +194,10 @@ FOUNDATION_EXTERN NSString * const TIPProblemImageContainerHasNilImage;
 FOUNDATION_EXTERN NSString * const TIPProblemImageFetchHasInvalidTargetDimensions;
 //! Problem that a downloaded image has GPS info
 FOUNDATION_EXTERN NSString * const TIPProblemImageDownloadedHasGPSInfo;
+//! Problem decoding downloaded image
+FOUNDATION_EXTERN NSString * const TIPProblemImageDownloadedCouldNotBeDecoded;
+//! Problem when attempting to store an image to disk cache due to size limit
+FOUNDATION_EXTERN NSString * const TIPProblemImageTooLargeToStoreInDiskCache;
 
 #pragma mark Problem Info Keys
 

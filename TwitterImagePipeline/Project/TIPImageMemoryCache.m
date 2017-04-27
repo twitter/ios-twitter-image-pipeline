@@ -27,7 +27,7 @@
 
 @implementation TIPImageMemoryCache
 {
-    dispatch_queue_t _memoryCacheQueue;
+    TIPGlobalConfiguration *_globalConfig;
     TIPLRUCache *_manifest;
 }
 
@@ -46,7 +46,7 @@
 - (instancetype)init
 {
     if (self = [super init]) {
-        _memoryCacheQueue = [TIPGlobalConfiguration sharedInstance].queueForMemoryCaches;
+        _globalConfig = [TIPGlobalConfiguration sharedInstance];
         _manifest = [[TIPLRUCache alloc] initWithEntries:nil delegate:self];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_tip_memoryCache_didReceiveMemoryWarning:) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
     }
@@ -60,7 +60,7 @@
     // Remove the cache's total bytes from our global count of total bytes
     const SInt64 totalSize = self.atomicTotalCost;
     const SInt16 totalCount = (SInt16)_manifest.numberOfEntries;
-    TIPGlobalConfiguration *config = [TIPGlobalConfiguration sharedInstance];
+    TIPGlobalConfiguration *config = _globalConfig;
     dispatch_async(config.queueForMemoryCaches, ^{
         config.internalTotalBytesForAllMemoryCaches -= totalSize;
         config.internalTotalCountForAllMemoryCaches -= totalCount;
@@ -80,7 +80,7 @@
     }
 
     __block TIPImageMemoryCacheEntry *entry;
-    dispatch_sync(_memoryCacheQueue, ^{
+    tip_dispatch_sync_autoreleasing(_globalConfig.queueForMemoryCaches, ^{
         // Get entry
         entry = (TIPImageMemoryCacheEntry *)[self->_manifest entryWithIdentifier:identifier];
         if (entry) {
@@ -137,7 +137,7 @@
         return;
     }
 
-    dispatch_async(_memoryCacheQueue, ^{
+    tip_dispatch_async_autoreleasing(_globalConfig.queueForMemoryCaches, ^{
         if (![entry isValid:NO]) {
             return;
         }
@@ -204,13 +204,12 @@
                     NSDate *now = [NSDate date];
                     currentEntry.partialImageContext.lastAccess = now;
                     currentEntry.completeImageContext.lastAccess = now;
-                    [[TIPGlobalConfiguration sharedInstance] pruneAllCachesOfType:self.cacheType withPriorityCache:self];
                 }
             }
         }
 
         if (updatedCompleteImage || updatedPartialImage) {
-            // TIPLogDebug(@"Updated Memory Cache Entry: %@", identifier);
+            [[TIPGlobalConfiguration sharedInstance] pruneAllCachesOfType:self.cacheType withPriorityCache:self];
         }
     });
 }
@@ -222,7 +221,7 @@
         return;
     }
 
-    dispatch_async(_memoryCacheQueue, ^{
+    tip_dispatch_async_autoreleasing(_globalConfig.queueForMemoryCaches, ^{
         (void)[self->_manifest entryWithIdentifier:identifier];
     });
 }
@@ -234,15 +233,15 @@
         return;
     }
 
-    dispatch_async(_memoryCacheQueue, ^{
+    tip_dispatch_async_autoreleasing(_globalConfig.queueForMemoryCaches, ^{
         TIPImageMemoryCacheEntry *entry = (TIPImageMemoryCacheEntry *)[self->_manifest entryWithIdentifier:identifier];
         [self->_manifest removeEntry:entry];
     });
 }
 
-- (void)clearAllImages:(void (^ __nullable)(void))completion
+- (void)clearAllImages:(void (^)(void))completion
 {
-    dispatch_async(_memoryCacheQueue, ^{
+    tip_dispatch_async_autoreleasing(_globalConfig.queueForMemoryCaches, ^{
         const SInt16 totalCount = (SInt16)self->_manifest.numberOfEntries;
         [self->_manifest clearAllEntries];
         [TIPGlobalConfiguration sharedInstance].internalTotalCountForAllMemoryCaches -= totalCount;
@@ -360,7 +359,7 @@
 
 #pragma mark Delegate
 
-- (void)tip_cache:(nonnull TIPLRUCache *)manifest didEvictEntry:(nonnull TIPImageMemoryCacheEntry *)entry
+- (void)tip_cache:(TIPLRUCache *)manifest didEvictEntry:(TIPImageMemoryCacheEntry *)entry
 {
     [TIPGlobalConfiguration sharedInstance].internalTotalCountForAllMemoryCaches -= 1;
     [self _tip_memoryCache_addByteCount:0 removeByteCount:entry.memoryCost];
@@ -371,7 +370,7 @@
 
 - (void)inspect:(TIPInspectableCacheCallback)callback
 {
-    dispatch_async(_memoryCacheQueue, ^{
+    tip_dispatch_async_autoreleasing(_globalConfig.queueForMemoryCaches, ^{
         [self _tip_memoryCache_inspect:callback];
     });
 }

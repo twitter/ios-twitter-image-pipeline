@@ -31,8 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface TIPImageStoreHydrationOperation : TIPDisabledExternalMutabilityOperation
 
-@property (nonatomic, readonly) NSError *error;
-@property (nonatomic, readonly) id<TIPImageStoreRequest> hydratedRequest;
+@property (nonatomic, readonly, nullable) NSError *error;
+@property (nonatomic, readonly, nullable) id<TIPImageStoreRequest> hydratedRequest;
 
 - (instancetype)initWithRequest:(id<TIPImageStoreRequest>)request pipeline:(TIPImagePipeline *)pipeline hydrater:(id<TIPImageStoreRequestHydrater>)hydrater;
 

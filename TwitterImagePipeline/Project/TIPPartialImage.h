@@ -20,7 +20,7 @@ typedef NS_ENUM(NSInteger, TIPPartialImageState) {
 @interface TIPPartialImage : NSObject
 
 // State
-@property (nonatomic, readonly) TIPPartialImageState state;
+@property (atomic, readonly) TIPPartialImageState state;
 @property (nonatomic, readonly) NSUInteger expectedContentLength;
 
 // After headers are read

@@ -707,6 +707,27 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     }];
 }
 
+- (void)testSaveAnimatedPNG
+{
+    [self runMeasurement:@"save" format:@"apng" block:^{
+        [self runSaveTest:TIPImageTypePNG options:0 extension:@"apng" quality:1.0f useAnimatedImage:YES];
+    }];
+}
+
+- (void)testXLoadAnimatedPNG
+{
+    [self runMeasurement:@"load" format:@"apng" block:^{
+        [self runLoadTest:TIPImageTypePNG options:0 extension:@"apng" quality:1.0f isAnimated:YES];
+    }];
+}
+
+- (void)testSpeedAnimatedPNG
+{
+    [self runMeasurement:@"speed" format:@"apng" block:^{
+        [self runSpeedTest:TIPImageTypePNG options:0];
+    }];
+}
+
 #pragma mark Robustness Tests
 
 - (void)testDataDribbleJPEG

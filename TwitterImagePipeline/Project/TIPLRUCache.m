@@ -35,6 +35,7 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
 {
     struct {
         BOOL delegateSupportsDidEvictSelector;
+        BOOL delegateSupportsCanEvictSelector;
     } _flags;
     NSInteger _mutationCheckInteger;
 }
@@ -59,6 +60,7 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
 - (void)internalSetDelegate:(id<TIPLRUCacheDelegate>)delegate
 {
     _flags.delegateSupportsDidEvictSelector = (NO != [delegate respondsToSelector:@selector(tip_cache:didEvictEntry:)]);
+    _flags.delegateSupportsCanEvictSelector = (NO != [delegate respondsToSelector:@selector(tip_cache:canEvictEntry:)]);
     _delegate = delegate;
 }
 
@@ -69,7 +71,7 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
 
 #pragma mark Setting
 
-- (void)addEntry:(nonnull id<TIPLRUEntry>)entry
+- (void)addEntry:(id<TIPLRUEntry>)entry
 {
     TIPAssert(entry != nil);
     if (entry == nil) {
@@ -92,7 +94,7 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
     TIPLRUCacheAssertHeadAndTail(self);
 }
 
-- (void)appendEntry:(nonnull id<TIPLRUEntry>)entry
+- (void)appendEntry:(id<TIPLRUEntry>)entry
 {
     TIPAssert(entry != nil);
     if (entry == nil) {
@@ -127,7 +129,7 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
     return _cache.count;
 }
 
-- (nullable id<TIPLRUEntry>)entryWithIdentifier:(nonnull NSString *)identifier canMutate:(BOOL)canMutate
+- (id<TIPLRUEntry>)entryWithIdentifier:(NSString *)identifier canMutate:(BOOL)canMutate
 {
     id<TIPLRUEntry> entry = _cache[identifier];
     if (canMutate && entry) {
@@ -136,7 +138,7 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
     return entry;
 }
 
-- (nullable id<TIPLRUEntry>)entryWithIdentifier:(nonnull NSString *)identifier
+- (id<TIPLRUEntry>)entryWithIdentifier:(NSString *)identifier
 {
     return [self entryWithIdentifier:identifier canMutate:YES];
 }
@@ -156,7 +158,7 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
 
 #pragma mark Removal
 
-- (void)removeEntry:(nonnull id<TIPLRUEntry>)entry
+- (void)removeEntry:(id<TIPLRUEntry>)entry
 {
     if (!entry) {
         return;
@@ -181,11 +183,15 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
     }
 }
 
-- (nullable id<TIPLRUEntry>)removeTailEntry
+- (id<TIPLRUEntry>)removeTailEntry
 {
-    id<TIPLRUEntry> tailEntry = _tailEntry;
-    [self removeEntry:tailEntry];
-    return tailEntry;
+    id<TIPLRUEntry> entry = _tailEntry;
+    id<TIPLRUCacheDelegate> delegate = self.delegate;
+    while (entry && _flags.delegateSupportsCanEvictSelector && ![delegate tip_cache:self canEvictEntry:entry]) {
+        entry = entry.previousLRUEntry;
+    }
+    [self removeEntry:entry];
+    return entry;
 }
 
 #pragma mark Other
@@ -251,7 +257,7 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
 
 #pragma mark Private
 
-- (void)clearEntry:(nonnull id<TIPLRUEntry>)entry
+- (void)clearEntry:(id<TIPLRUEntry>)entry
 {
     id<TIPLRUEntry> prev = entry.previousLRUEntry;
     id<TIPLRUEntry> next = entry.nextLRUEntry;
@@ -268,7 +274,7 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
     _mutationCheckInteger++;
 }
 
-- (void)moveEntryToFront:(nonnull id<TIPLRUEntry>)entry
+- (void)moveEntryToFront:(id<TIPLRUEntry>)entry
 {
     if (_headEntry == entry) {
         return;

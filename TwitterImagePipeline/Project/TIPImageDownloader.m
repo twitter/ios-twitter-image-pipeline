@@ -521,7 +521,34 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
         if (200 != ((context.response.statusCode / 100) * 100)) {
             error = [NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeHTTPTransactionError userInfo:@{ TIPErrorUserInfoHTTPStatusCodeKey : @(context.response.statusCode) }];
         } else if (isComplete) {
-            error = [NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeCouldNotDecodeImage userInfo:nil];
+
+            NSMutableDictionary *userInfo = [[NSMutableDictionary alloc] init];
+            id value = nil;
+
+            value = context.temporaryFile.imageIdentifier;
+            if (value) {
+                userInfo[TIPProblemInfoKeyImageIdentifier] = value;
+            }
+            value = context.originalRequest.URL;
+            if (value) {
+                userInfo[TIPProblemInfoKeyImageURL] = value;
+            }
+            value = download.finalURLRequest;
+            if (value) {
+                userInfo[@"finalRequest"] = value;
+            }
+            value = context.response;
+            if (value) {
+                userInfo[@"response"] = value;
+            }
+            value = [download respondsToSelector:@selector(downloadMetrics)] ? [download downloadMetrics] : nil;
+            if (value) {
+                userInfo[@"metrics"] = value;
+            }
+
+            error = [NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeCouldNotDecodeImage userInfo:userInfo];
+            [[TIPGlobalConfiguration sharedInstance] postProblem:TIPProblemImageDownloadedCouldNotBeDecoded userInfo:userInfo];
+
         } else { // !response.isComplete
             TIPAssertNever();
             error = [NSError errorWithDomain:NSPOSIXErrorDomain code:EBADEXEC userInfo:nil];

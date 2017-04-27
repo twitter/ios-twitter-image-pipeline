@@ -6,6 +6,8 @@
 //  Copyright © 2016 Twitter. All rights reserved.
 //
 
+#include <stdatomic.h>
+
 #import "TIP_Project.h"
 #import "TIPError.h"
 #import "TIPGlobalConfiguration+Project.h"
@@ -117,133 +119,137 @@ NS_ASSUME_NONNULL_END
 
 - (void)main
 {
-    void (^completion)(TIPImageCacheEntry *, NSError *) = ^(TIPImageCacheEntry *completedEntry, NSError *completedError) {
-        TIPAssert((completedEntry != nil) ^ (completedError != nil));
+    @autoreleasepool {
+        void (^completion)(TIPImageCacheEntry *, NSError *) = ^(TIPImageCacheEntry *completedEntry, NSError *completedError) {
+            TIPAssert((completedEntry != nil) ^ (completedError != nil));
 
-        if (completedEntry) {
-            [self.pipeline postCompletedEntry:completedEntry manual:YES];
-        }
-
-        if (self.storeCompletionBlock) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                self.storeCompletionBlock(completedEntry != nil, completedError);
-            });
-        }
-    };
-
-    // Check hydration
-    if (_hydrationOperation) {
-        NSError *hydrationError = _hydrationOperation.error;
-        if (hydrationError) {
-            completion(nil, hydrationError);
-            return;
-        } else if (_hydrationOperation.hydratedRequest) {
-            _request = _hydrationOperation.hydratedRequest;
-        }
-    }
-
-    // Confirm Caches
-    if (!_pipeline.diskCache && !_pipeline.memoryCache) {
-        completion(nil, [NSError errorWithDomain:TIPImageStoreErrorDomain code:TIPImageStoreErrorCodeNoCacheForStoring userInfo:nil]);
-        return;
-    }
-
-    // Pull out image info
-    NSData *imageData = [self _tip_imageData];
-    NSString *imageFilePath = [self _tip_imageFilePath];
-    TIPImageContainer *imageContainer = [self _tip_imageContainer];
-
-    // Validate image info
-    TIPAssertMessage(imageContainer != nil || imageData != nil || imageFilePath != nil, @"%@ didn't have any image info", NSStringFromClass([_request class]));
-    if (!imageContainer && !imageData && !imageFilePath) {
-        completion(nil, [NSError errorWithDomain:TIPImageStoreErrorDomain code:TIPImageStoreErrorCodeImageNotProvided userInfo:nil]);
-        return;
-    }
-
-    // Pull out and validate URL
-    NSURL *imageURL = _request.imageURL;
-    TIPAssert(imageURL != nil);
-    if (!imageURL) {
-        completion(nil, [NSError errorWithDomain:TIPImageStoreErrorDomain code:TIPImageStoreErrorCodeImageURLNotProvided userInfo:nil]);
-        return;
-    }
-
-    // Create context
-    TIPCompleteImageEntryContext *context = [self _tip_entryContext:imageURL imageContainer:imageContainer];
-
-    // Create Memory Entry
-    TIPImageCacheEntry *memoryEntry = nil;
-    if (_pipeline.memoryCache) {
-        memoryEntry = [[TIPImageCacheEntry alloc] init];
-        if (imageContainer) {
-            memoryEntry.completeImage = imageContainer;
-            TIPAssert(memoryEntry.completeImage);
-        } else if (imageData) {
-            memoryEntry.completeImageData = imageData;
-        } else {
-            TIPAssert(imageFilePath);
-            memoryEntry.completeImageFilePath = imageFilePath;
-        }
-    }
-
-    // Create Disk Entry
-    TIPImageCacheEntry *diskEntry = nil;
-    if (_pipeline.diskCache) {
-        diskEntry = [[TIPImageCacheEntry alloc] init];
-        if (imageFilePath && ([[NSFileManager defaultManager] fileExistsAtPath:imageFilePath] || (!imageData && !imageContainer))) {
-            diskEntry.completeImageFilePath = imageFilePath;
-        } else if (imageData) {
-            diskEntry.completeImageData = imageData;
-        } else {
-            TIPAssert(imageContainer);
-            diskEntry.completeImage = imageContainer;
-            TIPAssert(diskEntry.completeImage);
-        }
-    }
-
-    // Finish hydrating entries
-    NSString *identifier = [_request respondsToSelector:@selector(imageIdentifier)] ? [[_request imageIdentifier] copy] : nil;
-    if (!identifier) {
-        identifier = [imageURL absoluteString];
-    }
-    if (memoryEntry) {
-        memoryEntry.completeImageContext = [context copy];
-        memoryEntry.identifier = identifier;
-    }
-    if (diskEntry) {
-        diskEntry.completeImageContext = [context copy];
-        diskEntry.identifier = identifier;
-    }
-
-    // Update caches
-    [_pipeline.renderedCache clearImagesWithIdentifier:identifier];
-
-    if (diskEntry) {
-        [_pipeline.diskCache updateImageEntry:diskEntry forciblyReplaceExisting:!context.treatAsPlaceholder];
-    }
-
-    if (memoryEntry) {
-        if (memoryEntry.completeImage != nil) {
-            [_pipeline.memoryCache updateImageEntry:memoryEntry forciblyReplaceExisting:!context.treatAsPlaceholder];
-        } else {
-            if (diskEntry) {
-                // clear memory cache first, in case actual store fails we'll want to fall back to the disk cache for loading
-                [_pipeline.memoryCache clearImageWithIdentifier:identifier];
+            if (completedEntry) {
+                [self.pipeline postCompletedEntry:completedEntry manual:YES];
             }
-            [self _tip_asyncStoreMemoryEntry:memoryEntry completion:^(BOOL success) {
-                if (success) {
-                    completion(memoryEntry, nil);
-                } else if (diskEntry) {
-                    completion(diskEntry, nil);
-                } else {
-                    completion(nil, [NSError errorWithDomain:TIPImageStoreErrorDomain code:TIPImageStoreErrorCodeStorageFailed userInfo:nil]);
-                }
-            }];
-            return; // async completion
-        }
-    }
 
-    completion(memoryEntry ?: diskEntry, nil);
+            TIPImagePipelineStoreCompletionBlock block = self.storeCompletionBlock;
+            if (block) {
+                const BOOL success = completedEntry != nil;
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    block(self, success, completedError);
+                });
+            }
+        };
+
+        // Check hydration
+        if (_hydrationOperation) {
+            NSError *hydrationError = _hydrationOperation.error;
+            if (hydrationError) {
+                completion(nil, hydrationError);
+                return;
+            } else if (_hydrationOperation.hydratedRequest) {
+                _request = _hydrationOperation.hydratedRequest;
+            }
+        }
+
+        // Confirm Caches
+        if (!_pipeline.diskCache && !_pipeline.memoryCache) {
+            completion(nil, [NSError errorWithDomain:TIPImageStoreErrorDomain code:TIPImageStoreErrorCodeNoCacheForStoring userInfo:nil]);
+            return;
+        }
+
+        // Pull out image info
+        NSData *imageData = [self _tip_imageData];
+        NSString *imageFilePath = [self _tip_imageFilePath];
+        TIPImageContainer *imageContainer = [self _tip_imageContainer];
+
+        // Validate image info
+        TIPAssertMessage(imageContainer != nil || imageData != nil || imageFilePath != nil, @"%@ didn't have any image info", NSStringFromClass([_request class]));
+        if (!imageContainer && !imageData && !imageFilePath) {
+            completion(nil, [NSError errorWithDomain:TIPImageStoreErrorDomain code:TIPImageStoreErrorCodeImageNotProvided userInfo:nil]);
+            return;
+        }
+
+        // Pull out and validate URL
+        NSURL *imageURL = _request.imageURL;
+        TIPAssert(imageURL != nil);
+        if (!imageURL) {
+            completion(nil, [NSError errorWithDomain:TIPImageStoreErrorDomain code:TIPImageStoreErrorCodeImageURLNotProvided userInfo:nil]);
+            return;
+        }
+
+        // Create context
+        TIPCompleteImageEntryContext *context = [self _tip_entryContext:imageURL imageContainer:imageContainer];
+
+        // Create Memory Entry
+        TIPImageCacheEntry *memoryEntry = nil;
+        if (_pipeline.memoryCache) {
+            memoryEntry = [[TIPImageCacheEntry alloc] init];
+            if (imageContainer) {
+                memoryEntry.completeImage = imageContainer;
+                TIPAssert(memoryEntry.completeImage);
+            } else if (imageData) {
+                memoryEntry.completeImageData = imageData;
+            } else {
+                TIPAssert(imageFilePath);
+                memoryEntry.completeImageFilePath = imageFilePath;
+            }
+        }
+
+        // Create Disk Entry
+        TIPImageCacheEntry *diskEntry = nil;
+        if (_pipeline.diskCache) {
+            diskEntry = [[TIPImageCacheEntry alloc] init];
+            if (imageFilePath && ([[NSFileManager defaultManager] fileExistsAtPath:imageFilePath] || (!imageData && !imageContainer))) {
+                diskEntry.completeImageFilePath = imageFilePath;
+            } else if (imageData) {
+                diskEntry.completeImageData = imageData;
+            } else {
+                TIPAssert(imageContainer);
+                diskEntry.completeImage = imageContainer;
+                TIPAssert(diskEntry.completeImage);
+            }
+        }
+
+        // Finish hydrating entries
+        NSString *identifier = [_request respondsToSelector:@selector(imageIdentifier)] ? [[_request imageIdentifier] copy] : nil;
+        if (!identifier) {
+            identifier = [imageURL absoluteString];
+        }
+        if (memoryEntry) {
+            memoryEntry.completeImageContext = [context copy];
+            memoryEntry.identifier = identifier;
+        }
+        if (diskEntry) {
+            diskEntry.completeImageContext = [context copy];
+            diskEntry.identifier = identifier;
+        }
+
+        // Update caches
+        [_pipeline.renderedCache clearImagesWithIdentifier:identifier];
+
+        if (diskEntry) {
+            [_pipeline.diskCache updateImageEntry:diskEntry forciblyReplaceExisting:!context.treatAsPlaceholder];
+        }
+
+        if (memoryEntry) {
+            if (memoryEntry.completeImage != nil) {
+                [_pipeline.memoryCache updateImageEntry:memoryEntry forciblyReplaceExisting:!context.treatAsPlaceholder];
+            } else {
+                if (diskEntry) {
+                    // clear memory cache first, in case actual store fails we'll want to fall back to the disk cache for loading
+                    [_pipeline.memoryCache clearImageWithIdentifier:identifier];
+                }
+                [self _tip_asyncStoreMemoryEntry:memoryEntry completion:^(BOOL success) {
+                    if (success) {
+                        completion(memoryEntry, nil);
+                    } else if (diskEntry) {
+                        completion(diskEntry, nil);
+                    } else {
+                        completion(nil, [NSError errorWithDomain:TIPImageStoreErrorDomain code:TIPImageStoreErrorCodeStorageFailed userInfo:nil]);
+                    }
+                }];
+                return; // async completion
+            }
+        }
+
+        completion(memoryEntry ?: diskEntry, nil);
+    }
 }
 
 @end
@@ -349,11 +355,9 @@ NS_ASSUME_NONNULL_END
     TIPImagePipeline *_pipeline;
     id<TIPImageStoreRequestHydrater> _hydrater;
 
-    struct {
-        BOOL isExecuting:1;
-        BOOL isFinished:1;
-        BOOL didExitStart:1;
-    } _flags;
+    volatile atomic_bool _isFinished;
+    volatile atomic_bool _isExecuting;
+    volatile atomic_bool _didStart;
 }
 
 - (instancetype)initWithRequest:(id<TIPImageStoreRequest>)request pipeline:(TIPImagePipeline *)pipeline hydrater:(id<TIPImageStoreRequestHydrater>)hydrater
@@ -370,6 +374,9 @@ NS_ASSUME_NONNULL_END
         _request = request;
         _pipeline = pipeline;
         _hydrater = hydrater;
+        atomic_init(&_isFinished, false);
+        atomic_init(&_isExecuting, false);
+        atomic_init(&_didStart, false);
     }
     return self;
 }
@@ -386,22 +393,22 @@ NS_ASSUME_NONNULL_END
 
 - (BOOL)isExecuting
 {
-    return _flags.isExecuting;
+    return atomic_load(&_isExecuting);
 }
 
 - (BOOL)isFinished
 {
-    return _flags.isFinished;
+    return atomic_load(&_isFinished);
 }
 
 - (void)start
 {
     tip_defer(^{
-        self->_flags.didExitStart = 1;
+        atomic_store(&(self->_didStart), true);
     });
 
     [self willChangeValueForKey:@"isExecuting"];
-    _flags.isExecuting = 1;
+    atomic_store(&_isExecuting, true);
     [self didChangeValueForKey:@"isExecuting"];
 
     [_hydrater tip_hydrateImageStoreRequest:_request imagePipeline:_pipeline completion:^(id<TIPImageStoreRequest> newRequest, NSError *error) {
@@ -411,7 +418,7 @@ NS_ASSUME_NONNULL_END
 
 - (void)_tip_complete:(id<TIPImageStoreRequest>)request error:(NSError *)error
 {
-    if (!self->_flags.didExitStart) {
+    if (false == atomic_load(&_didStart)) {
         // Completed synchronously, don't want to mess up "isAsynchronous" behavior
         [[TIPGlobalConfiguration sharedInstance] enqueueImagePipelineOperation:[NSBlockOperation blockOperationWithBlock:^{
             [self _tip_complete:request error:error];
@@ -422,13 +429,13 @@ NS_ASSUME_NONNULL_END
     if (error) {
         _error = error;
     } else {
-        _hydratedRequest = request;
+        _hydratedRequest = request ?: _request;
     }
 
     [self willChangeValueForKey:@"isFinished"];
     [self willChangeValueForKey:@"isExecuting"];
-    _flags.isExecuting = 0;
-    _flags.isFinished = 1;
+    atomic_store(&_isExecuting, false);
+    atomic_store(&_isFinished, true);
     [self didChangeValueForKey:@"isExecuting"];
     [self didChangeValueForKey:@"isFinished"];
 }

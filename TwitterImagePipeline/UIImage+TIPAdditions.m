@@ -46,13 +46,13 @@ NS_ASSUME_NONNULL_END
         return TIPEstimateMemorySizeOfImageWithSettings(self.size, self.scale, 4 /* Guess RGB+A == 4 bytes */, self.images.count);
     }
 
-    const NSUInteger rowCount = (NSUInteger)(self.size.height * self.scale);
+    const NSUInteger rowCount = (NSUInteger)(self.size.height * self.scale) * MAX((NSUInteger)1, self.images.count);
     return bytesPerRow * rowCount;
 }
 
 - (NSUInteger)tip_imageCountBasedOnImageType:(NSString *)type
 {
-    if (!type || [type isEqualToString:TIPImageTypeGIF] /* only GIF for now */) {
+    if (!type || [type isEqualToString:TIPImageTypeGIF] || [type isEqualToString:TIPImageTypePNG]) {
         return MAX((NSUInteger)1, self.images.count);
     }
 
@@ -625,9 +625,22 @@ animationFrameDurations:(NSArray<NSNumber *> *)animationFrameDurations
     if (count > 1 && loopCountOut) {
         CFDictionaryRef topLevelProperties = CGImageSourceCopyProperties(source, NULL);
         TIPDeferRelease(topLevelProperties);
-        CFDictionaryRef topLevelGIFProperties = topLevelProperties ? CFDictionaryGetValue(topLevelProperties, kCGImagePropertyGIFDictionary) : NULL;
-        NSNumber *loopCount = topLevelGIFProperties ? (NSNumber *)CFDictionaryGetValue(topLevelGIFProperties, kCGImagePropertyGIFLoopCount) : nil;
-        *loopCountOut = (loopCount) ? loopCount.unsignedIntegerValue : 0;
+
+        if (topLevelProperties) {
+            NSNumber *loopCount = nil;
+            CFDictionaryRef topLevelGIFProperties = CFDictionaryGetValue(topLevelProperties, kCGImagePropertyGIFDictionary);
+            if (topLevelGIFProperties) {
+                loopCount = (NSNumber *)CFDictionaryGetValue(topLevelGIFProperties, kCGImagePropertyGIFLoopCount);
+            } else {
+                CFDictionaryRef topLevelPNGProperties = CFDictionaryGetValue(topLevelProperties, kCGImagePropertyPNGDictionary);
+                if (topLevelPNGProperties) {
+                    loopCount = (NSNumber *)CFDictionaryGetValue(topLevelPNGProperties, kCGImagePropertyAPNGLoopCount);
+                }
+            }
+            *loopCountOut = (loopCount) ? loopCount.unsignedIntegerValue : 0;
+        } else {
+            *loopCountOut = 0;
+        }
     }
 
     const CGFloat scale = [UIScreen mainScreen].scale;
@@ -646,19 +659,38 @@ animationFrameDurations:(NSArray<NSNumber *> *)animationFrameDurations
                 if (frame) {
                     float additionalDuration = 0.0;
 
-                    CFDictionaryRef gifProperties = CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
-                    if (gifProperties) {
-                        NSNumber *unclampedDelayTime = (NSNumber *)CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFUnclampedDelayTime);
+                    CFStringRef unclampedDelayTimeKey = NULL;
+                    CFStringRef delayTimeKey = NULL;
+                    CFDictionaryRef animatedProperties = NULL;
+
+                    animatedProperties = CFDictionaryGetValue(properties, kCGImagePropertyGIFDictionary);
+                    if (animatedProperties) {
+                        // GIF
+                        unclampedDelayTimeKey = kCGImagePropertyGIFUnclampedDelayTime;
+                        delayTimeKey = kCGImagePropertyGIFDelayTime;
+                    } else {
+                        animatedProperties = CFDictionaryGetValue(properties, kCGImagePropertyPNGDictionary);
+                        if (animatedProperties) {
+                            // APNG
+                            unclampedDelayTimeKey = kCGImagePropertyAPNGUnclampedDelayTime;
+                            delayTimeKey = kCGImagePropertyAPNGDelayTime;
+                        }
+                    }
+
+                    if (animatedProperties) {
+
+                        NSNumber *unclampedDelayTime = (NSNumber *)CFDictionaryGetValue(animatedProperties, unclampedDelayTimeKey);
                         if (unclampedDelayTime) {
                             additionalDuration = unclampedDelayTime.floatValue;
                         } else {
-                            NSNumber *delayTime = (NSNumber *)CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFDelayTime);
+                            NSNumber *delayTime = (NSNumber *)CFDictionaryGetValue(animatedProperties, delayTimeKey);
                             if (delayTime) {
                                 additionalDuration = delayTime.floatValue;
                             }
                         }
+
                     } else {
-                        TIPLogWarning(@"No GIF dictionary in properties:%@", (__bridge NSDictionary *)properties);
+                        TIPLogWarning(@"No GIF/PNG dictionary in properties for animated image : %@", (__bridge NSDictionary *)properties);
                     }
 
                     if (additionalDuration < 0.01f + FLT_EPSILON) {
@@ -699,6 +731,7 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
                                                BOOL isGlobalProperties)
 {
     const BOOL preferProgressive = TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageEncodingProgressive);
+    const BOOL isAnimated = image.images.count > 1;
     NSMutableDictionary *properties = [NSMutableDictionary dictionary];
 
     // TODO: investigate if we should be using kCGImageDestinationOptimizeColorForSharing
@@ -735,16 +768,28 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
                                    (NSString *)kCGImagePropertyTIFFCompression : @(/*NSTIFFCompressionLZW*/ 5)
                                    };
         properties[(NSString *)kCGImagePropertyTIFFDictionary] = tiffInfo;
-    } else if ([type isEqualToString:TIPImageTypePNG]) {
+    } else if ([type isEqualToString:TIPImageTypePNG] && !isAnimated) {
         if (preferProgressive) {
             NSDictionary *pngInfo = @{
                                       (NSString *)kCGImagePropertyPNGInterlaceType : @1 // 1 == Adam7 interlaced encoding
                                       };
             properties[(NSString *)kCGImagePropertyPNGDictionary] = pngInfo;
         }
-    } else if ([type isEqualToString:TIPImageTypeGIF]) {
-        if (image.images.count > 1) {
-            NSDictionary *gifInfo = nil;
+    } else if (isAnimated) {
+
+        NSString *animatedDictionaryKey = nil;
+        NSString *animatedValueKey = nil; // loop-count for global, delay-time for image
+
+        if ([type isEqualToString:TIPImageTypeGIF]) {
+            animatedDictionaryKey = (NSString *)kCGImagePropertyGIFDictionary;
+            animatedValueKey = (isGlobalProperties) ? (NSString *)kCGImagePropertyGIFLoopCount : (NSString *)kCGImagePropertyGIFDelayTime;
+        } else if ([type isEqualToString:TIPImageTypePNG]) {
+            animatedDictionaryKey = (NSString *)kCGImagePropertyPNGDictionary;
+            animatedValueKey = (isGlobalProperties) ? (NSString *)kCGImagePropertyAPNGLoopCount : (NSString *)kCGImagePropertyAPNGDelayTime;
+        }
+
+        if (animatedDictionaryKey && animatedValueKey) {
+            NSDictionary *animatedDictionary = nil;
             if (isGlobalProperties) {
 
                 const NSUInteger loopCount = animationLoopCount.unsignedIntegerValue;
@@ -753,13 +798,15 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
                 // Restrict our loop count here to something that is more than long enough.
                 const UInt16 loopCount16 = (UInt16)MIN(loopCount, (NSUInteger)INT16_MAX);
 
-                gifInfo = @{ (NSString *)kCGImagePropertyGIFLoopCount : @(loopCount16) };
+                animatedDictionary = @{ animatedValueKey : @(loopCount16) };
 
             } else {
-                gifInfo = @{ (NSString *)kCGImagePropertyGIFDelayTime : animationDuration ?: @(image.duration / image.images.count) };
+
+                animatedDictionary = @{ animatedValueKey : animationDuration ?: @((float)(image.duration / image.images.count)) };
+
             }
 
-            properties[(NSString *)kCGImagePropertyGIFDictionary] = gifInfo;
+            properties[animatedDictionaryKey] = animatedDictionary;
         }
     }
 

@@ -134,3 +134,54 @@ __strong tip_defer_block_t tip_macro_concat(tip_stack_defer_block_, __LINE__) __
 #define TIPDeferRelease(ref) tip_defer(^{ if (ref) { CFRelease(ref); } })
 
 #pragma twitter stopignorestylecheck
+
+#pragma mark - GCD helpers
+
+// Autoreleasing dispatch functions.
+// callers cannot use autoreleasing passthrough
+//
+//  Example of what can't be done (autoreleasing passthrough):
+//
+//      - (void)deleteFile:(NSString *)fileToDelete
+//                   error:(NSError * __autoreleasing *)error
+//      {
+//          tip_dispatch_sync_autoreleasing(_config.queueForDiskCaches, ^{
+//              [[NSFileManager defaultFileManager] removeItemAtPath:fileToDelete
+//       /* will lead to crash if set to non-nil value --> */  error:error];
+//          });
+//      }
+//
+//  Example of how to avoid passthrough crash:
+//
+//      - (void)deleteFile:(NSString *)fileToDelete
+//                   error:(NSError * __autoreleasing *)error
+//      {
+//          __block NSError *outerError = nil;
+//          tip_dispatch_sync_autoreleasing(_config.queueForDiskCaches, ^{
+//              NSError *innerError = nil;
+//              [[NSFileManager defaultFileManager] removeItemAtPath:fileToDelete
+//                                                             error:&innerError];
+//              outerError = innerError;
+//          });
+//          if (error) {
+//              *error = outerError;
+//          }
+//      }
+
+NS_INLINE void tip_dispatch_async_autoreleasing(dispatch_queue_t __nonnull queue, dispatch_block_t __nonnull block)
+{
+    dispatch_async(queue, ^{
+        @autoreleasepool {
+            block();
+        }
+    });
+}
+
+NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t __nonnull queue, dispatch_block_t __nonnull block)
+{
+    dispatch_sync(queue, ^{
+        @autoreleasepool {
+            block();
+        }
+    });
+}

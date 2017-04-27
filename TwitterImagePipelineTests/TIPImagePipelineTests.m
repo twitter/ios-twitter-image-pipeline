@@ -606,10 +606,10 @@ static TIPImagePipeline *sPipeline = nil;
         XCTAssertEqual(sPipeline.memoryCache.manifest.numberOfEntries, (NSUInteger)0);
         XCTAssertEqual(sPipeline.diskCache.manifest.numberOfEntries, (NSUInteger)0);
 
-        dispatch_sync(config.queueForDiskCaches, ^{
+        dispatch_sync([TIPGlobalConfiguration sharedInstance].queueForDiskCaches, ^{
             preDeallocDiskSize = config.internalTotalBytesForAllDiskCaches;
         });
-        dispatch_sync(config.queueForMemoryCaches, ^{
+        dispatch_sync([TIPGlobalConfiguration sharedInstance].queueForMemoryCaches, ^{
             preDeallocMemSize = config.internalTotalBytesForAllMemoryCaches;
         });
         preDeallocRendSize = config.internalTotalBytesForAllRenderedCaches;
@@ -642,10 +642,10 @@ static TIPImagePipeline *sPipeline = nil;
     for (cacheSizeCheck = 1; cacheSizeCheck <= cacheSizeCheckMax; cacheSizeCheck++) {
         [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];
 
-        dispatch_sync(config.queueForDiskCaches, ^{
+        dispatch_sync([TIPGlobalConfiguration sharedInstance].queueForDiskCaches, ^{
             postDeallocDiskSize = config.internalTotalBytesForAllDiskCaches;
         });
-        dispatch_sync(config.queueForMemoryCaches, ^{
+        dispatch_sync([TIPGlobalConfiguration sharedInstance].queueForMemoryCaches, ^{
             postDeallocMemSize = config.internalTotalBytesForAllMemoryCaches;
         });
         postDeallocRendSize = config.internalTotalBytesForAllRenderedCaches;
@@ -917,7 +917,7 @@ static TIPImagePipeline *sPipeline = nil;
     [sPipeline clearDiskCache];
     [sPipeline clearMemoryCaches];
 
-    NSString * copyFinishedNotificationName = @"copy_finished";
+    NSString *copyFinishedNotificationName = @"copy_finished";
 
     TIPImagePipelineTestFetchRequest *request = [[TIPImagePipelineTestFetchRequest alloc] init];
     request.imageURL = [TIPImagePipelineTests dummyURLWithPath:[NSUUID UUID].UUIDString];
@@ -1007,7 +1007,7 @@ static TIPImagePipeline *sPipeline = nil;
 
     expectation = [self expectationWithDescription:@"Storing Image"];
     TIPImagePipeline *pipeline = [[TIPImagePipeline alloc] initWithIdentifier:signalIdentifier];
-    [pipeline storeImageWithRequest:storeRequest completion:^(BOOL succeeded, NSError *error) {
+    [pipeline storeImageWithRequest:storeRequest completion:^(NSObject<TIPDependencyOperation> *storeOp, BOOL succeeded, NSError *error) {
         didStore = succeeded;
         [expectation fulfill];
     }];
@@ -1065,7 +1065,7 @@ static TIPImagePipeline *sPipeline = nil;
     [self waitForExpectationsWithTimeout:10.0 handler:NULL];
 
     expectation = [self expectationWithDescription:@"Cross Pipeline Store Image"];
-    [pipeline1 storeImageWithRequest:storeRequest completion:^(BOOL succeeded, NSError *error) {
+    [pipeline1 storeImageWithRequest:storeRequest completion:^(NSObject<TIPDependencyOperation> *storeOp, BOOL succeeded, NSError *error) {
         [expectation fulfill];
     }];
     [self waitForExpectationsWithTimeout:10.0 handler:NULL];

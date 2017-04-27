@@ -65,6 +65,8 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 {
     NSOperationQueue *_sharedImagePipelineQueue;
     dispatch_queue_t _globalObserversQueue;
+    dispatch_queue_t _queueForMemoryCaches;
+    dispatch_queue_t _queueForDiskCaches;
     NSHashTable<id<TIPImagePipelineObserver>> *_globalObservers;
 }
 
@@ -205,7 +207,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 
 - (void)setMaxBytesForAllMemoryCaches:(SInt64)maxBytes
 {
-    dispatch_async(self.queueForMemoryCaches, ^{
+    tip_dispatch_async_autoreleasing(_queueForMemoryCaches, ^{
         self.internalMaxBytesForAllMemoryCaches = (maxBytes >= 0ll) ? maxBytes : TIPMaxBytesForAllMemoryCachesDefaultValue();
         [self pruneAllCachesOfType:TIPImageCacheTypeMemory withPriorityCache:nil];
     });
@@ -214,7 +216,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 - (SInt64)maxBytesForAllMemoryCaches
 {
     __block SInt64 maxBytes;
-    dispatch_sync(self.queueForMemoryCaches, ^{
+    dispatch_sync(_queueForMemoryCaches, ^{
         maxBytes = self.internalMaxBytesForAllMemoryCaches;
     });
     return maxBytes;
@@ -222,7 +224,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 
 - (void)setMaxCountForAllMemoryCaches:(SInt16)maxCount
 {
-    dispatch_async(self.queueForMemoryCaches, ^{
+    tip_dispatch_async_autoreleasing(_queueForMemoryCaches, ^{
         self.internalMaxCountForAllMemoryCaches = (maxCount >= 0) ? maxCount : TIPMaxCountForAllMemoryCachesDefault;
         [self pruneAllCachesOfType:TIPImageCacheTypeMemory withPriorityCache:nil];
     });
@@ -231,7 +233,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 - (SInt16)maxCountForAllMemoryCaches
 {
     __block SInt16 maxCount;
-    dispatch_sync(self.queueForMemoryCaches, ^{
+    dispatch_sync(_queueForMemoryCaches, ^{
         maxCount = self.internalMaxCountForAllMemoryCaches;
     });
     return maxCount;
@@ -239,7 +241,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 
 - (void)setMaxBytesForAllDiskCaches:(SInt64)maxBytes
 {
-    dispatch_async(self.queueForDiskCaches, ^{
+    tip_dispatch_async_autoreleasing(_queueForDiskCaches, ^{
         self.internalMaxBytesForAllDiskCaches = (maxBytes >= 0ll) ? maxBytes : TIPMaxBytesForAllDiskCachesDefaultValue();
         [self pruneAllCachesOfType:TIPImageCacheTypeDisk withPriorityCache:nil];
     });
@@ -248,7 +250,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 - (SInt64)maxBytesForAllDiskCaches
 {
     __block SInt64 maxBytes;
-    dispatch_sync(self.queueForDiskCaches, ^{
+    dispatch_sync(_queueForDiskCaches, ^{
         maxBytes = self.internalMaxBytesForAllDiskCaches;
     });
     return maxBytes;
@@ -256,7 +258,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 
 - (void)setMaxCountForAllDiskCaches:(SInt16)maxCount
 {
-    dispatch_async(self.queueForDiskCaches, ^{
+    tip_dispatch_async_autoreleasing(_queueForDiskCaches, ^{
         self.internalMaxCountForAllDiskCaches = (maxCount >= 0) ? maxCount : TIPMaxCountForAllDiskCachesDefault;
         [self pruneAllCachesOfType:TIPImageCacheTypeDisk withPriorityCache:nil];
     });
@@ -265,7 +267,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 - (SInt16)maxCountForAllDiskCaches
 {
     __block SInt16 maxCount;
-    dispatch_sync(self.queueForDiskCaches, ^{
+    dispatch_sync(_queueForDiskCaches, ^{
         maxCount = self.internalMaxCountForAllDiskCaches;
     });
     return maxCount;
@@ -292,7 +294,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 - (SInt64)totalBytesForAllMemoryCaches
 {
     __block SInt64 totalBytes;
-    dispatch_sync(self.queueForMemoryCaches, ^{
+    dispatch_sync(_queueForMemoryCaches, ^{
         totalBytes = self.internalTotalBytesForAllMemoryCaches;
     });
     return totalBytes;
@@ -301,7 +303,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 - (SInt16)totalCountForAllMemoryCaches
 {
     __block SInt16 totalCount;
-    dispatch_sync(self.queueForMemoryCaches, ^{
+    dispatch_sync(_queueForMemoryCaches, ^{
         totalCount = self.internalTotalCountForAllMemoryCaches;
     });
     return totalCount;
@@ -310,7 +312,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 - (SInt64)totalBytesForAllDiskCaches
 {
     __block SInt64 totalBytes;
-    dispatch_sync(self.queueForDiskCaches, ^{
+    dispatch_sync(_queueForDiskCaches, ^{
         totalBytes = self.internalTotalBytesForAllDiskCaches;
     });
     return totalBytes;
@@ -319,7 +321,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 - (SInt16)totalCountForAllDiskCaches
 {
     __block SInt16 totalCount;
-    dispatch_sync(self.queueForDiskCaches, ^{
+    dispatch_sync(_queueForDiskCaches, ^{
         totalCount = self.internalTotalCountForAllDiskCaches;
     });
     return totalCount;
@@ -368,20 +370,22 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
     return observers;
 }
 
-#pragma mark Project Instance Methods
+#pragma mark Project Dispatch Methods
 
-- (nonnull dispatch_queue_t)queueForCachesOfType:(TIPImageCacheType)type
+- (dispatch_queue_t)queueForCachesOfType:(TIPImageCacheType)type
 {
     switch (type) {
-        case TIPImageCacheTypeRendered:
-            return dispatch_get_main_queue();
         case TIPImageCacheTypeMemory:
-            return self.queueForMemoryCaches;
+            return _queueForMemoryCaches;
         case TIPImageCacheTypeDisk:
-            return self.queueForDiskCaches;
+            return _queueForDiskCaches;
+        case TIPImageCacheTypeRendered:
+        default:
+            return dispatch_get_main_queue();
     }
-    return nil;
 }
+
+#pragma mark Project Instance Methods
 
 - (SInt16)internalMaxCountForAllCachesOfType:(TIPImageCacheType)type
 {
@@ -500,86 +504,88 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 
 - (void)pruneAllCachesOfType:(TIPImageCacheType)type withPriorityCache:(id<TIPImageCache>)priorityCache toGlobalMaxBytes:(SInt64)globalMaxBytes toGlobalMaxCount:(SInt16)globalMaxCount
 {
-    switch (type) {
-        case TIPImageCacheTypeRendered:
-        case TIPImageCacheTypeMemory:
-        case TIPImageCacheTypeDisk:
-            break;
-        default:
-            TIPAssertNever();
-            return;
-    }
-
-    TIPAssert(globalMaxBytes >= 0);
-    TIPAssert(globalMaxCount >= 0);
-
-    if (globalMaxBytes == 0) {
-        globalMaxBytes = INT64_MAX;
-    }
-    if (globalMaxCount == 0) {
-        globalMaxCount = INT16_MAX;
-    }
-
-    NSArray<TIPImagePipeline *> *allPipelines = nil;
-    NSInteger knownTotalEntries = -1;
-    NSInteger knownPriorityEntries = priorityCache ? (NSInteger)priorityCache.manifest.numberOfEntries : 0;
-
-    // Remove entries from the non-priority caches to alleviate memory pressure
-    while (([self internalTotalBytesForAllCachesOfType:type] > globalMaxBytes || [self internalTotalCountForAllCachesOfType:type] > globalMaxCount) && knownTotalEntries != knownPriorityEntries) {
-
-        if (!allPipelines) {
-            // lazy load
-            allPipelines = [[TIPImagePipeline allRegisteredImagePipelines] allValues];
+    @autoreleasepool {
+        switch (type) {
+            case TIPImageCacheTypeRendered:
+            case TIPImageCacheTypeMemory:
+            case TIPImageCacheTypeDisk:
+                break;
+            default:
+                TIPAssertNever();
+                return;
         }
 
-        // Only load knownTotalEntries once
-        const BOOL getKnownTotalEntries = knownTotalEntries < 0;
-        if (getKnownTotalEntries) {
-            knownTotalEntries = 0;
+        TIPAssert(globalMaxBytes >= 0);
+        TIPAssert(globalMaxCount >= 0);
+
+        if (globalMaxBytes == 0) {
+            globalMaxBytes = INT64_MAX;
+        }
+        if (globalMaxCount == 0) {
+            globalMaxCount = INT16_MAX;
         }
 
-        // Ditch the oldest entry for all non-priority caches
-        for (TIPImagePipeline *pipeline in allPipelines) {
-            id<TIPImageCache> cache = [pipeline cacheOfType:type];
-            if (cache) {
-                TIPLRUCache *manifest = (TIPImageCacheTypeDisk == type) ? [(TIPImageDiskCache *)cache diskCache_syncAccessManifest] : cache.manifest;
-                if (getKnownTotalEntries) {
-                    knownTotalEntries += manifest.numberOfEntries;
-                }
+        NSArray<TIPImagePipeline *> *allPipelines = nil;
+        NSInteger knownTotalEntries = -1;
+        NSInteger knownPriorityEntries = priorityCache ? (NSInteger)priorityCache.manifest.numberOfEntries : 0;
 
-                if (cache != priorityCache) {
-                    if ([manifest removeTailEntry]) {
-                        knownTotalEntries--;
+        // Remove entries from the non-priority caches to alleviate memory pressure
+        while (([self internalTotalBytesForAllCachesOfType:type] > globalMaxBytes || [self internalTotalCountForAllCachesOfType:type] > globalMaxCount) && knownTotalEntries != knownPriorityEntries) {
+
+            if (!allPipelines) {
+                // lazy load
+                allPipelines = [[TIPImagePipeline allRegisteredImagePipelines] allValues];
+            }
+
+            // Only load knownTotalEntries once
+            const BOOL getKnownTotalEntries = knownTotalEntries < 0;
+            if (getKnownTotalEntries) {
+                knownTotalEntries = 0;
+            }
+
+            // Ditch the oldest entry for all non-priority caches
+            for (TIPImagePipeline *pipeline in allPipelines) {
+                id<TIPImageCache> cache = [pipeline cacheOfType:type];
+                if (cache) {
+                    TIPLRUCache *manifest = (TIPImageCacheTypeDisk == type) ? [(TIPImageDiskCache *)cache diskCache_syncAccessManifest] : cache.manifest;
+                    if (getKnownTotalEntries) {
+                        knownTotalEntries += manifest.numberOfEntries;
+                    }
+
+                    if (cache != priorityCache) {
+                        if ([manifest removeTailEntry]) {
+                            knownTotalEntries--;
+                        }
                     }
                 }
             }
+
         }
 
-    }
-
-    // If we still have too much data being consumed, start removing entries from the priority cache
-    while (([self internalTotalBytesForAllCachesOfType:type] > globalMaxBytes || [self internalTotalCountForAllCachesOfType:type] > globalMaxCount) && knownPriorityEntries > 0) {
-        [priorityCache.manifest removeTailEntry];
-        knownPriorityEntries--;
-    }
+        // If we still have too much data being consumed, start removing entries from the priority cache
+        while (([self internalTotalBytesForAllCachesOfType:type] > globalMaxBytes || [self internalTotalCountForAllCachesOfType:type] > globalMaxCount) && knownPriorityEntries > 0) {
+            [priorityCache.manifest removeTailEntry];
+            knownPriorityEntries--;
+        }
 
 #if DEBUG
-    if ([self internalTotalBytesForAllCachesOfType:type] > globalMaxBytes || [self internalTotalCountForAllCachesOfType:type] > globalMaxCount) {
-        NSString *typeStr = nil;
-        switch (type) {
-            case TIPImageCacheTypeRendered:
-                typeStr = @"Rendered Cache";
-                break;
-            case TIPImageCacheTypeMemory:
-                typeStr = @"Memory Cache";
-                break;
-            case TIPImageCacheTypeDisk:
-                typeStr = @"Disk Cache";
-                break;
+        if ([self internalTotalBytesForAllCachesOfType:type] > globalMaxBytes || [self internalTotalCountForAllCachesOfType:type] > globalMaxCount) {
+            NSString *typeStr = nil;
+            switch (type) {
+                case TIPImageCacheTypeRendered:
+                    typeStr = @"Rendered Cache";
+                    break;
+                case TIPImageCacheTypeMemory:
+                    typeStr = @"Memory Cache";
+                    break;
+                case TIPImageCacheTypeDisk:
+                    typeStr = @"Disk Cache";
+                    break;
+            }
+            TIPLogWarning(@"We cleared as many entries from %@s as we could and still are over the cap", typeStr);
         }
-        TIPLogWarning(@"We cleared as many entries from %@s as we could and still are over the cap", typeStr);
-    }
 #endif
+    }
 }
 
 #pragma mark Runtime Methods

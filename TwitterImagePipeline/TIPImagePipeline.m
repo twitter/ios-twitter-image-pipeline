@@ -82,7 +82,7 @@ NS_ASSUME_NONNULL_END
     NSString *_imagePipelinePath;
 }
 
-// the following getters may appear superfluous, and would be if it weren't for the need to
+// the following getters may appear superfluous, and would be, if it weren't for the need to
 // annotate them with __attribute__((no_sanitize("thread")).  the getters make the @synthesize
 // lines necessary.
 //
@@ -118,7 +118,7 @@ NS_ASSUME_NONNULL_END
 
 + (void)getKnownImagePipelineIdentifiers:(void (^)(NSSet<NSString *> *identifiers))callback
 {
-    dispatch_async([TIPGlobalConfiguration sharedInstance].queueForDiskCaches, ^{
+    tip_dispatch_async_autoreleasing([TIPGlobalConfiguration sharedInstance].queueForDiskCaches, ^{
         NSMutableSet *identifiers = [[NSMutableSet alloc] init];
         NSFileManager *fm = [NSFileManager defaultManager];
         NSString *pipelineDir = TIPImagePipelinePath();
@@ -301,8 +301,8 @@ NS_ASSUME_NONNULL_END
 - (void)_tip_background_copyDiskCacheFileWithIdentifier:(nonnull NSString *)imageIdentifier completion:(nullable TIPImagePipelineCopyFileCompletionBlock)completion
 {
     // Copy to temp location
-    NSString *temporaryFile;
-    NSError *error;
+    NSString *temporaryFile = nil;
+    NSError *error = nil;
     temporaryFile = [self.diskCache copyImageEntryFileForIdentifier:imageIdentifier error:&error];
 
     // Indicate completion

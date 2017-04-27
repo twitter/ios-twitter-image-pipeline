@@ -8,6 +8,8 @@
 
 #import <TwitterImagePipeline/TIPImageCodecs.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 //! Custom image type for WebP, `@"google.webp"`
 FOUNDATION_EXTERN NSString * const TIPXImageTypeWebP;
 
@@ -23,3 +25,5 @@ FOUNDATION_EXTERN NSString * const TIPXImageTypeWebP;
 /** WebP encoder */
 @property (nonatomic, readonly) id<TIPImageEncoder> tip_encoder;
 @end
+
+NS_ASSUME_NONNULL_END

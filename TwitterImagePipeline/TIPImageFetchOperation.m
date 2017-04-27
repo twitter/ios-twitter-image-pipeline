@@ -914,7 +914,7 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     NSMutableDictionary<NSString *, TIPImagePipeline *> *pipelines = [[TIPImagePipeline allRegisteredImagePipelines] mutableCopy];
     [pipelines removeObjectForKey:_imagePipeline.identifier];
     NSArray<TIPImagePipeline *> *otherPipelines = [pipelines allValues];
-    dispatch_async([TIPGlobalConfiguration sharedInstance].queueForDiskCaches, ^{
+    tip_dispatch_async_autoreleasing([TIPGlobalConfiguration sharedInstance].queueForDiskCaches, ^{
         [self _tip_diskCache_loadFromOtherPipelines:otherPipelines startMachTime:mach_absolute_time()];
     });
 }
