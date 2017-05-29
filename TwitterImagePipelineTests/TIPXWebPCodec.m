@@ -457,15 +457,17 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer
         .bitmapInfo = CGImageGetBitmapInfo(sourceImage)
     };
 
+    CGColorSpaceRef deviceRGBColorSpace = CGColorSpaceCreateDeviceRGB();
+    TIPXDeferRelease(deviceRGBColorSpace);
+
     vImage_CGImageFormat destinationImageFormat = {
         .bitsPerComponent = 8,
         .bitsPerPixel = 32,
-        .colorSpace = CGColorSpaceCreateDeviceRGB(),
+        .colorSpace = deviceRGBColorSpace,
         .bitmapInfo = kCGImageByteOrder32Big | kCGImageAlphaLast
     };
 
     __block vImage_Buffer sourceImageBuffer = {};
-
     tipx_defer(^{
         if (sourceImageBuffer.data) {
             free(sourceImageBuffer.data);
@@ -481,10 +483,14 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer
     }
 
     vImageConverterRef imageConverter = vImageConverter_CreateWithCGImageFormat(&sourceImageFormat, &destinationImageFormat, NULL, kvImageNoFlags, NULL);
-    
+
     if (imageConverter == NULL) {
         return NO;
     }
+
+    tipx_defer(^{
+        vImageConverter_Release(imageConverter);
+    });
     
     if (vImageConvert_AnyToAny(imageConverter, &sourceImageBuffer, convertedImageBuffer, NULL, kvImageNoFlags) != kvImageNoError) {
         return NO;
