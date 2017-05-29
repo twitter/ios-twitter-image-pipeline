@@ -445,7 +445,8 @@ static BOOL TIPXWebPPictureImport(WebPPicture *picture, CGImageRef imageRef)
     return WebPPictureImportRGBA(picture, convertedImageBuffer.data, (int)convertedImageBuffer.rowBytes);
 }
 
-static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *convertedImageBuffer) {
+static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *convertedImageBuffer)
+{
     if (convertedImageBuffer == NULL) {
         return NO;
     }
@@ -460,7 +461,7 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer
     CGColorSpaceRef deviceRGBColorSpace = CGColorSpaceCreateDeviceRGB();
     TIPXDeferRelease(deviceRGBColorSpace);
 
-    vImage_CGImageFormat destinationImageFormat = {
+    vImage_CGImageFormat convertedImageFormat = {
         .bitsPerComponent = 8,
         .bitsPerPixel = 32,
         .colorSpace = deviceRGBColorSpace,
@@ -478,11 +479,11 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer
         return NO;
     }
 
-    if (vImageBuffer_Init(convertedImageBuffer, sourceImageBuffer.width, sourceImageBuffer.height, destinationImageFormat.bitsPerPixel, kvImageNoFlags) != kvImageNoError) {
+    if (vImageBuffer_Init(convertedImageBuffer, sourceImageBuffer.width, sourceImageBuffer.height, convertedImageFormat.bitsPerPixel, kvImageNoFlags) != kvImageNoError) {
         return NO;
     }
 
-    vImageConverterRef imageConverter = vImageConverter_CreateWithCGImageFormat(&sourceImageFormat, &destinationImageFormat, NULL, kvImageNoFlags, NULL);
+    vImageConverterRef imageConverter = vImageConverter_CreateWithCGImageFormat(&sourceImageFormat, &convertedImageFormat, NULL, kvImageNoFlags, NULL);
 
     if (imageConverter == NULL) {
         return NO;
