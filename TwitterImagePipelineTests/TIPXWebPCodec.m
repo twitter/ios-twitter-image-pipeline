@@ -6,10 +6,10 @@
 //  Copyright © 2016 Twitter. All rights reserved.
 //
 
+#import <Accelerate/Accelerate.h>
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
 #import <WebP/decode.h>
 #import <WebP/encode.h>
-#import <Accelerate/Accelerate.h>
 #import "TIPXWebPCodec.h"
 
 #pragma mark - Constants
