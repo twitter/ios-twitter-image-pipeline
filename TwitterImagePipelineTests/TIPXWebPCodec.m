@@ -40,8 +40,8 @@ __strong tipx_defer_block_t tipx_macro_concat(tipx_stack_defer_block_, __LINE__)
 #pragma mark - Declarations
 
 static TIPImageContainer * __nullable TIPXWebPConstructImageContainer(CGDataProviderRef dataProvider, const size_t width, const size_t height, const size_t bytesPerPixel, const size_t componentsPerPixel);
-static int TIPXWebPPictureImport(WebPPicture *picture, CGImageRef imageRef);
-static int TIPXCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *convertedImageBuffer);
+static BOOL TIPXWebPPictureImport(WebPPicture *picture, CGImageRef imageRef);
+static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *convertedImageBuffer);
 
 @interface TIPXWebPDecoderContext : NSObject <TIPImageDecoderContext>
 
@@ -428,9 +428,9 @@ static TIPImageContainer *TIPXWebPConstructImageContainer(CGDataProviderRef data
     return [[TIPImageContainer alloc] initWithImage:image];
 }
 
-static int TIPXWebPPictureImport(WebPPicture *picture, CGImageRef imageRef)
+static BOOL TIPXWebPPictureImport(WebPPicture *picture, CGImageRef imageRef)
 {
-    __block vImage_Buffer convertedImageBuffer;
+    __block vImage_Buffer convertedImageBuffer = {};
 
     tipx_defer(^{
         if (convertedImageBuffer.data) {
@@ -438,16 +438,16 @@ static int TIPXWebPPictureImport(WebPPicture *picture, CGImageRef imageRef)
         }
     });
 
-    if (!TIPXCreateRGBADataForImage(imageRef, &convertedImageBuffer)) {
-        return 1;
+    if (!TIPXWebPCreateRGBADataForImage(imageRef, &convertedImageBuffer)) {
+        return NO;
     }
 
     return WebPPictureImportRGBA(picture, convertedImageBuffer.data, (int)convertedImageBuffer.rowBytes);
 }
 
-static int TIPXCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *convertedImageBuffer) {
+static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *convertedImageBuffer) {
     if (convertedImageBuffer == NULL) {
-        return 1;
+        return NO;
     }
 
     vImage_CGImageFormat sourceImageFormat = {
@@ -464,7 +464,7 @@ static int TIPXCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *con
         .bitmapInfo = kCGImageByteOrder32Big | kCGImageAlphaLast
     };
 
-    __block vImage_Buffer sourceImageBuffer;
+    __block vImage_Buffer sourceImageBuffer = {};
 
     tipx_defer(^{
         if (sourceImageBuffer.data) {
@@ -473,22 +473,22 @@ static int TIPXCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *con
     });
 
     if (vImageBuffer_InitWithCGImage(&sourceImageBuffer, &sourceImageFormat, NULL, sourceImage, kvImageNoFlags) != kvImageNoError) {
-        return 1;
+        return NO;
     }
 
     if (vImageBuffer_Init(convertedImageBuffer, sourceImageBuffer.width, sourceImageBuffer.height, destinationImageFormat.bitsPerPixel, kvImageNoFlags) != kvImageNoError) {
-        return 1;
+        return NO;
     }
 
     vImageConverterRef imageConverter = vImageConverter_CreateWithCGImageFormat(&sourceImageFormat, &destinationImageFormat, NULL, kvImageNoFlags, NULL);
     
     if (imageConverter == NULL) {
-        return 1;
+        return NO;
     }
     
     if (vImageConvert_AnyToAny(imageConverter, &sourceImageBuffer, convertedImageBuffer, NULL, kvImageNoFlags) != kvImageNoError) {
-        return 1;
+        return NO;
     }
     
-    return 0;
+    return YES;
 }
