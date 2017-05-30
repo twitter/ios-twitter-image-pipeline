@@ -479,7 +479,7 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer
         return NO;
     }
 
-    if (vImageBuffer_Init(convertedImageBuffer, sourceImageBuffer.width, sourceImageBuffer.height, convertedImageFormat.bitsPerPixel, kvImageNoFlags) != kvImageNoError) {
+    if (vImageBuffer_Init(convertedImageBuffer, sourceImageBuffer.height, sourceImageBuffer.width, convertedImageFormat.bitsPerPixel, kvImageNoFlags) != kvImageNoError) {
         return NO;
     }
 
