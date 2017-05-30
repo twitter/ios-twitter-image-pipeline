@@ -465,7 +465,7 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer
         .bitsPerComponent = 8,
         .bitsPerPixel = 32,
         .colorSpace = deviceRGBColorSpace,
-        .bitmapInfo = kCGImageByteOrder32Big | kCGImageAlphaLast
+        .bitmapInfo = kCGBitmapByteOrder32Big | kCGImageAlphaLast
     };
 
     __block vImage_Buffer sourceImageBuffer = {};
