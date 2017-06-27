@@ -79,13 +79,13 @@ NS_ASSUME_NONNULL_BEGIN
  @param imageType The image type `NSString`
  __See Also:__ `setCodec:forImageType:`
  */
-- (void)setObject:(nullable id<TIPImageCodec>)codec forKeyedSubscript:(nonnull NSString *)imageType;
+- (void)setObject:(nullable id<TIPImageCodec>)codec forKeyedSubscript:(NSString *)imageType;
 /**
  `id<TIPImageTypeCodec> codec = catalogue[imageType]`
  @param imageType The image type `NSString` to look up
  @return the codec matching the _imageType_.  If not found, returns `nil`.
  */
-- (nullable id<TIPImageCodec>)objectForKeyedSubscript:(nonnull NSString *)imageType;
+- (nullable id<TIPImageCodec>)objectForKeyedSubscript:(NSString *)imageType;
 
 @end
 

@@ -67,7 +67,9 @@ FOUNDATION_EXTERN NSString *TIPURLEncodeString(NSString *string);
 - (void)_api_loadAccount:(dispatch_block_t)complete
 {
     if (_account) {
-        complete();
+        if (complete) {
+            complete();
+        }
         return;
     }
 

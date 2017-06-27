@@ -10,16 +10,18 @@
 
 @class TIPPartialImage;
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageFetchMetrics ()
 
-- (nonnull instancetype)initProject;
+- (instancetype)initProject;
 
 - (void)startWithSource:(TIPImageLoadSource)source;
 - (void)endSource;
 - (void)cancelSource;
 
 - (void)convertNetworkMetricsToResumedNetworkMetrics;
-- (void)addNetworkMetrics:(nullable id)metrics forRequest:(nonnull NSURLRequest *)request imageType:(nullable NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions;
+- (void)addNetworkMetrics:(nullable id)metrics forRequest:(NSURLRequest *)request imageType:(nullable NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions;
 
 - (void)previewWasHit:(NSTimeInterval)renderLatency;
 - (void)progressiveFrameWasHit:(NSTimeInterval)renderLatency;
@@ -29,12 +31,14 @@
 
 @interface TIPImageFetchMetricInfo ()
 
-- (nonnull instancetype)initWithSource:(TIPImageLoadSource)source startTime:(uint64_t)startMachTime;
+- (instancetype)initWithSource:(TIPImageLoadSource)source startTime:(uint64_t)startMachTime;
 
 - (void)end;
 - (void)cancel;
 - (void)hit:(TIPImageFetchLoadResult)result renderLatency:(NSTimeInterval)renderLatency;
-- (void)addNetworkMetrics:(nullable id)metrics forRequest:(nonnull NSURLRequest *)request imageType:(nullable NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions;
+- (void)addNetworkMetrics:(nullable id)metrics forRequest:(NSURLRequest *)request imageType:(nullable NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions;
 - (void)flipLoadSourceFromNetworkToNetworkResumed;
 
 @end
+
+NS_ASSUME_NONNULL_END

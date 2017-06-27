@@ -11,6 +11,8 @@
 #import "TIPError.h"
 #import "TIPImageCodecCatalogue.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @implementation TIPImageCodecCatalogue
 {
     dispatch_queue_t _codecQueue;
@@ -64,7 +66,7 @@
     return [self initWithCodecs:nil];
 }
 
-- (instancetype)initWithCodecs:(NSDictionary<NSString *,id<TIPImageCodec>> *)codecs
+- (instancetype)initWithCodecs:(nullable NSDictionary<NSString *,id<TIPImageCodec>> *)codecs
 {
     if (self = [super init]) {
         _codecQueue = dispatch_queue_create("TIPImageCodecCatalogue.queue", DISPATCH_QUEUE_CONCURRENT);
@@ -108,7 +110,7 @@
     });
 }
 
-- (id<TIPImageCodec>)codecForImageType:(NSString *)imageType
+- (nullable id<TIPImageCodec>)codecForImageType:(NSString *)imageType
 {
     __block id<TIPImageCodec> codec;
     dispatch_sync(_codecQueue, ^{
@@ -121,7 +123,7 @@
 
 @implementation TIPImageCodecCatalogue (KeyedSubscripting)
 
-- (void)setObject:(id<TIPImageCodec>)codec forKeyedSubscript:(NSString *)imageType
+- (void)setObject:(nullable id<TIPImageCodec>)codec forKeyedSubscript:(NSString *)imageType
 {
     if (codec) {
         [self setCodec:codec forImageType:imageType];
@@ -130,7 +132,7 @@
     }
 }
 
-- (id<TIPImageCodec>)objectForKeyedSubscript:(NSString *)imageType
+- (nullable id<TIPImageCodec>)objectForKeyedSubscript:(NSString *)imageType
 {
     return [self codecForImageType:imageType];
 }
@@ -139,27 +141,27 @@
 
 @implementation TIPImageCodecCatalogue (Convenience)
 
-- (BOOL)codecWithImageTypeSupportsProgressiveLoading:(NSString *)type
+- (BOOL)codecWithImageTypeSupportsProgressiveLoading:(nullable NSString *)type
 {
     return TIP_BITMASK_HAS_SUBSET_FLAGS([self propertiesForCodecWithImageType:type], TIPImageCodecSupportsProgressiveLoading);
 }
 
-- (BOOL)codecWithImageTypeSupportsAnimation:(NSString *)type
+- (BOOL)codecWithImageTypeSupportsAnimation:(nullable NSString *)type
 {
     return TIP_BITMASK_HAS_SUBSET_FLAGS([self propertiesForCodecWithImageType:type], TIPImageCodecSupportsAnimation);
 }
 
-- (BOOL)codecWithImageTypeSupportsDecoding:(NSString *)type
+- (BOOL)codecWithImageTypeSupportsDecoding:(nullable NSString *)type
 {
     return TIP_BITMASK_HAS_SUBSET_FLAGS([self propertiesForCodecWithImageType:type], TIPImageCodecSupportsDecoding);
 }
 
-- (BOOL)codecWithImageTypeSupportsEncoding:(NSString *)type
+- (BOOL)codecWithImageTypeSupportsEncoding:(nullable NSString *)type
 {
     return TIP_BITMASK_HAS_SUBSET_FLAGS([self propertiesForCodecWithImageType:type], TIPImageCodecSupportsEncoding);
 }
 
-- (TIPImageCodecProperties)propertiesForCodecWithImageType:(NSString *)type
+- (TIPImageCodecProperties)propertiesForCodecWithImageType:(nullable NSString *)type
 {
     __block id<TIPImageCodec> codec = nil;
     if (type) {
@@ -187,7 +189,7 @@
     return properties;
 }
 
-- (TIPImageContainer *)decodeImageWithData:(NSData *)data imageType:(out NSString **)imageType
+- (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data imageType:(out NSString * __autoreleasing __nullable * __nullable)imageType
 {
     __block TIPImageContainer *container = nil;
     NSDictionary<NSString *, id<TIPImageCodec>> *codecs = self.allCodecs;
@@ -232,7 +234,7 @@
     return TIPEncodeImageToFile(codec, image, filePath, options, quality, atomic, error);
 }
 
-- (NSData *)encodeImage:(TIPImageContainer *)image withImageType:(NSString *)imageType quality:(float)quality options:(TIPImageEncodingOptions)options error:(out NSError **)error
+- (nullable NSData *)encodeImage:(TIPImageContainer *)image withImageType:(NSString *)imageType quality:(float)quality options:(TIPImageEncodingOptions)options error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     NSData *data = nil;
     id<TIPImageCodec> codec = [self codecForImageType:imageType];
@@ -248,3 +250,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

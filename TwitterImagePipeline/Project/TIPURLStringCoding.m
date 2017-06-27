@@ -9,9 +9,11 @@
 #import "TIP_Project.h"
 #import "TIPURLStringCoding.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 static const char kHexDigits[] = "0123456789ABCDEF";
 
-NSString *TIPURLEncodeString(NSString *string)
+NSString * __nullable TIPURLEncodeString(NSString * __nullable string)
 {
     if (0 == string.length) {
         return @"";
@@ -85,7 +87,7 @@ NSString *TIPURLEncodeString(NSString *string)
     return encodedString;
 }
 
-NSString *TIPURLDecodeString(NSString *string, BOOL replacePlussesWithSpaces)
+NSString * __nullable TIPURLDecodeString(NSString * __nullable string, BOOL replacePlussesWithSpaces)
 {
     NSString *s = string;
     // replace the '+' first since if the '+' is encoded we want to preserve its value
@@ -99,3 +101,5 @@ NSString *TIPURLDecodeString(NSString *string, BOOL replacePlussesWithSpaces)
     // by checking length, we preserve the old behavior for this caller in case anything depended upon it.
     return s.length ? [s stringByRemovingPercentEncoding] : s;
 }
+
+NS_ASSUME_NONNULL_END

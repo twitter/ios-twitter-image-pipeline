@@ -11,6 +11,8 @@
 #import "TIPImageFetchMetrics+Project.h"
 #import "TIPTiming.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageFetchMetricInfo ()
 @property (nonatomic, readonly, nullable) id networkMetrics;
 @property (nonatomic, readonly, nullable) NSURLRequest *networkRequest;
@@ -42,20 +44,20 @@
     TIPImageFetchMetricInfo *_infos[TIPImageLoadSourceMaxValue];
 }
 
-- (nonnull instancetype)init
+- (instancetype)init
 {
     [self doesNotRecognizeSelector:_cmd];
     abort();
 }
 
-- (nonnull instancetype)initProject
+- (instancetype)initProject
 {
     return [super init];
 }
 
 #pragma mark Public
 
-- (TIPImageFetchMetricInfo *)metricInfoForSource:(TIPImageLoadSource)source
+- (nullable TIPImageFetchMetricInfo *)metricInfoForSource:(TIPImageLoadSource)source
 {
     if (source == TIPImageLoadSourceUnknown || source > TIPImageLoadSourceMaxValue) {
         return nil;
@@ -162,7 +164,7 @@
     _infos[TIPImageLoadSourceNetworkResumed - 1] = currentInfo;
 }
 
-- (void)addNetworkMetrics:(id)metrics forRequest:(NSURLRequest *)request imageType:(NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions
+- (void)addNetworkMetrics:(nullable id)metrics forRequest:(NSURLRequest *)request imageType:(nullable NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions
 {
     if (_flags.wasCancelled) {
         return;
@@ -334,7 +336,7 @@
     }
 }
 
-- (void)addNetworkMetrics:(id)metrics forRequest:(NSURLRequest *)request  imageType:(NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions
+- (void)addNetworkMetrics:(nullable id)metrics forRequest:(NSURLRequest *)request imageType:(nullable NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions
 {
     if (_flags.wasCancelled) {
         return;
@@ -363,7 +365,7 @@
     return 0;
 }
 
-- (nonnull NSString *)description
+- (NSString *)description
 {
     const NSTimeInterval duration = self.loadDuration;
     NSString *source = nil;
@@ -444,3 +446,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

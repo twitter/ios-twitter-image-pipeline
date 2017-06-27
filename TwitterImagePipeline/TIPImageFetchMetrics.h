@@ -13,6 +13,8 @@
 
 @class TIPImageFetchMetricInfo;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Class that encapsulates all the metric information related to the `TIPImageFetchOperation`
  */
@@ -37,9 +39,9 @@
 - (nullable TIPImageFetchMetricInfo *)metricInfoForSource:(TIPImageLoadSource)source;
 
 /** `NS_UNAVAILABLE` */
-- (nonnull instancetype)init NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 /** `NS_UNAVAILABLE` */
-- (nonnull instancetype)new NS_UNAVAILABLE;
+- (instancetype)new NS_UNAVAILABLE;
 
 @end
 
@@ -73,9 +75,9 @@ typedef NS_ENUM(NSInteger, TIPImageFetchLoadResult){
 @property (nonatomic, readonly) NSTimeInterval loadDuration;
 
 /** `NS_UNAVAILABLE` */
-- (nonnull instancetype)init NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 /** `NS_UNAVAILABLE` */
-- (nonnull instancetype)new NS_UNAVAILABLE;
+- (instancetype)new NS_UNAVAILABLE;
 
 @end
 
@@ -104,3 +106,5 @@ typedef NS_ENUM(NSInteger, TIPImageFetchLoadResult){
 @property (nonatomic, readonly) float networkImagePixelsPerByte;
 
 @end
+
+NS_ASSUME_NONNULL_END

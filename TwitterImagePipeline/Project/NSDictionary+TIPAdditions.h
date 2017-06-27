@@ -8,22 +8,26 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface NSDictionary (TIPAdditions)
 
-- (nullable NSArray *)tip_objectsForCaseInsensitiveKey:(nonnull NSString *)key;
-- (nullable NSSet<NSString *> *)tip_keysMatchingCaseInsensitiveKey:(nonnull NSString *)key;
-- (nonnull id)tip_copyWithLowercaseKeys;
-- (nonnull id)tip_copyWithUppercaseKeys;
-- (nonnull id)tip_mutableCopyWithLowercaseKeys;
-- (nonnull id)tip_mutableCopyWithUppercaseKeys;
+- (nullable NSArray *)tip_objectsForCaseInsensitiveKey:(NSString *)key;
+- (nullable NSSet<NSString *> *)tip_keysMatchingCaseInsensitiveKey:(NSString *)key;
+- (id)tip_copyWithLowercaseKeys;
+- (id)tip_copyWithUppercaseKeys;
+- (id)tip_mutableCopyWithLowercaseKeys;
+- (id)tip_mutableCopyWithUppercaseKeys;
 
 @end
 
 @interface NSMutableDictionary (TIPAdditions)
 
-- (void)tip_removeObjectsForCaseInsensitiveKey:(nonnull NSString *)key;
-- (void)tip_setObject:(nonnull id)object forCaseInsensitiveKey:(nonnull NSString *)key;
+- (void)tip_removeObjectsForCaseInsensitiveKey:(NSString *)key;
+- (void)tip_setObject:(id)object forCaseInsensitiveKey:(NSString *)key;
 - (void)tip_makeAllKeysLowercase;
 - (void)tip_makeAllKeysUppercase;
 
 @end
+
+NS_ASSUME_NONNULL_END

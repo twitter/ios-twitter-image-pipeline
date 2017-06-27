@@ -16,8 +16,10 @@
 #include <sys/sysctl.h>
 #endif
 
+NS_ASSUME_NONNULL_BEGIN
+
 BOOL gTwitterImagePipelineAssertEnabled = YES;
-id<TIPLogger> gTIPLogger = nil;
+id<TIPLogger> __nullable gTIPLogger = nil;
 
 BOOL TIPIsExtension()
 {
@@ -117,3 +119,5 @@ void __TIPAssert(BOOL expression)
 }
 
 #endif // DEBUG
+
+NS_ASSUME_NONNULL_END

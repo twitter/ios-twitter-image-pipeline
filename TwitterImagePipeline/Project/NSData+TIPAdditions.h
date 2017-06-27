@@ -8,6 +8,10 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface NSData (TIPAdditions)
-- (nonnull NSData *)tip_safeSubdataNoCopyWithRange:(NSRange)range;
+- (NSData *)tip_safeSubdataNoCopyWithRange:(NSRange)range;
 @end
+
+NS_ASSUME_NONNULL_END

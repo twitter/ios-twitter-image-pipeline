@@ -65,6 +65,7 @@ typedef struct _TIPImageFetchTestStruct {
 @property (nonatomic) UIViewContentMode targetContentMode;
 @property (nonatomic) NSTimeInterval timeToLive;
 @property (nonatomic) TIPImageFetchOptions options;
+@property (nonatomic) TIPImageFetchLoadingSources loadingSources;
 @property (nonatomic) id<TIPImageFetchProgressiveLoadingPolicy> jp2ProgressiveLoadingPolicy;
 @property (nonatomic) id<TIPImageFetchProgressiveLoadingPolicy> jpegProgressiveLoadingPolicy;
 
@@ -1085,6 +1086,94 @@ static TIPImagePipeline *sPipeline = nil;
     pipeline2 = nil;
 }
 
+- (void)testRenamedEntry
+{
+    NSString *pipelineIdentifier = @"dummy.pipeline";
+    TIPImagePipeline *pipeline = [[TIPImagePipeline alloc] initWithIdentifier:pipelineIdentifier];
+    [pipeline clearDiskCache];
+
+    __block TIPImageLoadSource loadSource;
+    __block NSError *loadError;
+    XCTestExpectation *expectation;
+    TIPImageFetchOperation *op;
+    NSURL *URL1 = [NSURL URLWithString:@"http://dummy.pipeline.com/image.jpg"];
+    NSURL *URL2 = [NSURL URLWithString:@"fake://fake.pipeline.com/fake.jpg"];
+
+    TIPImagePipelineTestFetchRequest *fetchRequest1 = [[TIPImagePipelineTestFetchRequest alloc] init];
+    fetchRequest1.imageURL = URL1;
+    fetchRequest1.imageType = TIPImageTypeJPEG;
+    fetchRequest1.progressiveSource = NO;
+
+    TIPImagePipelineTestFetchRequest *fetchRequest2 = [[TIPImagePipelineTestFetchRequest alloc] init];
+    fetchRequest2.imageURL = URL1;
+    fetchRequest2.imageIdentifier = [URL2 absoluteString];
+    fetchRequest2.imageType = TIPImageTypeJPEG;
+    fetchRequest2.progressiveSource = NO;
+    fetchRequest2.loadingSources = TIPImageFetchLoadingSourcesAll & ~(TIPImageFetchLoadingSourceNetwork | TIPImageFetchLoadingSourceNetworkResumed); // no network!
+
+    [self _stubRequest:fetchRequest1 bitrate:0 resumable:YES];
+    [self _stubRequest:fetchRequest2 bitrate:0 resumable:NO]; // just to ensure we don't hit the network
+
+    expectation = [self expectationWithDescription:@"Pipeline Fetch Image 1"];
+    op = [pipeline operationWithRequest:fetchRequest1 context:nil completion:^(id<TIPImageFetchResult> result, NSError *error) {
+        loadSource = result.imageSource;
+        loadError = error;
+        [expectation fulfill];
+    }];
+    [pipeline fetchImageWithOperation:op];
+    [self waitForExpectationsWithTimeout:10.0 handler:NULL];
+    XCTAssertEqual(TIPImageLoadSourceNetwork, loadSource);
+    XCTAssertNil(loadError);
+
+    expectation = [self expectationWithDescription:@"Pipeline Fetch Image 2"];
+    op = [pipeline operationWithRequest:fetchRequest2 context:nil completion:^(id<TIPImageFetchResult> result, NSError *error) {
+        loadSource = result.imageSource;
+        loadError = error;
+        [expectation fulfill];
+    }];
+    [pipeline fetchImageWithOperation:op];
+    [self waitForExpectationsWithTimeout:10.0 handler:NULL];
+    XCTAssertEqual(TIPImageLoadSourceUnknown, loadSource);
+    XCTAssertNotNil(loadError);
+
+    expectation = [self expectationWithDescription:@"Move Image"];
+    [pipeline changeIdentifierForImageWithIdentifier:[URL1 absoluteString] toIdentifier:[URL2 absoluteString] completion:^(NSObject<TIPDependencyOperation> *moveOp, BOOL succeeded, NSError *error) {
+        [expectation fulfill];
+    }];
+    [self waitForExpectationsWithTimeout:10.0 handler:NULL];
+
+    expectation = [self expectationWithDescription:@"Pipeline Fetch Image 2"];
+    op = [pipeline operationWithRequest:fetchRequest2 context:nil completion:^(id<TIPImageFetchResult> result, NSError *error) {
+        loadSource = result.imageSource;
+        loadError = error;
+        [expectation fulfill];
+    }];
+    [pipeline fetchImageWithOperation:op];
+    [self waitForExpectationsWithTimeout:10.0 handler:NULL];
+    XCTAssertEqual(TIPImageLoadSourceDiskCache, loadSource);
+    XCTAssertNil(loadError);
+
+    expectation = [self expectationWithDescription:@"Pipeline Fetch Image 1"];
+    op = [pipeline operationWithRequest:fetchRequest1 context:nil completion:^(id<TIPImageFetchResult> result, NSError *error) {
+        loadSource = result.imageSource;
+        loadError = error;
+        [expectation fulfill];
+    }];
+    [pipeline fetchImageWithOperation:op];
+    [self waitForExpectationsWithTimeout:10.0 handler:NULL];
+    XCTAssertEqual(TIPImageLoadSourceNetwork, loadSource); // Not cache!
+    XCTAssertNil(loadError);
+
+    [pipeline clearDiskCache];
+    [pipeline clearMemoryCaches];
+    expectation = [self expectationWithDescription:@"Clear Caches"];
+    [pipeline inspect:^(TIPImagePipelineInspectionResult *result) {
+        [expectation fulfill];
+    }];
+    [self waitForExpectationsWithTimeout:10.0 handler:NULL];
+    pipeline = nil;
+}
+
 - (void)testInvalidPseudoFilePathFetch
 {
     TIPImagePipelineTestFetchRequest *request = [[TIPImagePipelineTestFetchRequest alloc] init];
@@ -1198,6 +1287,7 @@ static TIPImagePipeline *sPipeline = nil;
         _options = TIPImageFetchNoOptions;
         _targetContentMode = UIViewContentModeCenter;
         _targetDimensions = CGSizeZero;
+        _loadingSources = TIPImageFetchLoadingSourcesAll;
     }
     return self;
 }

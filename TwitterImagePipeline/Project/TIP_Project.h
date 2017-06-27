@@ -15,17 +15,17 @@
 
 #import "TIP_ProjectCommon.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 #pragma mark - Constants
 
 FOUNDATION_EXTERN const NSTimeInterval TIPTimeToLiveDefault; // 30 days
 
 #pragma mark - Version
 
-FOUNDATION_EXTERN NSString * __nonnull TIPVersion();
+FOUNDATION_EXTERN NSString *TIPVersion();
 
 #pragma mark - Helpers
-
-NS_ASSUME_NONNULL_BEGIN
 
 FOUNDATION_EXTERN BOOL TIPImageTypeSupportsLossyQuality(NSString * __nullable type);
 
@@ -80,8 +80,6 @@ do { \
     readWriteTotalVar = newSize; \
 } while (0)
 
-NS_ASSUME_NONNULL_END
-
 #pragma mark - Debugging Tools
 
 FOUNDATION_EXTERN BOOL TIPShouldAssertDuringPipelineRegistation();
@@ -113,3 +111,5 @@ dispatch_block_t clearTaskBlock##__LINE__ = TIPStartBackgroundTask([NSString str
 tip_defer(^{ if (clearTaskBlock##__LINE__) { clearTaskBlock##__LINE__(); } });
 
 #pragma twitter stopignorestylecheck
+
+NS_ASSUME_NONNULL_END

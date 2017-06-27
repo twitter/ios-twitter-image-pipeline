@@ -15,6 +15,8 @@
 #import "TIPImageFetchDownload.h"
 #import "TIPTiming.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 #ifndef TIP_LOG_DOWNLOAD_PROGRESS
 #define TIP_LOG_DOWNLOAD_PROGRESS 0
 #endif
@@ -42,7 +44,7 @@ do { \
 } while (0)
 
 static long long TIPExpectedResponseBodySize(NSHTTPURLResponse * __nullable URLResponse);
-static long long TIPExpectedResponseBodySize(NSHTTPURLResponse *URLResponse)
+static long long TIPExpectedResponseBodySize(NSHTTPURLResponse * __nullable URLResponse)
 {
     long long contentLength = 0;
     if (URLResponse) {
@@ -55,7 +57,7 @@ static long long TIPExpectedResponseBodySize(NSHTTPURLResponse *URLResponse)
 }
 
 static BOOL TIPImageDownloadIsComplete(NSHTTPURLResponse * __nullable response, NSError * __nullable error);
-static BOOL TIPImageDownloadIsComplete(NSHTTPURLResponse *response, NSError *error)
+static BOOL TIPImageDownloadIsComplete(NSHTTPURLResponse * __nullable response, NSError * __nullable error)
 {
     if (response.statusCode == 200 /* OK */ || response.statusCode == 206 /* Partial Content */) {
         if (!error) {
@@ -66,7 +68,7 @@ static BOOL TIPImageDownloadIsComplete(NSHTTPURLResponse *response, NSError *err
 }
 
 static NSString *TIPImageDownloadLastModifiedString(NSHTTPURLResponse * __nullable response, NSError * __nullable error);
-static NSString *TIPImageDownloadLastModifiedString(NSHTTPURLResponse *response, NSError *error)
+static NSString *TIPImageDownloadLastModifiedString(NSHTTPURLResponse * __nullable response, NSError * __nullable error)
 {
     if (response.statusCode == 200 /* OK */ || response.statusCode == 206 /* Partial Content */) {
         if (error) {
@@ -83,8 +85,8 @@ static NSString *TIPImageDownloadLastModifiedString(NSHTTPURLResponse *response,
     return nil;
 }
 
-static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInternalContext * __nonnull context, TIPImageFetchErrorCode code, id<TIPImageFetchDownload> __nullable download);
-static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInternalContext *context, TIPImageFetchErrorCode code, id<TIPImageFetchDownload> download)
+static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInternalContext *context, TIPImageFetchErrorCode code, id<TIPImageFetchDownload> __nullable download);
+static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInternalContext *context, TIPImageFetchErrorCode code, id<TIPImageFetchDownload> __nullable download)
 {
     TIPAssertDownloaderQueue();
 
@@ -119,13 +121,13 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 
 @interface TIPImageDownloader () <TIPImageFetchDownloadClient>
 
-+ (BOOL)_tip_canCoalesceDelegate:(nonnull NSObject<TIPImageDownloadDelegate> *)delegate withDownloadContext:(nonnull TIPImageDownloadInternalContext *)context;
++ (BOOL)_tip_canCoalesceDelegate:(NSObject<TIPImageDownloadDelegate> *)delegate withDownloadContext:(TIPImageDownloadInternalContext *)context;
 
 - (void)_tip_background_dequeuePendingDownloads;
-- (nonnull id<TIPImageFetchDownload>)_tip_background_downloadWithDelegate:(nonnull NSObject<TIPImageDownloadDelegate> *)delegate;
-- (void)_tip_background_clearDownload:(nonnull id<TIPImageFetchDownload>)download;
-- (void)_tip_background_updatePriorityOfDownload:(nonnull id<TIPImageFetchDownload>)download;
-- (void)_tip_background_removeDelegate:(nonnull NSObject<TIPImageDownloadDelegate> *)delegate forDownload:(nonnull id<TIPImageFetchDownload>)download;
+- (id<TIPImageFetchDownload>)_tip_background_downloadWithDelegate:(NSObject<TIPImageDownloadDelegate> *)delegate;
+- (void)_tip_background_clearDownload:(id<TIPImageFetchDownload>)download;
+- (void)_tip_background_updatePriorityOfDownload:(id<TIPImageFetchDownload>)download;
+- (void)_tip_background_removeDelegate:(NSObject<TIPImageDownloadDelegate> *)delegate forDownload:(id<TIPImageFetchDownload>)download;
 
 @end
 
@@ -415,7 +417,7 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     }
 }
 
-- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download didCompleteWithError:(NSError *)error
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download didCompleteWithError:(nullable NSError *)error
 {
     TIPAssertDownloaderQueue();
 
@@ -751,3 +753,5 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

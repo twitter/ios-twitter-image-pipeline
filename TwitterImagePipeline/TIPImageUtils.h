@@ -42,6 +42,10 @@ static const float kTIPAppleQualityValueRepresentingJFIFQuality65   = 0.400f;
 //! Convert size (in points) to dimensions (in pixels)
 NS_INLINE CGSize TIPDimensionsFromSizeScaled(CGSize size, CGFloat scale)
 {
+    if (scale <= 0.0) {
+        scale = [UIScreen mainScreen].scale;
+    }
+
     size.width *= scale;
     size.height *= scale;
     return size;
@@ -57,6 +61,34 @@ NS_INLINE CGSize TIPDimensionsFromView(UIView * __nullable view)
     return TIPDimensionsFromSizeScaled(view.bounds.size, [UIScreen mainScreen].scale);
 }
 
+//! Get dimensions (in pixels) from `UIImage`
+NS_INLINE CGSize TIPDimensionsFromImage(UIImage * __nullable image)
+{
+    if (!image) {
+        return CGSizeZero;
+    }
+
+    return TIPDimensionsFromSizeScaled(image.size, image.scale);
+}
+
+//! Get size from dimensions (pixels)
+NS_INLINE CGSize TIPSizeScaledFromDimensions(CGSize dimensions, CGFloat scale)
+{
+    if (scale <= 0.0) {
+        scale = [UIScreen mainScreen].scale;
+    }
+
+    dimensions.width /= scale;
+    dimensions.height /= scale;
+    return dimensions;
+}
+
+//! Get size (in points based on screen scale) from dimensions (in pixels)
+NS_INLINE CGSize TIPPointSizeFromDimensions(CGSize dimensions)
+{
+    return TIPSizeScaledFromDimensions(dimensions, [UIScreen mainScreen].scale);
+}
+
 //! Estimate byte size of a decoded `UIImage` with the given settings
 FOUNDATION_EXTERN NSUInteger TIPEstimateMemorySizeOfImageWithSettings(CGSize size,
                                                                       CGFloat scale,
@@ -67,6 +99,7 @@ FOUNDATION_EXTERN NSUInteger TIPEstimateMemorySizeOfImageWithSettings(CGSize siz
  Compare size with target sizing info
  Computed target dimensions will be pixel aligned
  (i.e. any fractional pixels will be rounded up, e.g. { 625.75, 724.001 } ==> { 626, 725 })
+ @note only _targetContentMode_ values that have `UIViewContentModeScale*` will be scaled (others are just positional and do not scale)
  */
 FOUNDATION_EXTERN BOOL TIPSizeMatchesTargetSizing(CGSize size,
                                                   CGSize targetSize,
@@ -77,12 +110,18 @@ FOUNDATION_EXTERN BOOL TIPSizeMatchesTargetSizing(CGSize size,
 FOUNDATION_EXTERN BOOL TIPCGImageHasAlpha(CGImageRef imageRef, BOOL inspectPixels);
 //! Best effort alpha check on a `CIImage`
 FOUNDATION_EXTERN BOOL TIPCIImageHasAlpha(CIImage *image, BOOL inspectPixels);
-//! Scale a size to target sizing info
+/**
+ Scale a size to target sizing info
+ @note only _targetContentMode_ values that have `UIViewContentModeScale*` will be scaled (others are just positional and do not scale)
+ */
 FOUNDATION_EXTERN CGSize TIPSizeScaledToTargetSizing(CGSize sizeToScale,
                                                      CGSize targetSizeOrZero,
                                                      UIViewContentMode targetContentMode,
                                                      CGFloat scale);
-//! Scale dimensions to target sizing info
+/**
+ Scale dimensions to target sizing info
+ @note only _targetContentMode_ values that have `UIViewContentModeScale*` will be scaled (others are just positional and do not scale)
+ */
 FOUNDATION_EXTERN CGSize TIPDimensionsScaledToTargetSizing(CGSize dimensionsToScale,
                                                            CGSize targetDimensionsOrZero,
                                                            UIViewContentMode targetContentMode);

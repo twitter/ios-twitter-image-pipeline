@@ -11,16 +11,18 @@
 #import "TIPImageUtils.h"
 #import "TIPPartialImage.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 #pragma mark - Private Declarations
 
 @interface TIPImageCacheEntryContext ()
-- (instancetype)initWithCacheEntryContext:(nonnull TIPImageCacheEntryContext *)context;
+- (instancetype)initWithCacheEntryContext:(TIPImageCacheEntryContext *)context;
 @end
 
 @interface TIPImageCacheEntry ()
-@property (nonatomic) NSData *completeImageData;
-@property (nonatomic, copy) NSString *completeImageFilePath;
-- (instancetype)initWithCacheEntry:(nonnull TIPImageCacheEntry *)cacheEntry;
+@property (nonatomic, nullable) NSData *completeImageData;
+@property (nonatomic, nullable, copy) NSString *completeImageFilePath;
+- (instancetype)initWithCacheEntry:(TIPImageCacheEntry *)cacheEntry;
 @end
 
 @interface TIPImageMemoryCacheEntry ()
@@ -51,7 +53,7 @@
     return self;
 }
 
-- (id)copyWithZone:(NSZone *)zone
+- (id)copyWithZone:(nullable NSZone *)zone
 {
     TIPImageCacheEntryContext *context = [[[self class] allocWithZone:zone] initWithCacheEntryContext:self];
     return context;
@@ -104,7 +106,7 @@
     return self;
 }
 
-- (id)copyWithZone:(NSZone *)zone
+- (id)copyWithZone:(nullable NSZone *)zone
 {
     TIPImageCacheEntry *copy = [[[self class] allocWithZone:zone] initWithCacheEntry:self];
     return copy;
@@ -132,7 +134,7 @@
     return self.completeImageContext.updateExpiryOnAccess || self.partialImageContext.updateExpiryOnAccess;
 }
 
-- (NSDate *)mostRecentAccess
+- (nullable NSDate *)mostRecentAccess
 {
     NSDate *completeDate = _completeImageContext.lastAccess;
     NSDate *partialDate = _partialImageContext.lastAccess;
@@ -160,35 +162,35 @@
 
 @synthesize memoryCost = _memoryCost;
 
-- (void)setCompleteImage:(TIPImageContainer *)completeImage
+- (void)setCompleteImage:(nullable TIPImageContainer *)completeImage
 {
     super.completeImage = completeImage;
     _memoryCost = 0;
 }
 
-- (void)setCompleteImageData:(NSData *)completeImageData
+- (void)setCompleteImageData:(nullable NSData *)completeImageData
 {
     TIPAssert(NO && "Should not be used!");
 }
 
-- (void)setCompleteImageFilePath:(NSString *)completeImageFilePath
+- (void)setCompleteImageFilePath:(nullable NSString *)completeImageFilePath
 {
     TIPAssert(NO && "Should not be used!");
 }
 
-- (void)setCompleteImageContext:(TIPCompleteImageEntryContext *)completeImageContext
+- (void)setCompleteImageContext:(nullable TIPCompleteImageEntryContext *)completeImageContext
 {
     super.completeImageContext = completeImageContext;
     _memoryCost = 0;
 }
 
-- (void)setPartialImage:(TIPPartialImage *)partialImage
+- (void)setPartialImage:(nullable TIPPartialImage *)partialImage
 {
     super.partialImage = partialImage;
     _memoryCost = 0;
 }
 
-- (void)setPartialImageContext:(TIPPartialImageEntryContext *)partialImageContext
+- (void)setPartialImageContext:(nullable TIPPartialImageEntryContext *)partialImageContext
 {
     super.partialImageContext = partialImageContext;
     _memoryCost = 0;
@@ -214,13 +216,13 @@
 
 @synthesize safeIdentifier = _safeIdentifier;
 
-- (void)setIdentifier:(NSString *)identifier
+- (void)setIdentifier:(nullable NSString *)identifier
 {
     super.identifier = identifier;
     _safeIdentifier = nil;
 }
 
-- (NSString *)safeIdentifier
+- (nullable NSString *)safeIdentifier
 {
     if (!_safeIdentifier) {
         _safeIdentifier = TIPSafeFromRaw(self.identifier);
@@ -233,4 +235,17 @@
     return self.safeIdentifier;
 }
 
+- (instancetype)initWithCacheEntry:(TIPImageCacheEntry *)cacheEntry
+{
+    if (self = [super initWithCacheEntry:cacheEntry]) {
+        if ([cacheEntry isKindOfClass:[TIPImageDiskCacheEntry class]]) {
+            _completeFileSize = [(TIPImageDiskCacheEntry *)cacheEntry completeFileSize];
+            _partialFileSize = [(TIPImageDiskCacheEntry *)cacheEntry partialFileSize];
+        }
+    }
+    return self;
+}
+
 @end
+
+NS_ASSUME_NONNULL_END

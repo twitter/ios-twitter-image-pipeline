@@ -13,13 +13,14 @@
 #import "TIPPartialImage.h"
 #import "UIImage+TIPAdditions.h"
 
-@implementation TIPImagePipelineInspectionResult
+NS_ASSUME_NONNULL_BEGIN
 
+@implementation TIPImagePipelineInspectionResult
 @end
 
 @implementation TIPImagePipelineInspectionResult (Project)
 
-- (instancetype)initWithImagePipeline:(TIPImagePipeline *)imagePipeline
+- (nullable instancetype)initWithImagePipeline:(TIPImagePipeline *)imagePipeline
 {
     if (self = [super init]) {
         _imagePipeline = imagePipeline;
@@ -72,7 +73,7 @@
 
 @implementation TIPImagePipelineInspectionResultEntry
 
-+ (instancetype)entryWithCacheEntry:(TIPImageCacheEntry *)cacheEntry class:(Class)class
++ (nullable instancetype)entryWithCacheEntry:(TIPImageCacheEntry *)cacheEntry class:(Class)class
 {
     BOOL partial = NO;
     if (class == [TIPImagePipelineInspectionResultRenderedEntry class]) {
@@ -153,3 +154,5 @@
 
 @implementation TIPImagePipelineInspectionResultPartialDiskEntry
 @end
+
+NS_ASSUME_NONNULL_END

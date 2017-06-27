@@ -8,5 +8,9 @@
 
 #import <Foundation/Foundation.h>
 
-FOUNDATION_EXTERN NSString *TIPURLEncodeString(NSString *string);
-FOUNDATION_EXTERN NSString *TIPURLDecodeString(NSString *string, BOOL replacePlussesWithSpaces);
+NS_ASSUME_NONNULL_BEGIN
+
+FOUNDATION_EXTERN NSString * __nullable TIPURLEncodeString(NSString * __nullable string);
+FOUNDATION_EXTERN NSString * __nullable TIPURLDecodeString(NSString * __nullable string, BOOL replacePlussesWithSpaces);
+
+NS_ASSUME_NONNULL_END

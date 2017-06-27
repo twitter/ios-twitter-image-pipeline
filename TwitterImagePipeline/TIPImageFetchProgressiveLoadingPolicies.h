@@ -8,6 +8,8 @@
 
 #import "TIPProgressive.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  A policy that loads the first and last frames of a progressive image.
  */
@@ -69,5 +71,7 @@
 /** The wrapped policy or `nil` */
 @property (nonatomic, readonly, weak, nullable) id<TIPImageFetchProgressiveLoadingPolicy> wrappedPolicy;
 /** Designated initializer.  Provide the _policy_ to wrap. */
-- (nonnull instancetype)initWithProgressiveLoadingPolicy:(nullable id<TIPImageFetchProgressiveLoadingPolicy>)policy NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithProgressiveLoadingPolicy:(nullable id<TIPImageFetchProgressiveLoadingPolicy>)policy NS_DESIGNATED_INITIALIZER;
 @end
+
+NS_ASSUME_NONNULL_END

@@ -19,7 +19,9 @@
 #import "TIPImagePipeline+Project.h"
 #import "TIPImagePipelineInspectionResult+Project.h"
 #import "TIPImageRenderedCache.h"
-#import "TIPImageStoreOperation.h"
+#import "TIPImageStoreAndMoveOperations.h"
+
+NS_ASSUME_NONNULL_BEGIN
 
 NSString * const TIPImagePipelineDidStoreCachedImageNotification = @"TIPImagePipelineDidStoreCachedImageNotification";
 NSString * const TIPImagePipelineDidStandUpImagePipelineNotification = @"TIPImagePipelineDidStandUpImagePipelineNotification";
@@ -62,8 +64,6 @@ static void TIPEnsureStaticImagePipelineVariables(void)
     });
 }
 
-NS_ASSUME_NONNULL_BEGIN
-
 static BOOL TIPImagePipelineIdentifierIsValid(NSString * identifier);
 static BOOL TIPRegisterImagePipelineWithIdentifier(TIPImagePipeline *pipeline, NSString *identifier);
 static void TIPUnregisterImagePipelineWithIdentifier(NSString *identifier);
@@ -71,10 +71,8 @@ static NSString * TIPImagePipelinePath(void) __attribute__((const));
 static NSString * __nullable TIPOpenImagePipelineWithIdentifier(NSString *identifier);
 static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
 
-NS_ASSUME_NONNULL_END
-
 @interface TIPImagePipeline (Private)
-- (void)_tip_enqueueOperation:(nonnull TIPImageFetchOperation *)operation;
+- (void)_tip_enqueueOperation:(TIPImageFetchOperation *)operation;
 @end
 
 @implementation TIPImagePipeline
@@ -94,17 +92,17 @@ NS_ASSUME_NONNULL_END
 @synthesize memoryCache = _memoryCache;
 @synthesize diskCache = _diskCache;
 
-- (TIPImageRenderedCache *)renderedCache TIP_THREAD_SANITIZER_DISABLED
+- (nullable TIPImageRenderedCache *)renderedCache TIP_THREAD_SANITIZER_DISABLED
 {
     return _renderedCache;
 }
 
-- (TIPImageMemoryCache *)memoryCache TIP_THREAD_SANITIZER_DISABLED
+- (nullable TIPImageMemoryCache *)memoryCache TIP_THREAD_SANITIZER_DISABLED
 {
     return _memoryCache;
 }
 
-- (TIPImageDiskCache *)diskCache TIP_THREAD_SANITIZER_DISABLED
+- (nullable TIPImageDiskCache *)diskCache TIP_THREAD_SANITIZER_DISABLED
 {
     return _diskCache;
 }
@@ -154,7 +152,7 @@ NS_ASSUME_NONNULL_END
     }
 }
 
-- (instancetype)initWithIdentifier:(NSString *)identifier
+- (nullable instancetype)initWithIdentifier:(NSString *)identifier
 {
     identifier = [identifier copy];
 
@@ -180,14 +178,14 @@ NS_ASSUME_NONNULL_END
 
 #pragma mark Generate Operation
 
-- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request context:(id)context delegate:(id<TIPImageFetchDelegate>)delegate
+- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request context:(nullable id)context delegate:(nullable id<TIPImageFetchDelegate>)delegate
 {
     TIPImageFetchOperation *operation = [[TIPImageFetchOperation alloc] initWithImagePipeline:self request:request delegate:delegate];
     operation.context = context;
     return operation;
 }
 
-- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request context:(id)context completion:(TIPImagePipelineFetchCompletionBlock)completion
+- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request context:(nullable id)context completion:(nullable TIPImagePipelineFetchCompletionBlock)completion
 {
     TIPSimpleImageFetchDelegate *delegate = [[TIPSimpleImageFetchDelegate alloc] initWithCompletion:completion];
     return [self operationWithRequest:request context:context delegate:delegate];
@@ -237,9 +235,16 @@ NS_ASSUME_NONNULL_END
     }
 }
 
-#pragma mark Store
+#pragma mark Store / Move
 
-- (NSOperation *)storeImageWithRequest:(id<TIPImageStoreRequest>)request completion:(TIPImagePipelineStoreCompletionBlock)completion
+- (NSObject<TIPDependencyOperation> *)changeIdentifierForImageWithIdentifier:(NSString *)currentIdentifier toIdentifier:(NSString *)newIdentifier completion:(nullable TIPImagePipelineOperationCompletionBlock)completion
+{
+    TIPImageMoveOperation *moveOp = [[TIPImageMoveOperation alloc] initWithPipeline:self originalIdentifier:currentIdentifier updatedIdentifier:newIdentifier completion:completion];
+    [[TIPGlobalConfiguration sharedInstance] enqueueImagePipelineOperation:moveOp];
+    return moveOp;
+}
+
+- (NSObject<TIPDependencyOperation> *)storeImageWithRequest:(id<TIPImageStoreRequest>)request completion:(nullable TIPImagePipelineOperationCompletionBlock)completion
 {
     TIPImageStoreOperation *storeOp = [self storeOperationWithRequest:request completion:completion];
     TIPImageStoreHydrationOperation *prepOp = [self _tip_hydrateOperationWithRequest:request];
@@ -251,12 +256,12 @@ NS_ASSUME_NONNULL_END
     return storeOp;
 }
 
-- (TIPImageStoreOperation *)storeOperationWithRequest:(id<TIPImageStoreRequest>)request completion:(TIPImagePipelineStoreCompletionBlock)completion
+- (TIPImageStoreOperation *)storeOperationWithRequest:(id<TIPImageStoreRequest>)request completion:(nullable TIPImagePipelineOperationCompletionBlock)completion
 {
     return [[TIPImageStoreOperation alloc] initWithRequest:request pipeline:self completion:completion];
 }
 
-- (TIPImageStoreHydrationOperation *)_tip_hydrateOperationWithRequest:(id<TIPImageStoreRequest>)request
+- (nullable TIPImageStoreHydrationOperation *)_tip_hydrateOperationWithRequest:(id<TIPImageStoreRequest>)request
 {
     id<TIPImageStoreRequestHydrater> hydrater = [request respondsToSelector:@selector(hydrater)] ? request.hydrater : nil;
     if (!hydrater) {
@@ -289,7 +294,7 @@ NS_ASSUME_NONNULL_END
 
 #pragma mark Copy Disk Cache File
 
-- (void)copyDiskCacheFileWithIdentifier:(NSString *)imageIdentifier completion:(TIPImagePipelineCopyFileCompletionBlock)completion
+- (void)copyDiskCacheFileWithIdentifier:(NSString *)imageIdentifier completion:(nullable TIPImagePipelineCopyFileCompletionBlock)completion
 {
     TIPAssert(imageIdentifier != nil);
     NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
@@ -298,7 +303,7 @@ NS_ASSUME_NONNULL_END
     [[TIPGlobalConfiguration sharedInstance] enqueueImagePipelineOperation:op];
 }
 
-- (void)_tip_background_copyDiskCacheFileWithIdentifier:(nonnull NSString *)imageIdentifier completion:(nullable TIPImagePipelineCopyFileCompletionBlock)completion
+- (void)_tip_background_copyDiskCacheFileWithIdentifier:(NSString *)imageIdentifier completion:(nullable TIPImagePipelineCopyFileCompletionBlock)completion
 {
     // Copy to temp location
     NSString *temporaryFile = nil;
@@ -342,7 +347,7 @@ NS_ASSUME_NONNULL_END
 
 #pragma mark Properties
 
-- (id<TIPImageCache>)cacheOfType:(TIPImageCacheType)type
+- (nullable id<TIPImageCache>)cacheOfType:(TIPImageCacheType)type
 {
     switch (type) {
         case TIPImageCacheTypeDisk:
@@ -400,7 +405,7 @@ NS_ASSUME_NONNULL_END
 
 @implementation TIPSimpleImageFetchDelegate
 
-- (instancetype)initWithCompletion:(TIPImagePipelineFetchCompletionBlock)completion
+- (instancetype)initWithCompletion:(nullable TIPImagePipelineFetchCompletionBlock)completion
 {
     if (self = [super init]) {
         _completion = [completion copy];
@@ -516,7 +521,7 @@ static NSString *TIPImagePipelinePath(void)
     return sPath;
 }
 
-static NSString *TIPOpenImagePipelineWithIdentifier(NSString *identifier)
+static NSString * __nullable TIPOpenImagePipelineWithIdentifier(NSString *identifier)
 {
     NSString *path = TIPImagePipelinePath();
     path = [path stringByAppendingPathComponent:identifier];
@@ -538,3 +543,5 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines()
     });
     return pipelines;
 }
+
+NS_ASSUME_NONNULL_END

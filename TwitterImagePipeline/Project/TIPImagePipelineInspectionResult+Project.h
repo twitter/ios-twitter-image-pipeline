@@ -10,12 +10,14 @@
 
 @class TIPImageCacheEntry;
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImagePipelineInspectionResult (Project)
 
-- (nullable instancetype)initWithImagePipeline:(nonnull TIPImagePipeline *)imagePipeline;
+- (nullable instancetype)initWithImagePipeline:(TIPImagePipeline *)imagePipeline;
 
-- (void)addEntries:(nonnull NSArray<id<TIPImagePipelineInspectionResultEntry>> *)entries;
-- (void)addEntry:(nonnull id<TIPImagePipelineInspectionResultEntry>)entry;
+- (void)addEntries:(NSArray<id<TIPImagePipelineInspectionResultEntry>> *)entries;
+- (void)addEntry:(id<TIPImagePipelineInspectionResultEntry>)entry;
 
 @end
 
@@ -29,7 +31,7 @@
 @property (nonatomic) float progress;
 @property (nonatomic, nullable) UIImage *image;
 
-+ (nullable instancetype)entryWithCacheEntry:(nonnull TIPImageCacheEntry *)cacheEntry class:(nonnull Class)class;
++ (nullable instancetype)entryWithCacheEntry:(TIPImageCacheEntry *)cacheEntry class:(Class)class;
 
 @end
 
@@ -47,3 +49,5 @@
 
 @interface TIPImagePipelineInspectionResultPartialDiskEntry : TIPImagePipelineInspectionResultEntry
 @end
+
+NS_ASSUME_NONNULL_END

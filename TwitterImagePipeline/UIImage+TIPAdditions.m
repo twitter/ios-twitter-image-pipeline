@@ -16,6 +16,7 @@
 #import "UIImage+TIPAdditions.h"
 
 NS_ASSUME_NONNULL_BEGIN
+
 static NSDictionary *TIPImageWritingProperties(UIImage *image,
                                                NSString *type,
                                                TIPImageEncodingOptions options,
@@ -24,7 +25,6 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
                                                NSNumber * __nullable animationDuration,
                                                BOOL isGlobalProperties);
 static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable imageRef);
-NS_ASSUME_NONNULL_END
 
 @implementation UIImage (TIPAdditions)
 
@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_END
 
 - (CGSize)tip_dimensions
 {
-    return TIPDimensionsFromSizeScaled(self.size, self.scale);
+    return TIPDimensionsFromImage(self);
 }
 
 - (NSUInteger)tip_estimatedSizeInBytes
@@ -50,7 +50,7 @@ NS_ASSUME_NONNULL_END
     return bytesPerRow * rowCount;
 }
 
-- (NSUInteger)tip_imageCountBasedOnImageType:(NSString *)type
+- (NSUInteger)tip_imageCountBasedOnImageType:(nullable NSString *)type
 {
     if (!type || [type isEqualToString:TIPImageTypeGIF] || [type isEqualToString:TIPImageTypePNG]) {
         return MAX((NSUInteger)1, self.images.count);
@@ -268,7 +268,7 @@ NS_ASSUME_NONNULL_END
     return image;
 }
 
-- (UIImage *)tip_CGImageBackedImageAndReturnError:(out NSError **)error;
+- (nullable UIImage *)tip_CGImageBackedImageAndReturnError:(out NSError * __autoreleasing __nullable * __nullable)error;
 {
     __block NSError *outError = nil;
     tip_defer(^{
@@ -315,7 +315,7 @@ NS_ASSUME_NONNULL_END
     return image;
 }
 
-- (UIImage *)tip_grayscaleImage
+- (nullable UIImage *)tip_grayscaleImage
 {
     CGImageRef originalImageRef = self.CGImage;
     CGImageRef grayscaleImageRef = TIPCGImageCreateGrayscale(originalImageRef);
@@ -330,9 +330,9 @@ NS_ASSUME_NONNULL_END
 
 #pragma mark Decode Methods
 
-+ (UIImage *)tip_imageWithAnimatedImageFile:(NSString *)filePath
-                                  durations:(out NSArray<NSNumber *> **)durationsOut
-                                  loopCount:(out NSUInteger *)loopCountOut
++ (nullable UIImage *)tip_imageWithAnimatedImageFile:(NSString *)filePath
+                                           durations:(out NSArray<NSNumber *> * __autoreleasing __nullable * __nullable)durationsOut
+                                           loopCount:(out NSUInteger * __nullable)loopCountOut
 {
     NSURL *fileURL = [NSURL fileURLWithPath:filePath isDirectory:NO];
     CGImageSourceRef imageSource = CGImageSourceCreateWithURL((CFURLRef)fileURL, NULL);
@@ -345,9 +345,9 @@ NS_ASSUME_NONNULL_END
     return nil;
 }
 
-+ (UIImage *)tip_imageWithAnimatedImageData:(NSData *)data
-                                  durations:(out NSArray<NSNumber *> **)durationsOut
-                                  loopCount:(out NSUInteger *)loopCountOut
++ (nullable UIImage *)tip_imageWithAnimatedImageData:(NSData *)data
+                                           durations:(out NSArray<NSNumber *> * __autoreleasing __nullable * __nullable)durationsOut
+                                           loopCount:(out NSUInteger * __nullable)loopCountOut
 {
     CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)data, NULL);
     TIPDeferRelease(imageSource);
@@ -362,12 +362,12 @@ NS_ASSUME_NONNULL_END
 #pragma mark Encode Methods
 
 - (BOOL)tip_writeToCGImageDestinationWithBlock:(CGImageDestinationRef(^)(NSString *UTType, const NSUInteger imageCount))desinationCreationBlock
-                                          type:(NSString *)type
+                                          type:(nullable NSString *)type
                                encodingOptions:(TIPImageEncodingOptions)options
                                        quality:(float)quality
                             animationLoopCount:(NSUInteger)animationLoopCount
-                       animationFrameDurations:(NSArray<NSNumber *> *)animationFrameDurations
-                                         error:(out NSError **)error
+                       animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
+                                         error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     __block NSError *theError = nil;
     tip_defer(^{
@@ -427,12 +427,12 @@ NS_ASSUME_NONNULL_END
     return YES;
 }
 
-- (NSData *)tip_writeToDataWithType:(NSString *)type
-                    encodingOptions:(TIPImageEncodingOptions)options
-                            quality:(float)quality
-                 animationLoopCount:(NSUInteger)animationLoopCount
-            animationFrameDurations:(NSArray<NSNumber *> *)animationFrameDurations
-                              error:(out NSError **)error
+- (nullable NSData *)tip_writeToDataWithType:(nullable NSString *)type
+                             encodingOptions:(TIPImageEncodingOptions)options
+                                     quality:(float)quality
+                          animationLoopCount:(NSUInteger)animationLoopCount
+                     animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
+                                       error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     __block NSError *theError = nil;
     tip_defer(^{
@@ -457,13 +457,13 @@ NS_ASSUME_NONNULL_END
 }
 
 - (BOOL)tip_writeToFile:(NSString *)filePath
-                   type:(NSString *)type
+                   type:(nullable NSString *)type
         encodingOptions:(TIPImageEncodingOptions)options
                 quality:(float)quality
      animationLoopCount:(NSUInteger)animationLoopCount
-animationFrameDurations:(NSArray<NSNumber *> *)animationFrameDurations
+animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
              atomically:(BOOL)atomic
-                  error:(out NSError **)error
+                  error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     TIPAssert(filePath != nil);
 
@@ -535,12 +535,12 @@ animationFrameDurations:(NSArray<NSNumber *> *)animationFrameDurations
 @implementation UIImage (TIPAdditions_CGImage)
 
 - (BOOL)tip_writeToCGImageDestination:(CGImageDestinationRef)destinationRef
-                                 type:(NSString *)type
+                                 type:(nullable NSString *)type
                       encodingOptions:(TIPImageEncodingOptions)options
                               quality:(float)quality
                    animationLoopCount:(NSUInteger)animationLoopCount
-              animationFrameDurations:(NSArray<NSNumber *> *)animationFrameDurations
-                                error:(out NSError **)error
+              animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
+                                error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     __block NSError *theError = nil;
     tip_defer(^{
@@ -615,9 +615,9 @@ animationFrameDurations:(NSArray<NSNumber *> *)animationFrameDurations
     return !theError;
 }
 
-+ (UIImage *)tip_imageWithAnimatedImageSource:(CGImageSourceRef)source
-                                    durations:(out NSArray<NSNumber *> **)durationsOut
-                                    loopCount:(out NSUInteger *)loopCountOut
++ (nullable UIImage *)tip_imageWithAnimatedImageSource:(CGImageSourceRef)source
+                                             durations:(out NSArray<NSNumber *> * __autoreleasing __nullable * __nullable)durationsOut
+                                             loopCount:(out NSUInteger * __nullable)loopCountOut
 {
     UIImage *image = nil;
     NSTimeInterval duration = 0.0;
@@ -726,8 +726,8 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
                                                NSString *type,
                                                TIPImageEncodingOptions options,
                                                float quality,
-                                               NSNumber *animationLoopCount,
-                                               NSNumber *animationDuration,
+                                               NSNumber * __nullable animationLoopCount,
+                                               NSNumber * __nullable animationDuration,
                                                BOOL isGlobalProperties)
 {
     const BOOL preferProgressive = TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageEncodingProgressive);
@@ -813,7 +813,7 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
     return properties;
 }
 
-static CGImageRef TIPCGImageCreateGrayscale(CGImageRef imageRef)
+static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable imageRef)
 {
     if (!imageRef) {
         return NULL;
@@ -850,3 +850,5 @@ static CGImageRef TIPCGImageCreateGrayscale(CGImageRef imageRef)
     // Create bitmap image info from pixel data in current context
     return CGBitmapContextCreateImage(context);
 }
+
+NS_ASSUME_NONNULL_END

@@ -17,9 +17,9 @@
 @class TIPImageStoreOperation;
 
 NS_ASSUME_NONNULL_BEGIN
+
 FOUNDATION_EXTERN NSString * const TIPImagePipelineDidStandUpImagePipelineNotification;
 FOUNDATION_EXTERN NSString * const TIPImagePipelineDidTearDownImagePipelineNotification; // object will be nil
-NS_ASSUME_NONNULL_END
 
 @interface TIPImagePipeline ()
 
@@ -28,13 +28,15 @@ NS_ASSUME_NONNULL_END
 @property (nonatomic, readonly, nullable) TIPImageDiskCache *diskCache;
 @property (nonatomic, readonly, nullable) TIPImageDownloader *downloader;
 
-- (nonnull TIPImageStoreOperation *)storeOperationWithRequest:(nonnull id<TIPImageStoreRequest>)request completion:(nullable TIPImagePipelineStoreCompletionBlock)completion;
-- (void)postCompletedEntry:(nonnull TIPImageCacheEntry *)entry manual:(BOOL)manual;
+- (TIPImageStoreOperation *)storeOperationWithRequest:(id<TIPImageStoreRequest>)request completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
+- (void)postCompletedEntry:(TIPImageCacheEntry *)entry manual:(BOOL)manual;
 - (nullable id<TIPImageCache>)cacheOfType:(TIPImageCacheType)type;
 
-+ (nonnull NSDictionary<NSString *, TIPImagePipeline *> *)allRegisteredImagePipelines;
++ (NSDictionary<NSString *, TIPImagePipeline *> *)allRegisteredImagePipelines;
 
 @end
 
 @interface TIPSimpleImageFetchDelegate : NSObject <TIPImageFetchDelegate>
 @end
+
+NS_ASSUME_NONNULL_END

@@ -6,6 +6,7 @@
 //  Copyright (c) 2015 Twitter. All rights reserved.
 //
 
+#import <Accelerate/Accelerate.h>
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
 
 #import "TIPTestImageFetchDownloadInternalWithStubbing.h"
@@ -27,8 +28,13 @@ static const ImageTypeStruct sImageTypes[] = {
     { @"public.png",            "PNG",          "twitterfied.png",          NO,     NO  },
     { @"public.tiff",           "TIFF",         "twitterfied.tiff",         NO,     NO  },
     { @"com.compuserve.gif",    "GIF",          "fireworks_original.gif",   NO,     YES },
+    { @"com.google.webp",       "WEBP",         "twitterfied.webp",         NO,     NO  },
+    { @"public.jpeg",           "Small-PJPEG",  "twitterfied.small.pjpg",   YES,    NO  },
 };
 
+static const NSUInteger kBitrateDribble = 4 * 1000;
+static const NSUInteger kBitrate80sModem = 16 * 1000;
+static const NSUInteger kBitrateBad2G = 56 * 1000;
 static const NSUInteger kBitrate2G = 128 * 1000; // 2G
 static const NSUInteger kBitrate2GPlus = kBitrate2G * 2; // 2.5G
 static const NSUInteger kBitrate3G = kBitrate2GPlus * 2; // 3G
@@ -37,14 +43,15 @@ static const NSUInteger kBitrate4G = kBitrate3G * 2; // 4G
 static const NSUInteger kBitrate4GPlus = kBitrate4G * 2; // ~LTE
 
 static const NSUInteger sBitrates[] = {
+    kBitrateDribble, kBitrate80sModem, kBitrateBad2G,
     kBitrate2G, kBitrate2GPlus,
     kBitrate3G, kBitrate3GPlus,
     kBitrate4G, kBitrate4GPlus
 };
 
-static const NSUInteger kDefaultBitrateIndex = 2;
+static const NSUInteger kDefaultBitrateIndex = 5;
 
-@interface ViewController () <UIPickerViewDataSource, UIPickerViewDelegate, TIPImageFetchRequest, TIPImageFetchDelegate>
+@interface ViewController () <UIPickerViewDataSource, UIPickerViewDelegate, TIPImageFetchRequest, TIPImageFetchDelegate, TIPImageFetchTransformer>
 @end
 
 @implementation ViewController
@@ -56,6 +63,7 @@ static const NSUInteger kDefaultBitrateIndex = 2;
     IBOutlet UIButton *_startButton;
     IBOutlet UIPickerView *_pickerView;
     IBOutlet UILabel *_resultsLabel;
+    IBOutlet UISwitch *_blurSwitch;
 
     BOOL _selectingSpeed;
     UITapGestureRecognizer *_tapper;
@@ -313,6 +321,148 @@ static const NSUInteger kDefaultBitrateIndex = 2;
 {
     return _imageView.contentMode;
 }
+
+- (id<TIPImageFetchTransformer>)transformer
+{
+    return _blurSwitch.on ? self : nil;
+}
+
+- (UIImage *)tip_transformImage:(UIImage *)image withProgress:(float)progress hintTargetDimensions:(CGSize)targetDimensions hintTargetContentMode:(UIViewContentMode)targetContentMode forImageFetchOperation:(TIPImageFetchOperation *)op
+{
+    if (!image.CGImage) {
+        return nil;
+    }
+
+    BOOL shouldScaleFirst = NO;
+    const CGSize imageDimension = [image tip_dimensions];
+    CGFloat blurRadius = 0;
+    if (progress < 0 || progress >= 1.f) {
+        // placeholder?
+        id<TIPImageFetchRequest> request = op.request;
+        if (![request respondsToSelector:@selector(options)]) {
+            return nil;
+        }
+        if ((request.options & TIPImageFetchTreatAsPlaceholder) == 0) {
+            return nil;
+        }
+        if (targetDimensions.width <= imageDimension.width && targetDimensions.height <= imageDimension.height) {
+            return nil;
+        }
+        blurRadius = log2(MAX(targetDimensions.height / imageDimension.height, targetDimensions.width / targetDimensions.width));
+        shouldScaleFirst = YES;
+    } else {
+        // progressive
+        if (progress > .65f) {
+            return nil;
+        }
+        const CGFloat divisor = (1.f + progress) * 2.f;
+        blurRadius = log2(MAX(imageDimension.width, imageDimension.height)) / divisor;
+        blurRadius *= 1.f - progress;
+    }
+
+    if (blurRadius < 0.5) {
+        return nil;
+    }
+
+    // TRANSFORM!
+    if (shouldScaleFirst) {
+        image = [image tip_scaledImageWithTargetDimensions:targetDimensions contentMode:targetContentMode];
+    }
+    UIImage *transformed = [self applyBlurToImage:image withRadius:blurRadius];
+    NSAssert(CGSizeEqualToSize([image tip_dimensions], [transformed tip_dimensions]), @"sizing missmatch!");
+    return transformed;
+}
+
+// This is a modified version of Apple's 2013 WWDC sample code for UIImage(ImageEffects)
+// https://developer.apple.com/library/content/samplecode/UIImageEffects/Listings/UIImageEffects_UIImageEffects_m.html
+- (UIImage *)applyBlurToImage:(UIImage *)image withRadius:(CGFloat)blurRadius
+{
+    // Check pre-conditions
+    if (image.size.width < 1 || image.size.height < 1) {
+        return nil;
+    }
+    if (!image.CGImage) {
+        return nil;
+    }
+
+    CGRect imageRect = { CGPointZero, image.size };
+    UIImage *effectImage = image;
+
+    const BOOL hasBlur = blurRadius > __FLT_EPSILON__;
+    if (hasBlur) {
+        UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
+        CGContextRef effectInContext = UIGraphicsGetCurrentContext();
+        CGContextScaleCTM(effectInContext, 1.0, -1.0);
+        CGContextTranslateCTM(effectInContext, 0, -image.size.height);
+        CGContextDrawImage(effectInContext, imageRect, image.CGImage);
+
+        vImage_Buffer effectInBuffer;
+        effectInBuffer.data     = CGBitmapContextGetData(effectInContext);
+        effectInBuffer.width    = CGBitmapContextGetWidth(effectInContext);
+        effectInBuffer.height   = CGBitmapContextGetHeight(effectInContext);
+        effectInBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectInContext);
+
+        UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
+        CGContextRef effectOutContext = UIGraphicsGetCurrentContext();
+        vImage_Buffer effectOutBuffer;
+        effectOutBuffer.data     = CGBitmapContextGetData(effectOutContext);
+        effectOutBuffer.width    = CGBitmapContextGetWidth(effectOutContext);
+        effectOutBuffer.height   = CGBitmapContextGetHeight(effectOutContext);
+        effectOutBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectOutContext);
+
+        // A description of how to compute the box kernel width from the Gaussian
+        // radius (aka standard deviation) appears in the SVG spec:
+        // http://www.w3.org/TR/SVG/filters.html#feGaussianBlurElement
+        //
+        // For larger values of 's' (s >= 2.0), an approximation can be used: Three
+        // successive box-blurs build a piece-wise quadratic convolution kernel, which
+        // approximates the Gaussian kernel to within roughly 3%.
+        //
+        // let d = floor(s * 3*sqrt(2*pi)/4 + 0.5)
+        //
+        // ... if d is odd, use three box-blurs of size 'd', centered on the output pixel.
+        //
+        const CGFloat inputRadius = blurRadius * [[UIScreen mainScreen] scale];
+        uint32_t radius = (uint32_t)floor(inputRadius * 3. * sqrt(2 * M_PI) / 4 + 0.5);
+        if (radius % 2 != 1) {
+            radius += 1; // force radius to be odd so that the three box-blur methodology works.
+        }
+        vImageBoxConvolve_ARGB8888(&effectInBuffer, &effectOutBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
+        vImageBoxConvolve_ARGB8888(&effectOutBuffer, &effectInBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
+        vImageBoxConvolve_ARGB8888(&effectInBuffer, &effectOutBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
+
+        effectImage = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        UIGraphicsEndImageContext();
+    }
+
+    // Set up output context.
+    UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
+    CGContextRef outputContext = UIGraphicsGetCurrentContext();
+    CGContextScaleCTM(outputContext, 1.0, -1.0);
+    CGContextTranslateCTM(outputContext, 0, -image.size.height);
+
+    // Draw base image.
+    CGContextDrawImage(outputContext, imageRect, image.CGImage);
+
+    // Draw effect image.
+    if (hasBlur) {
+        CGContextSaveGState(outputContext);
+        CGContextDrawImage(outputContext, imageRect, effectImage.CGImage);
+        CGContextRestoreGState(outputContext);
+    }
+
+    // Output image is ready.
+    UIImage *outputImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+
+    return outputImage;
+}
+
+//- (NSDictionary *)progressiveLoadingPolicies
+//{
+//    return @{ TIPImageTypeJPEG : [[TIPGreedyProgressiveLoadingPolicy alloc] init] };
+//}
 
 //- (NSDictionary *)progressiveLoadingPolicies
 //{

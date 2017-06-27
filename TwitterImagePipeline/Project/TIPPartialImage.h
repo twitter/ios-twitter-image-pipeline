@@ -10,6 +10,8 @@
 #import "TIPImageContainer.h"
 #import "TIPImageUtils.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 typedef NS_ENUM(NSInteger, TIPPartialImageState) {
     TIPPartialImageStateNoData = 0,
     TIPPartialImageStateLoadingHeaders,
@@ -37,11 +39,13 @@ typedef NS_ENUM(NSInteger, TIPPartialImageState) {
 @property (nonatomic, readonly) NSUInteger byteCount;
 @property (nonatomic, readonly) float progress;
 
-- (nonnull instancetype)initWithExpectedContentLength:(NSUInteger)contentLength NS_DESIGNATED_INITIALIZER;
-- (nonnull instancetype)init NS_UNAVAILABLE;
-+ (nonnull instancetype)new NS_UNAVAILABLE;
+- (instancetype)initWithExpectedContentLength:(NSUInteger)contentLength NS_DESIGNATED_INITIALIZER;
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 - (TIPImageDecoderAppendResult)appendData:(nullable NSData *)data final:(BOOL)final;
 - (nullable TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode decoded:(BOOL)decode;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -18,14 +18,14 @@ FOUNDATION_EXTERN NSArray<NSString *> * __nullable TIPContentsAtPath(NSString *d
 FOUNDATION_EXTERN NSUInteger TIPFileSizeAtPath(NSString *filePath, NSError * __nullable * __nullable outError);
 
 //! Return the last modified date of the file at the given _path_
-FOUNDATION_EXTERN NSDate * __nullable TIPLastModifiedDateAtPath(NSString * __nonnull path);
+FOUNDATION_EXTERN NSDate * __nullable TIPLastModifiedDateAtPath(NSString *path);
 //! Return the last modified date of the file at the given _pathURL_
-FOUNDATION_EXTERN NSDate * __nullable TIPLastModifiedDateAtPathURL(NSURL * __nonnull pathURL);
+FOUNDATION_EXTERN NSDate * __nullable TIPLastModifiedDateAtPathURL(NSURL *pathURL);
 
 //! Set the last modified _date_ of the file at the given _path_
-FOUNDATION_EXTERN void TIPSetLastModifiedDateAtPath(NSString * __nonnull path, NSDate * __nonnull date);
+FOUNDATION_EXTERN void TIPSetLastModifiedDateAtPath(NSString *path, NSDate *date);
 //! Set the last modified _date_ of the file at the given _pathURL_
-FOUNDATION_EXTERN void TIPSetLastModifiedDateAtPathURL(NSURL * __nonnull pathURL, NSDate * __nonnull date);
+FOUNDATION_EXTERN void TIPSetLastModifiedDateAtPathURL(NSURL *pathURL, NSDate *date);
 
 #pragma mark - File Extended Attribute Helpers
 

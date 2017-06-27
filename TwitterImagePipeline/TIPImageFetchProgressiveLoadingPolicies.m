@@ -8,6 +8,8 @@
 
 #import "TIPImageFetchProgressiveLoadingPolicies.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @implementation TIPImageFetchProgressiveLoadingPolicy
 @end
 
@@ -143,7 +145,7 @@
     return [self initWithProgressiveLoadingPolicy:nil];
 }
 
-- (instancetype) initWithProgressiveLoadingPolicy:(id<TIPImageFetchProgressiveLoadingPolicy>)policy
+- (instancetype) initWithProgressiveLoadingPolicy:(nullable id<TIPImageFetchProgressiveLoadingPolicy>)policy
 {
     if (self = [super init]) {
         _wrappedPolicy = policy;
@@ -161,3 +163,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

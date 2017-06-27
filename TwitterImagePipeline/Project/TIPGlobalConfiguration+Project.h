@@ -49,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (dispatch_queue_t)queueForCachesOfType:(TIPImageCacheType)type;
 
 // other properties
-@property (atomic, nonnull, readonly) NSArray<id<TIPImagePipelineObserver>> *allImagePipelineObservers;
+@property (atomic, readonly) NSArray<id<TIPImagePipelineObserver>> *allImagePipelineObservers;
 @property (atomic, nullable, strong) id<TIPLogger> internalLogger;
 @property (nonatomic, readonly) BOOL imageFetchDownloadProviderSupportsStubbing;
 

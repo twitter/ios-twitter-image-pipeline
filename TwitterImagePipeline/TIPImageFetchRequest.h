@@ -10,12 +10,15 @@
 #import "TIPProgressive.h"
 
 @protocol TIPImageFetchOperationUnderlyingContext;
+@protocol TIPImageFetchTransformer;
+
+NS_ASSUME_NONNULL_BEGIN
 
 //! Block to call with the hydrated `NSURLRequest` when hydration is triggered
 typedef void(^TIPImageFetchHydrationCompletionBlock)(NSURLRequest * __nullable hydratedRequest, NSError * __nullable error);
 
 //! Block to hydrate an `NSURLRequest` for a given _context_
-typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest * __nonnull requestToHydrate, id<TIPImageFetchOperationUnderlyingContext> __nonnull context, TIPImageFetchHydrationCompletionBlock __nonnull complete);
+typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest *requestToHydrate, id<TIPImageFetchOperationUnderlyingContext> context, TIPImageFetchHydrationCompletionBlock complete);
 
 /** Options for a `TIPImageFetchRequest` */
  typedef NS_OPTIONS(NSInteger, TIPImageFetchOptions)
@@ -42,7 +45,7 @@ typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest * __nonnull requestToHyd
 @required
 
 /** The only required property is the `NSURL` of the image to load from the _Network_. */
-@property (nonnull, nonatomic, readonly) NSURL *imageURL;
+@property (nonatomic, readonly) NSURL *imageURL;
 
 @optional
 
@@ -75,6 +78,7 @@ typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest * __nonnull requestToHyd
  dimensions.
  See `UIViewContentModeScaleToFill`, `UIViewContentModeScaleAspectFit` and/or
  `UIViewContentModeScaleAspectFill` for constrained content modes.
+ @note only _targetContentMode_ values that have `UIViewContentModeScale*` will be scaled (others are just positional and do not scale)
  */
 @property (nonatomic, readonly) UIViewContentMode targetContentMode;
 
@@ -99,6 +103,12 @@ typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest * __nonnull requestToHyd
  See `TIPImageFetchDelegate` and `TIPImageTypes.h`
  */
 @property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, id<TIPImageFetchProgressiveLoadingPolicy>> *progressiveLoadingPolicies;
+
+/**
+ Provide a `TIPImageFetchTransformer` to support transforming the fetched image.
+ When not provided or `nil`, falls back to the `TIPGlobalConfiguration` object's _transformer_.
+ */
+@property (nullable, nonatomic, readonly) id<TIPImageFetchTransformer> transformer;
 
 /**
  Specify where to load from.
@@ -139,3 +149,5 @@ typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest * __nonnull requestToHyd
 @property (nonatomic) UIViewContentMode targetContentMode;
 
 @end
+
+NS_ASSUME_NONNULL_END

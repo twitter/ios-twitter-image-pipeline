@@ -12,6 +12,8 @@
 
 @class TIPImageFetchOperation;
 
+NS_ASSUME_NONNULL_BEGIN
+
 #pragma mark - Constants
 
 /**
@@ -74,13 +76,17 @@ typedef NS_ENUM(NSInteger, TIPImageFetchProgressUpdateBehavior)
  `TIPImageFetchProgressUpdateBehaviorUpdateWithFullFrameProgress` == only update to that last full
  frame loaded, nothing further.  By default, if there is no policy, a strong default will be used.
  */
-- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op behaviorForProgress:(TIPImageFetchProgress)frameProgress frameCount:(NSUInteger)frameCount progress:(float)progress type:(nonnull NSString *)type dimensions:(CGSize)dimensions renderCount:(NSUInteger)renderCount;
+- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op behaviorForProgress:(TIPImageFetchProgress)frameProgress frameCount:(NSUInteger)frameCount progress:(float)progress type:(NSString *)type dimensions:(CGSize)dimensions renderCount:(NSUInteger)renderCount;
 
 @end
+
+NS_ASSUME_NONNULL_END
 
 #pragma mark - Class Methods
 
 #import "TIPImageFetchProgressiveLoadingPolicy+StaticClass.h"
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  A category on the `TIPImageFetchProgressiveLoadingPolicy` protocol for class methods.
@@ -96,5 +102,7 @@ typedef NS_ENUM(NSInteger, TIPImageFetchProgressUpdateBehavior)
  - 64-bit: `TIPFullFrameProgressiveLoadingPolicy` w/ `shouldRenderLowQualityFrame` == `YES`
  - 32-bit: `TIPFirstAndLastFrameProgressiveLoadingPolicy` w/ `shouldRenderLowQualityFrame` == `YES`
  */
-+ (nonnull NSDictionary<NSString *, id<TIPImageFetchProgressiveLoadingPolicy>> *)defaultProgressiveLoadingPolicies;
++ (NSDictionary<NSString *, id<TIPImageFetchProgressiveLoadingPolicy>> *)defaultProgressiveLoadingPolicies;
 @end
+
+NS_ASSUME_NONNULL_END

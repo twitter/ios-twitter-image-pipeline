@@ -11,6 +11,8 @@
 #import "TIPImageFetchDownload.h"
 #import "TIPImageFetchOperation+Project.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageDownloadInternalContext : NSObject <TIPImageFetchOperationUnderlyingContext, TIPImageFetchDownloadContext>
 
 @property (nonatomic, assign, nullable) id<TIPImageFetchDownload> download;
@@ -43,10 +45,12 @@
 
 - (NSOperationQueuePriority)downloadPriority;
 - (nullable id<TIPImageDownloadDelegate>)firstDelegate;
-- (BOOL)containsDelegate:(nonnull id<TIPImageDownloadDelegate>)delegate;
-- (void)addDelegate:(nonnull id<TIPImageDownloadDelegate>)delegate;
-- (void)removeDelegate:(nonnull id<TIPImageDownloadDelegate>)delegate;
-- (void)executePerDelegateSuspendingQueue:(nullable dispatch_queue_t)queue block:(nonnull void(^)(id<TIPImageDownloadDelegate> __nonnull))block;
-+ (void)executeDelegate:(nonnull id<TIPImageDownloadDelegate>)delegate suspendingQueue:(nullable dispatch_queue_t)queue block:(nonnull void (^)(id<TIPImageDownloadDelegate> __nonnull))block;
+- (BOOL)containsDelegate:(id<TIPImageDownloadDelegate>)delegate;
+- (void)addDelegate:(id<TIPImageDownloadDelegate>)delegate;
+- (void)removeDelegate:(id<TIPImageDownloadDelegate>)delegate;
+- (void)executePerDelegateSuspendingQueue:(nullable dispatch_queue_t)queue block:(void(^)(id<TIPImageDownloadDelegate>))block;
++ (void)executeDelegate:(id<TIPImageDownloadDelegate>)delegate suspendingQueue:(nullable dispatch_queue_t)queue block:(void (^)(id<TIPImageDownloadDelegate>))block;
 
 @end
+
+NS_ASSUME_NONNULL_END
