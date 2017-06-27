@@ -22,6 +22,8 @@
 #import "TIPImagePipeline+Project.h"
 #import "TIPImageRenderedCache.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 SInt64 const TIPMaxBytesForAllRenderedCachesDefault = -1;
 SInt64 const TIPMaxBytesForAllMemoryCachesDefault = -1;
 SInt64 const TIPMaxBytesForAllDiskCachesDefault = -1;
@@ -495,14 +497,14 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 
 #pragma mark Project Class Methods
 
-- (void)pruneAllCachesOfType:(TIPImageCacheType)type withPriorityCache:(id<TIPImageCache>)priorityCache
+- (void)pruneAllCachesOfType:(TIPImageCacheType)type withPriorityCache:(nullable id<TIPImageCache>)priorityCache
 {
     const SInt64 globalMaxBytes = [self internalMaxBytesForAllCachesOfType:type];
     const SInt16 globalMaxCount = [self internalMaxCountForAllCachesOfType:type];
     [self pruneAllCachesOfType:type withPriorityCache:priorityCache toGlobalMaxBytes:globalMaxBytes toGlobalMaxCount:globalMaxCount];
 }
 
-- (void)pruneAllCachesOfType:(TIPImageCacheType)type withPriorityCache:(id<TIPImageCache>)priorityCache toGlobalMaxBytes:(SInt64)globalMaxBytes toGlobalMaxCount:(SInt16)globalMaxCount
+- (void)pruneAllCachesOfType:(TIPImageCacheType)type withPriorityCache:(nullable id<TIPImageCache>)priorityCache toGlobalMaxBytes:(SInt64)globalMaxBytes toGlobalMaxCount:(SInt16)globalMaxCount
 {
     @autoreleasepool {
         switch (type) {
@@ -600,13 +602,13 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
     return gTwitterImagePipelineAssertEnabled;
 }
 
-- (void)setLogger:(id<TIPLogger>)logger
+- (void)setLogger:(nullable id<TIPLogger>)logger
 {
     gTIPLogger = logger;
     self.internalLogger = logger;
 }
 
-- (id<TIPLogger>)logger
+- (nullable id<TIPLogger>)logger
 {
     return self.internalLogger;
 }
@@ -624,7 +626,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
     return download;
 }
 
-- (void)setImageFetchDownloadProvider:(id<TIPImageFetchDownloadProvider>)imageFetchDownloadProvider
+- (void)setImageFetchDownloadProvider:(nullable id<TIPImageFetchDownloadProvider>)imageFetchDownloadProvider
 {
     if (!imageFetchDownloadProvider) {
         if ([_imageFetchDownloadProvider class] == [TIPImageFetchDownloadProviderInternal class]) {
@@ -740,3 +742,5 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -13,11 +13,15 @@
 
 @class TIPImageCacheEntry;
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageRenderedCache : NSObject <TIPImageCache, TIPInspectableCache>
 
-- (nullable TIPImageCacheEntry *)imageEntryWithIdentifier:(nonnull NSString *)identifier targetDimensions:(CGSize)size targetContentMode:(UIViewContentMode)mode;
-- (void)storeImageEntry:(nonnull TIPImageCacheEntry *)entry;
-- (void)clearImagesWithIdentifier:(nonnull NSString *)identifier;
-- (void)clearAllImages:(void (^ __nullable)(void))completion;
+- (nullable TIPImageCacheEntry *)imageEntryWithIdentifier:(NSString *)identifier targetDimensions:(CGSize)size targetContentMode:(UIViewContentMode)mode;
+- (void)storeImageEntry:(TIPImageCacheEntry *)entry;
+- (void)clearImagesWithIdentifier:(NSString *)identifier;
+- (void)clearAllImages:(nullable void (^)(void))completion;
 
 @end
+
+NS_ASSUME_NONNULL_END

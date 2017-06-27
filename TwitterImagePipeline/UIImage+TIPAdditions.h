@@ -71,6 +71,7 @@ NS_ASSUME_NONNULL_BEGIN
  @return `YES` if there's a match, `NO` otherwise.
  @note computed target dimensions will be pixel aligned (i.e. any fractional pixels will be rounded
  up, e.g. { 625.75, 724.001 } ==> { 626, 725 })
+ @note only _targetContentMode_ values that have `UIViewContentModeScale*` will be a scaled test (others are just positional and do not scale)
  */
 - (BOOL)tip_matchesTargetDimensions:(CGSize)targetDimensions contentMode:(UIViewContentMode)targetContentMode;
 
@@ -80,6 +81,7 @@ NS_ASSUME_NONNULL_BEGIN
  Return a copy of the image scaled
  @param targetDimensions the target size in pixels to scale to.
  @param targetContentMode the target `UIViewContentMode` used to confine the scaling
+ @note only _targetContentMode_ values that have `UIViewContentModeScale*` will be scaled (others are just positional and do not scale)
  */
 - (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions contentMode:(UIViewContentMode)targetContentMode;
 
@@ -212,7 +214,7 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
  @return `YES` on success, `NO` on error
  */
 - (BOOL)tip_writeToCGImageDestination:(CGImageDestinationRef)destinationRef
-                                 type:(NSString *)type
+                                 type:(nullable NSString *)type
                       encodingOptions:(TIPImageEncodingOptions)options
                               quality:(float)quality
                    animationLoopCount:(NSUInteger)animationLoopCount

@@ -10,13 +10,15 @@
 #import "TIPImageDiskCache.h"
 #import "TIPImageDiskCacheTemporaryFile.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageDiskCacheTemporaryFile ()
 
-@property (nonatomic, readonly, copy, nonnull) NSString *temporaryPath;
-@property (nonatomic, readonly, copy, nonnull) NSString *finalPath;
-@property (nonatomic, weak) TIPImageDiskCache *diskCache;
+@property (nonatomic, readonly, copy) NSString *temporaryPath;
+@property (nonatomic, readonly, copy) NSString *finalPath;
+@property (nonatomic, nullable, weak) TIPImageDiskCache *diskCache;
 
-- (nonnull instancetype)initWithIdentifier:(nonnull NSString *)identifier temporaryPath:(nonnull NSString *)tempPath finalPath:(nonnull NSString *)finalPath diskCache:(nullable TIPImageDiskCache *)diskCache;
+- (instancetype)initWithIdentifier:(NSString *)identifier temporaryPath:(NSString *)tempPath finalPath:(NSString *)finalPath diskCache:(nullable TIPImageDiskCache *)diskCache;
 
 - (void)cleanupOpenFile;
 
@@ -33,7 +35,7 @@
     abort();
 }
 
-- (instancetype)initWithIdentifier:(NSString *)identifier temporaryPath:(NSString *)tempPath finalPath:(NSString *)finalPath diskCache:(TIPImageDiskCache *)diskCache
+- (instancetype)initWithIdentifier:(NSString *)identifier temporaryPath:(NSString *)tempPath finalPath:(NSString *)finalPath diskCache:(nullable TIPImageDiskCache *)diskCache
 {
     TIPAssert(identifier != nil);
     TIPAssert(tempPath != nil);
@@ -56,7 +58,7 @@
     [_diskCache clearTemporaryFilePath:_temporaryPath];
 }
 
-- (NSUInteger)appendData:(NSData *)data
+- (NSUInteger)appendData:(nullable NSData *)data
 {
     if (!_openFile) {
         return 0;
@@ -97,3 +99,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

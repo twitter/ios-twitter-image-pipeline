@@ -8,6 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Syslog compatible log levels for use with *TIPLogger*.
  */
@@ -42,7 +44,7 @@ typedef NS_ENUM(NSInteger, TIPLogLevel)
 /**
  Method called when logging a message from *TwitterImagePipeline*
  */
-- (void)tip_logWithLevel:(TIPLogLevel)level file:(nonnull NSString *)file function:(nonnull NSString *)function line:(int)line message:(nonnull NSString *)message;
+- (void)tip_logWithLevel:(TIPLogLevel)level file:(NSString *)file function:(NSString *)function line:(int)line message:(NSString *)message;
 
 @optional
 
@@ -55,3 +57,5 @@ typedef NS_ENUM(NSInteger, TIPLogLevel)
 - (BOOL)tip_canLogWithLevel:(TIPLogLevel)level;
 
 @end
+
+NS_ASSUME_NONNULL_END

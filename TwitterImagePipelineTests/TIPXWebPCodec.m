@@ -6,6 +6,7 @@
 //  Copyright © 2016 Twitter. All rights reserved.
 //
 
+#import <Accelerate/Accelerate.h>
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
 #import <WebP/decode.h>
 #import <WebP/encode.h>
@@ -39,6 +40,8 @@ __strong tipx_defer_block_t tipx_macro_concat(tipx_stack_defer_block_, __LINE__)
 #pragma mark - Declarations
 
 static TIPImageContainer * __nullable TIPXWebPConstructImageContainer(CGDataProviderRef dataProvider, const size_t width, const size_t height, const size_t bytesPerPixel, const size_t componentsPerPixel);
+static BOOL TIPXWebPPictureImport(WebPPicture *picture, CGImageRef imageRef);
+static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *convertedImageBuffer);
 
 @interface TIPXWebPDecoderContext : NSObject <TIPImageDecoderContext>
 
@@ -155,11 +158,7 @@ static TIPImageContainer * __nullable TIPXWebPConstructImageContainer(CGDataProv
     __block WebPPicture *pictureRef = NULL;
     __block TIPErrorCode errorCode = TIPErrorCodeUnknown;
     __block NSData *outputData = nil;
-    __block CFDataRef dataRef = NULL;
     tipx_defer(^{
-        if (dataRef) {
-            CFRelease(dataRef);
-        }
         if (pictureRef) {
             WebPPictureFree(pictureRef);
         }
@@ -180,12 +179,6 @@ static TIPImageContainer * __nullable TIPXWebPConstructImageContainer(CGDataProv
         return nil;
     }
 
-    CGDataProviderRef dataProvider = CGImageGetDataProvider(imageRef);
-    dataRef = CGDataProviderCopyData(dataProvider);
-    if (!dataRef) {
-        return nil;
-    }
-
     WebPConfig config;
     if (!WebPConfigPreset(&config, WEBP_PRESET_DEFAULT, quality * 100.f)) {
         return nil;
@@ -202,19 +195,15 @@ static TIPImageContainer * __nullable TIPXWebPConstructImageContainer(CGDataProv
     }
     pictureRef = &pictureStruct;
 
-    const size_t bytesPerRow = CGImageGetBytesPerRow(imageRef);
     const size_t width = CGImageGetWidth(imageRef);
     const size_t height = CGImageGetHeight(imageRef);
 
     pictureRef->width = (int)width;
     pictureRef->height = (int)height;
 
-    if (!WebPPictureImportRGBA(pictureRef, (uint8_t *)CFDataGetBytePtr(dataRef), (int)bytesPerRow)) {
+    if (!TIPXWebPPictureImport(pictureRef, imageRef)) {
         return nil;
     }
-
-    CFRelease(dataRef);
-    dataRef = NULL;
 
     WebPMemoryWriter *writerRef = (WebPMemoryWriter *)malloc(sizeof(WebPMemoryWriter));
     WebPMemoryWriterInit(writerRef);
@@ -255,6 +244,8 @@ static TIPImageContainer * __nullable TIPXWebPConstructImageContainer(CGDataProv
 
     TIPImageContainer *_cachedImageContainer;
 }
+
+@synthesize tip_data = _dataBuffer;
 
 - (instancetype)initWithExpectedContentLength:(NSUInteger)length buffer:(NSMutableData *)buffer
 {
@@ -437,4 +428,79 @@ static TIPImageContainer *TIPXWebPConstructImageContainer(CGDataProviderRef data
         return nil;
     }
     return [[TIPImageContainer alloc] initWithImage:image];
+}
+
+static BOOL TIPXWebPPictureImport(WebPPicture *picture, CGImageRef imageRef)
+{
+    __block vImage_Buffer convertedImageBuffer = {};
+
+    tipx_defer(^{
+        if (convertedImageBuffer.data) {
+            free(convertedImageBuffer.data);
+        }
+    });
+
+    if (!TIPXWebPCreateRGBADataForImage(imageRef, &convertedImageBuffer)) {
+        return NO;
+    }
+
+    return WebPPictureImportRGBA(picture, convertedImageBuffer.data, (int)convertedImageBuffer.rowBytes);
+}
+
+static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *convertedImageBuffer)
+{
+    if (!convertedImageBuffer) {
+        return NO;
+    }
+
+    vImage_CGImageFormat sourceImageFormat = {
+        .bitsPerComponent = (uint32_t)CGImageGetBitsPerComponent(sourceImage),
+        .bitsPerPixel = (uint32_t)CGImageGetBitsPerPixel(sourceImage),
+        .colorSpace = CGImageGetColorSpace(sourceImage),
+        .bitmapInfo = CGImageGetBitmapInfo(sourceImage)
+    };
+
+    CGColorSpaceRef deviceRGBColorSpace = CGColorSpaceCreateDeviceRGB();
+    TIPXDeferRelease(deviceRGBColorSpace);
+
+    vImage_CGImageFormat convertedImageFormat = {
+        .bitsPerComponent = 8,
+        .bitsPerPixel = 32,
+        .colorSpace = deviceRGBColorSpace,
+        .bitmapInfo = kCGBitmapByteOrder32Big | kCGImageAlphaLast
+    };
+
+    vImage_Error errorCode = kvImageNoError;
+
+    __block vImage_Buffer sourceImageBuffer = {};
+    tipx_defer(^{
+        if (sourceImageBuffer.data) {
+            free(sourceImageBuffer.data);
+        }
+    });
+
+    errorCode = vImageBuffer_InitWithCGImage(&sourceImageBuffer, &sourceImageFormat, NULL, sourceImage, kvImageNoFlags);
+    if (errorCode != kvImageNoError) {
+        return NO;
+    }
+
+    errorCode = vImageBuffer_Init(convertedImageBuffer, sourceImageBuffer.height, sourceImageBuffer.width, convertedImageFormat.bitsPerPixel, kvImageNoFlags);
+    if (errorCode != kvImageNoError) {
+        return NO;
+    }
+
+    vImageConverterRef imageConverter = vImageConverter_CreateWithCGImageFormat(&sourceImageFormat, &convertedImageFormat, NULL, kvImageNoFlags, NULL);
+    if (!imageConverter) {
+        return NO;
+    }
+    tipx_defer(^{
+        vImageConverter_Release(imageConverter);
+    });
+
+    errorCode = vImageConvert_AnyToAny(imageConverter, &sourceImageBuffer, convertedImageBuffer, NULL, kvImageNoFlags);
+    if (errorCode != kvImageNoError) {
+        return NO;
+    }
+
+    return YES;
 }

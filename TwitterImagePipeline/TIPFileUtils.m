@@ -13,9 +13,11 @@
 #import "TIP_Project.h"
 #import "TIPFileUtils.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 #pragma mark - File Helpers
 
-NSArray *TIPContentsAtPath(NSString *path, NSError **outError)
+NSArray<NSString *> * __nullable TIPContentsAtPath(NSString *path, NSError * __nullable * __nullable outError)
 {
     DIR *dir = opendir(path.UTF8String);
     if (!dir) {
@@ -43,7 +45,7 @@ NSArray *TIPContentsAtPath(NSString *path, NSError **outError)
     return entries;
 }
 
-NSUInteger TIPFileSizeAtPath(NSString *path, NSError **outError)
+NSUInteger TIPFileSizeAtPath(NSString *path, NSError * __nullable * __nullable outError)
 {
     NSUInteger size = 0;
     if (path.length > 0) {
@@ -65,12 +67,12 @@ NSUInteger TIPFileSizeAtPath(NSString *path, NSError **outError)
     return size;
 }
 
-NSDate *TIPLastModifiedDateAtPath(NSString *path)
+NSDate * __nullable TIPLastModifiedDateAtPath(NSString *path)
 {
     return TIPLastModifiedDateAtPathURL([NSURL fileURLWithPath:path]);
 }
 
-NSDate *TIPLastModifiedDateAtPathURL(NSURL *pathURL)
+NSDate * __nullable TIPLastModifiedDateAtPathURL(NSURL *pathURL)
 {
     NSDate *date = nil;
     [pathURL getResourceValue:&date forKey:NSURLContentModificationDateKey error:NULL];
@@ -89,7 +91,7 @@ void TIPSetLastModifiedDateAtPathURL(NSURL *pathURL, NSDate *date)
 
 #pragma mark - File Extended Attribute Helpers
 
-NSArray<NSString *> *TIPListXAttributesForFile(NSString *filePath)
+NSArray<NSString *> * __nullable TIPListXAttributesForFile(NSString *filePath)
 {
     const char *cFilePath = filePath.fileSystemRepresentation;
     const ssize_t listStringSize = listxattr(cFilePath, NULL, 0, 0);
@@ -207,7 +209,7 @@ int TIPSetXAttributeURLForFile(const char *name, NSURL *URL, const char *filePat
     return TIPSetXAttributeStringForFile(name, URLString, filePath);
 }
 
-NSString *TIPGetXAttributeStringFromFile(const char *name, const char *filePath)
+NSString * __nullable TIPGetXAttributeStringFromFile(const char *name, const char *filePath)
 {
     ssize_t bufferLength = getxattr(filePath, name, NULL, 0, 0, 0);
     if (bufferLength <= 0) {
@@ -223,7 +225,7 @@ NSString *TIPGetXAttributeStringFromFile(const char *name, const char *filePath)
     return [[NSString alloc] initWithBytesNoCopy:buffer length:(NSUInteger)bufferLength encoding:NSUTF8StringEncoding freeWhenDone:YES];
 }
 
-NSNumber *TIPGetXAttributeNumberFromFile(const char *name, const char *filePath)
+NSNumber * __nullable TIPGetXAttributeNumberFromFile(const char *name, const char *filePath)
 {
     ssize_t bufferLength = getxattr(filePath, name, NULL, 0, 0, 0);
     if (bufferLength != sizeof(double)) {
@@ -237,7 +239,7 @@ NSNumber *TIPGetXAttributeNumberFromFile(const char *name, const char *filePath)
     return @(number);
 }
 
-NSDate *TIPGetXAttributeDateFromFile(const char *name, const char *filePath)
+NSDate * __nullable TIPGetXAttributeDateFromFile(const char *name, const char *filePath)
 {
     NSNumber *number = TIPGetXAttributeNumberFromFile(name, filePath);
     if (!number) {
@@ -247,7 +249,7 @@ NSDate *TIPGetXAttributeDateFromFile(const char *name, const char *filePath)
     return [NSDate dateWithTimeIntervalSinceReferenceDate:[number doubleValue]];
 }
 
-NSURL *TIPGetXAttributeURLFromFile(const char *name, const char *filePath)
+NSURL * __nullable TIPGetXAttributeURLFromFile(const char *name, const char *filePath)
 {
     NSString *URLString = TIPGetXAttributeStringFromFile(name, filePath);
     NSURL *URL = nil;
@@ -257,3 +259,5 @@ NSURL *TIPGetXAttributeURLFromFile(const char *name, const char *filePath)
     }
     return URL;
 }
+
+NS_ASSUME_NONNULL_END

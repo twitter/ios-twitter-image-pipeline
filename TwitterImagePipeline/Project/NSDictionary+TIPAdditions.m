@@ -9,9 +9,11 @@
 #import "NSDictionary+TIPAdditions.h"
 #import "TIP_Project.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @implementation NSDictionary (TIPAdditions)
 
-- (NSSet *)tip_keysMatchingCaseInsensitiveKey:(NSString *)key
+- (nullable NSSet *)tip_keysMatchingCaseInsensitiveKey:(NSString *)key
 {
     NSMutableSet *keys = nil;
     TIPAssert([key isKindOfClass:[NSString class]]);
@@ -29,7 +31,7 @@
     return keys;
 }
 
-- (NSArray *)tip_objectsForCaseInsensitiveKey:(NSString *)key
+- (nullable NSArray *)tip_objectsForCaseInsensitiveKey:(NSString *)key
 {
     TIPAssert(key);
     NSSet *keys = [self tip_keysMatchingCaseInsensitiveKey:key];
@@ -104,3 +106,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

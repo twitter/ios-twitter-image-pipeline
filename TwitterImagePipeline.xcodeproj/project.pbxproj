@@ -18,6 +18,8 @@
 		8B1A49391D78D1BC0003F252 /* TIPTestsResources.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 8B1A49381D78D1370003F252 /* TIPTestsResources.bundle */; };
 		8B1DB3F41B34D63B00F16A70 /* TIPImageFetchMetrics.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B1DB3F11B34D63B00F16A70 /* TIPImageFetchMetrics.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B1DB3F61B34D63B00F16A70 /* TIPImageFetchMetrics.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B1DB3F21B34D63B00F16A70 /* TIPImageFetchMetrics.m */; };
+		8B1EE8931EE0D942007B2D76 /* TIPSafeOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B1EE8911EE0D942007B2D76 /* TIPSafeOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		8B1EE8941EE0D942007B2D76 /* TIPSafeOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B1EE8921EE0D942007B2D76 /* TIPSafeOperation.m */; };
 		8B2031D31D6E36FF00E9E88F /* TIPImageFetchDownload.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B2031D11D6E36FF00E9E88F /* TIPImageFetchDownload.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B2031D41D6E36FF00E9E88F /* TIPImageFetchDownload.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B2031D21D6E36FF00E9E88F /* TIPImageFetchDownload.m */; };
 		8B228B551DD14D1E009E8F6F /* TIPImageCodecs.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B228B531DD14D1E009E8F6F /* TIPImageCodecs.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -31,6 +33,7 @@
 		8B3B079D1DFE59EE00174F40 /* fireworks_original.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8B3B079C1DFE59EE00174F40 /* fireworks_original.gif */; };
 		8B41E9E41BBDC31F00162AAD /* TIPGlobalConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B41E9E11BBDC31F00162AAD /* TIPGlobalConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B41E9E61BBDC31F00162AAD /* TIPGlobalConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B41E9E21BBDC31F00162AAD /* TIPGlobalConfiguration.m */; };
+		8B4F99971ECA9C5200E3DE74 /* TIPImageViewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B4F99961ECA9C5200E3DE74 /* TIPImageViewTests.m */; };
 		8B545C011E5016120096B39B /* ZoomingTweetImageViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B545C001E5016120096B39B /* ZoomingTweetImageViewController.m */; };
 		8B545C041E501CE30096B39B /* TweetImageFetchRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B545C031E501CE30096B39B /* TweetImageFetchRequest.m */; };
 		8B5CFE341D381EBE00860D40 /* TIPLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B5CFE321D381EBE00860D40 /* TIPLogger.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -56,12 +59,18 @@
 		8B6968D21BC6AC4400ADDAF5 /* TIPImageContainer.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B6968CF1BC6AC4400ADDAF5 /* TIPImageContainer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B6968D41BC6AC4400ADDAF5 /* TIPImageContainer.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B6968D01BC6AC4400ADDAF5 /* TIPImageContainer.m */; };
 		8B6C0C121D7CBD2B00B9FBF3 /* TIPTestImageFetchDownloadInternalWithStubbing.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B56927D1D7329BB00E07D32 /* TIPTestImageFetchDownloadInternalWithStubbing.m */; };
+		8B6FCB251EBD16CC00B35B0C /* twitterfied.webp in Resources */ = {isa = PBXBuildFile; fileRef = 8B6FCB241EBD16CC00B35B0C /* twitterfied.webp */; };
+		8B6FCB271EBD184400B35B0C /* twitterfied.small.pjpg in Resources */ = {isa = PBXBuildFile; fileRef = 8B6FCB261EBD184400B35B0C /* twitterfied.small.pjpg */; };
+		8B6FCB281EBD187200B35B0C /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BA232751DD4F43D0097B1DE /* WebP.framework */; };
+		8B6FCB291EBD18CB00B35B0C /* TIPXWebPCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BA232701DD430D70097B1DE /* TIPXWebPCodec.m */; };
+		8B6FCB2A1EBD31D900B35B0C /* TIPImageFetchTransformer.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B8B72881EBC2B3A004E10BA /* TIPImageFetchTransformer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B725B631AB73A1000786F5E /* TIPImageFetchDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B725B611AB73A1000786F5E /* TIPImageFetchDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B750E841D985D3B006CD714 /* TIPTestURLProtocol.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BB118F91D834EC200E75CD9 /* TIPTestURLProtocol.m */; };
 		8B7695131D482A3A009091B5 /* interlace.png in Resources */ = {isa = PBXBuildFile; fileRef = 8B7695091D4824B9009091B5 /* interlace.png */; };
 		8B7695141D482A3A009091B5 /* no-interlace.png in Resources */ = {isa = PBXBuildFile; fileRef = 8B76950A1D4824B9009091B5 /* no-interlace.png */; };
 		8B894DD51D4FBA3D00FFB5F8 /* TIPImageTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B894DD31D4FBA3D00FFB5F8 /* TIPImageTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B894DD81D4FBD7900FFB5F8 /* TIPImageTypes.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B894DD71D4FBD7900FFB5F8 /* TIPImageTypes.m */; };
+		8B8B72891EBC2B3A004E10BA /* TIPImageFetchTransformer.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B8B72881EBC2B3A004E10BA /* TIPImageFetchTransformer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B9333AE1AAA25C000D2C5C7 /* TIPImageFetchOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B9333AC1AAA25C000D2C5C7 /* TIPImageFetchOperation.m */; };
 		8B9333B41AAA30EE00D2C5C7 /* TIPImageUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B96C0711AA930E500C44222 /* TIPImageUtils.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B9333B51AAA30EE00D2C5C7 /* TIPDefinitions.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B96C0731AA930E500C44222 /* TIPDefinitions.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -141,8 +150,8 @@
 		8BC2179B1DDF69DB0017B0DA /* TIPImagePipelineInspectionResult+Project.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BC2176F1DDF69DB0017B0DA /* TIPImagePipelineInspectionResult+Project.h */; };
 		8BC2179C1DDF69DB0017B0DA /* TIPImageRenderedCache.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BC217701DDF69DB0017B0DA /* TIPImageRenderedCache.h */; };
 		8BC2179D1DDF69DB0017B0DA /* TIPImageRenderedCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BC217711DDF69DB0017B0DA /* TIPImageRenderedCache.m */; };
-		8BC2179E1DDF69DB0017B0DA /* TIPImageStoreOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BC217721DDF69DB0017B0DA /* TIPImageStoreOperation.h */; };
-		8BC2179F1DDF69DB0017B0DA /* TIPImageStoreOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BC217731DDF69DB0017B0DA /* TIPImageStoreOperation.m */; };
+		8BC2179E1DDF69DB0017B0DA /* TIPImageStoreAndMoveOperations.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BC217721DDF69DB0017B0DA /* TIPImageStoreAndMoveOperations.h */; };
+		8BC2179F1DDF69DB0017B0DA /* TIPImageStoreAndMoveOperations.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BC217731DDF69DB0017B0DA /* TIPImageStoreAndMoveOperations.m */; };
 		8BC217A01DDF69DB0017B0DA /* TIPInspectableCache.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BC217741DDF69DB0017B0DA /* TIPInspectableCache.h */; };
 		8BC217A11DDF69DB0017B0DA /* TIPLRUCache.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BC217751DDF69DB0017B0DA /* TIPLRUCache.h */; };
 		8BC217A21DDF69DB0017B0DA /* TIPLRUCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BC217761DDF69DB0017B0DA /* TIPLRUCache.m */; };
@@ -152,6 +161,9 @@
 		8BC217A61DDF69DB0017B0DA /* TIPTiming.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BC2177A1DDF69DB0017B0DA /* TIPTiming.m */; };
 		8BC217A71DDF69DB0017B0DA /* TIPURLStringCoding.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BC2177B1DDF69DB0017B0DA /* TIPURLStringCoding.h */; };
 		8BC217A81DDF69DB0017B0DA /* TIPURLStringCoding.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BC2177C1DDF69DB0017B0DA /* TIPURLStringCoding.m */; };
+		8BCB820C1EE1B1E5006CF76D /* TIPSafeOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B1EE8911EE0D942007B2D76 /* TIPSafeOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		8BDB8F171F0319E000057B21 /* TwitterImagePipeline.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BFF176A1DF5B4AD005DE734 /* TwitterImagePipeline.framework */; };
+		8BDB8F181F0319E000057B21 /* TwitterImagePipeline.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8BFF176A1DF5B4AD005DE734 /* TwitterImagePipeline.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8BDF142D1B2F592000F46E71 /* TIPImagePipelineInspectionResult.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BDF142A1B2F592000F46E71 /* TIPImagePipelineInspectionResult.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8BDF142F1B2F592000F46E71 /* TIPImagePipelineInspectionResult.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BDF142B1B2F592000F46E71 /* TIPImagePipelineInspectionResult.m */; };
 		8BE31C881B9A1BF5009BC0B2 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BE31C871B9A1BF5009BC0B2 /* main.m */; };
@@ -265,6 +277,17 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8BDB8F191F0319E100057B21 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				8BDB8F181F0319E000057B21 /* TwitterImagePipeline.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8BFF17761DF5B4AD005DE734 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -295,6 +318,8 @@
 		8B1A49381D78D1370003F252 /* TIPTestsResources.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = TIPTestsResources.bundle; sourceTree = "<group>"; };
 		8B1DB3F11B34D63B00F16A70 /* TIPImageFetchMetrics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageFetchMetrics.h; sourceTree = "<group>"; };
 		8B1DB3F21B34D63B00F16A70 /* TIPImageFetchMetrics.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageFetchMetrics.m; sourceTree = "<group>"; };
+		8B1EE8911EE0D942007B2D76 /* TIPSafeOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPSafeOperation.h; sourceTree = "<group>"; };
+		8B1EE8921EE0D942007B2D76 /* TIPSafeOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPSafeOperation.m; sourceTree = "<group>"; };
 		8B2031D11D6E36FF00E9E88F /* TIPImageFetchDownload.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageFetchDownload.h; sourceTree = "<group>"; };
 		8B2031D21D6E36FF00E9E88F /* TIPImageFetchDownload.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageFetchDownload.m; sourceTree = "<group>"; };
 		8B228B531DD14D1E009E8F6F /* TIPImageCodecs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageCodecs.h; sourceTree = "<group>"; };
@@ -309,6 +334,7 @@
 		8B41E9E11BBDC31F00162AAD /* TIPGlobalConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPGlobalConfiguration.h; sourceTree = "<group>"; };
 		8B41E9E21BBDC31F00162AAD /* TIPGlobalConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPGlobalConfiguration.m; sourceTree = "<group>"; };
 		8B4F59931AEEE3CA0071AD95 /* TIPImagePipelineTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImagePipelineTests.m; sourceTree = "<group>"; };
+		8B4F99961ECA9C5200E3DE74 /* TIPImageViewTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageViewTests.m; sourceTree = "<group>"; };
 		8B545BFF1E5016120096B39B /* ZoomingTweetImageViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZoomingTweetImageViewController.h; sourceTree = "<group>"; };
 		8B545C001E5016120096B39B /* ZoomingTweetImageViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZoomingTweetImageViewController.m; sourceTree = "<group>"; };
 		8B545C021E501CE30096B39B /* TweetImageFetchRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TweetImageFetchRequest.h; sourceTree = "<group>"; };
@@ -330,6 +356,8 @@
 		8B6301A91E69B5E000C9A86A /* TwitterSearchViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwitterSearchViewController.swift; sourceTree = "<group>"; };
 		8B6968CF1BC6AC4400ADDAF5 /* TIPImageContainer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageContainer.h; sourceTree = "<group>"; };
 		8B6968D01BC6AC4400ADDAF5 /* TIPImageContainer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageContainer.m; sourceTree = "<group>"; };
+		8B6FCB241EBD16CC00B35B0C /* twitterfied.webp */ = {isa = PBXFileReference; lastKnownFileType = file; path = twitterfied.webp; sourceTree = "<group>"; };
+		8B6FCB261EBD184400B35B0C /* twitterfied.small.pjpg */ = {isa = PBXFileReference; lastKnownFileType = file; path = twitterfied.small.pjpg; sourceTree = "<group>"; };
 		8B725B611AB73A1000786F5E /* TIPImageFetchDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageFetchDelegate.h; sourceTree = "<group>"; };
 		8B7695091D4824B9009091B5 /* interlace.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = interlace.png; sourceTree = "<group>"; };
 		8B76950A1D4824B9009091B5 /* no-interlace.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "no-interlace.png"; sourceTree = "<group>"; };
@@ -338,6 +366,7 @@
 		8B8607F31D90415A00939554 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		8B894DD31D4FBA3D00FFB5F8 /* TIPImageTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageTypes.h; sourceTree = "<group>"; };
 		8B894DD71D4FBD7900FFB5F8 /* TIPImageTypes.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageTypes.m; sourceTree = "<group>"; };
+		8B8B72881EBC2B3A004E10BA /* TIPImageFetchTransformer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageFetchTransformer.h; sourceTree = "<group>"; };
 		8B9333AB1AAA25C000D2C5C7 /* TIPImageFetchOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageFetchOperation.h; sourceTree = "<group>"; };
 		8B9333AC1AAA25C000D2C5C7 /* TIPImageFetchOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageFetchOperation.m; sourceTree = "<group>"; };
 		8B9607AF1C63CF1800C99B71 /* TIPImageFetchDelegateTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageFetchDelegateTests.m; sourceTree = "<group>"; };
@@ -411,8 +440,8 @@
 		8BC2176F1DDF69DB0017B0DA /* TIPImagePipelineInspectionResult+Project.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "TIPImagePipelineInspectionResult+Project.h"; path = "Project/TIPImagePipelineInspectionResult+Project.h"; sourceTree = "<group>"; };
 		8BC217701DDF69DB0017B0DA /* TIPImageRenderedCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TIPImageRenderedCache.h; path = Project/TIPImageRenderedCache.h; sourceTree = "<group>"; };
 		8BC217711DDF69DB0017B0DA /* TIPImageRenderedCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TIPImageRenderedCache.m; path = Project/TIPImageRenderedCache.m; sourceTree = "<group>"; };
-		8BC217721DDF69DB0017B0DA /* TIPImageStoreOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TIPImageStoreOperation.h; path = Project/TIPImageStoreOperation.h; sourceTree = "<group>"; };
-		8BC217731DDF69DB0017B0DA /* TIPImageStoreOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TIPImageStoreOperation.m; path = Project/TIPImageStoreOperation.m; sourceTree = "<group>"; };
+		8BC217721DDF69DB0017B0DA /* TIPImageStoreAndMoveOperations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TIPImageStoreAndMoveOperations.h; path = Project/TIPImageStoreAndMoveOperations.h; sourceTree = "<group>"; };
+		8BC217731DDF69DB0017B0DA /* TIPImageStoreAndMoveOperations.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TIPImageStoreAndMoveOperations.m; path = Project/TIPImageStoreAndMoveOperations.m; sourceTree = "<group>"; };
 		8BC217741DDF69DB0017B0DA /* TIPInspectableCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TIPInspectableCache.h; path = Project/TIPInspectableCache.h; sourceTree = "<group>"; };
 		8BC217751DDF69DB0017B0DA /* TIPLRUCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TIPLRUCache.h; path = Project/TIPLRUCache.h; sourceTree = "<group>"; };
 		8BC217761DDF69DB0017B0DA /* TIPLRUCache.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TIPLRUCache.m; path = Project/TIPLRUCache.m; sourceTree = "<group>"; };
@@ -459,6 +488,7 @@
 			files = (
 				8B63019C1E69225100C9A86A /* TwitterImagePipeline.framework in Frameworks */,
 				8B63019B1E69224C00C9A86A /* UIKit.framework in Frameworks */,
+				8BDB8F171F0319E000057B21 /* TwitterImagePipeline.framework in Frameworks */,
 				8B63019D1E69226600C9A86A /* WebP.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -487,6 +517,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8B6FCB281EBD187200B35B0C /* WebP.framework in Frameworks */,
 				8BFF17711DF5B4AD005DE734 /* TwitterImagePipeline.framework in Frameworks */,
 				8BE31CB81B9A27DA009BC0B2 /* libz.dylib in Frameworks */,
 				8BE31CB91B9A27EB009BC0B2 /* SystemConfiguration.framework in Frameworks */,
@@ -586,8 +617,8 @@
 				8BC2176F1DDF69DB0017B0DA /* TIPImagePipelineInspectionResult+Project.h */,
 				8BC217701DDF69DB0017B0DA /* TIPImageRenderedCache.h */,
 				8BC217711DDF69DB0017B0DA /* TIPImageRenderedCache.m */,
-				8BC217721DDF69DB0017B0DA /* TIPImageStoreOperation.h */,
-				8BC217731DDF69DB0017B0DA /* TIPImageStoreOperation.m */,
+				8BC217721DDF69DB0017B0DA /* TIPImageStoreAndMoveOperations.h */,
+				8BC217731DDF69DB0017B0DA /* TIPImageStoreAndMoveOperations.m */,
 				8BC217741DDF69DB0017B0DA /* TIPInspectableCache.h */,
 				8BC217751DDF69DB0017B0DA /* TIPLRUCache.h */,
 				8BC217761DDF69DB0017B0DA /* TIPLRUCache.m */,
@@ -668,7 +699,9 @@
 				8B3B07981DFE565400174F40 /* twitterfied.png */,
 				8BAD1A241BBAFC44003395F3 /* twitterfied.RLCP.jp2 */,
 				8BAD1A251BBAFC44003395F3 /* twitterfied.RPCL.jp2 */,
+				8B6FCB261EBD184400B35B0C /* twitterfied.small.pjpg */,
 				8B3B079A1DFE56B800174F40 /* twitterfied.tiff */,
+				8B6FCB241EBD16CC00B35B0C /* twitterfied.webp */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -743,6 +776,7 @@
 				8BF17B5C1ADED888004F5CAA /* TIPImageFetchProgressiveLoadingPolicies.m */,
 				8BF17B661ADEE27D004F5CAA /* TIPImageFetchProgressiveLoadingPolicy+StaticClass.h */,
 				8B02CB1D1C51409900443AD3 /* TIPImageFetchRequest.h */,
+				8B8B72881EBC2B3A004E10BA /* TIPImageFetchTransformer.h */,
 				8B96C0751AA930E500C44222 /* TIPImagePipeline.h */,
 				8B96C0761AA930E500C44222 /* TIPImagePipeline.m */,
 				8BDF142A1B2F592000F46E71 /* TIPImagePipelineInspectionResult.h */,
@@ -758,6 +792,8 @@
 				8BB026931CC5987F003D75F9 /* TIPImageViewFetchHelper.m */,
 				8B5CFE321D381EBE00860D40 /* TIPLogger.h */,
 				8B5CFE381D381F7F00860D40 /* TIPProgressive.h */,
+				8B1EE8911EE0D942007B2D76 /* TIPSafeOperation.h */,
+				8B1EE8921EE0D942007B2D76 /* TIPSafeOperation.m */,
 				8BFBD34A1AA77DB2007A08DD /* TwitterImagePipeline.h */,
 				8B198F2B1D7FD34C00122D83 /* UIImage+TIPAdditions.h */,
 				8B198F2C1D7FD34C00122D83 /* UIImage+TIPAdditions.m */,
@@ -773,6 +809,7 @@
 				8B9607AF1C63CF1800C99B71 /* TIPImageFetchDelegateTests.m */,
 				8B4F59931AEEE3CA0071AD95 /* TIPImagePipelineTests.m */,
 				8B96C0941AA9311700C44222 /* TIPImageTest.m */,
+				8B4F99961ECA9C5200E3DE74 /* TIPImageViewTests.m */,
 				8B00D5B71CFFDF0800D1728D /* TIPProblematicImagesTest.m */,
 				8B56927C1D7329BB00E07D32 /* TIPTestImageFetchDownloadInternalWithStubbing.h */,
 				8B56927D1D7329BB00E07D32 /* TIPTestImageFetchDownloadInternalWithStubbing.m */,
@@ -842,7 +879,7 @@
 				8B9333B61AAA30EE00D2C5C7 /* TIPImageFetchOperation.h in Headers */,
 				8B5CFE3E1D3820CA00860D40 /* TIPError.h in Headers */,
 				8B02CB1F1C51409900443AD3 /* TIPImageFetchRequest.h in Headers */,
-				8BC2179E1DDF69DB0017B0DA /* TIPImageStoreOperation.h in Headers */,
+				8BC2179E1DDF69DB0017B0DA /* TIPImageStoreAndMoveOperations.h in Headers */,
 				8B02CB271C5142CB00443AD3 /* TIPImageStoreRequest.h in Headers */,
 				8BC2177D1DDF69DB0017B0DA /* NSData+TIPAdditions.h in Headers */,
 				B3B9EA0B1C3AFAA300B8A451 /* module.modulemap in Headers */,
@@ -851,10 +888,12 @@
 				8BB026941CC5987F003D75F9 /* TIPImageViewFetchHelper.h in Headers */,
 				8B5CFE3A1D381F7F00860D40 /* TIPProgressive.h in Headers */,
 				8B41E9E41BBDC31F00162AAD /* TIPGlobalConfiguration.h in Headers */,
+				8B1EE8931EE0D942007B2D76 /* TIPSafeOperation.h in Headers */,
 				8BF17B5E1ADED888004F5CAA /* TIPImageFetchProgressiveLoadingPolicies.h in Headers */,
 				8B9333B91AAA30EE00D2C5C7 /* TwitterImagePipeline.h in Headers */,
 				8BC217A11DDF69DB0017B0DA /* TIPLRUCache.h in Headers */,
 				8B36938B1DD3B7A900285774 /* TIPImageCodecCatalogue.h in Headers */,
+				8B8B72891EBC2B3A004E10BA /* TIPImageFetchTransformer.h in Headers */,
 				8B1DB3F41B34D63B00F16A70 /* TIPImageFetchMetrics.h in Headers */,
 				8B375B401ABB5A1000EAAC71 /* TIPImageView.h in Headers */,
 				8BC2178D1DDF69DB0017B0DA /* TIPImageDiskCache.h in Headers */,
@@ -891,8 +930,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				8BFF177E1DF5B5FE005DE734 /* TIPImageCodecCatalogue.h in Headers */,
+				8B6FCB2A1EBD31D900B35B0C /* TIPImageFetchTransformer.h in Headers */,
 				8BFF17861DF5B5FE005DE734 /* TIPImageFetchProgressiveLoadingPolicy+StaticClass.h in Headers */,
 				8BFF17801DF5B5FE005DE734 /* TIPImageContainer.h in Headers */,
+				8BCB820C1EE1B1E5006CF76D /* TIPSafeOperation.h in Headers */,
 				8BFF17901DF5B5FE005DE734 /* TIPProgressive.h in Headers */,
 				8BFF17811DF5B5FE005DE734 /* TIPImageFetchDelegate.h in Headers */,
 				8BFF178C1DF5B5FE005DE734 /* TIPImageUtils.h in Headers */,
@@ -928,6 +969,7 @@
 				8B63017C1E68F9B400C9A86A /* Sources */,
 				8B63017D1E68F9B400C9A86A /* Frameworks */,
 				8B63017E1E68F9B400C9A86A /* Resources */,
+				8BDB8F191F0319E100057B21 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1151,12 +1193,14 @@
 				8BE31CB31B9A276F009BC0B2 /* twitterfied.pjpg in Resources */,
 				8BE31CB11B9A276F009BC0B2 /* twitterfied.jp2 in Resources */,
 				8BAD1A261BBAFC44003395F3 /* twitterfied.RLCP.jp2 in Resources */,
+				8B6FCB251EBD16CC00B35B0C /* twitterfied.webp in Resources */,
 				8BE31C911B9A1BF5009BC0B2 /* Main.storyboard in Resources */,
 				8B7695141D482A3A009091B5 /* no-interlace.png in Resources */,
 				8B3B07991DFE565400174F40 /* twitterfied.png in Resources */,
 				8BE31CB21B9A276F009BC0B2 /* twitterfied.jpg in Resources */,
 				8BE31C961B9A1BF6009BC0B2 /* LaunchScreen.xib in Resources */,
 				8BE31C931B9A1BF6009BC0B2 /* Images.xcassets in Resources */,
+				8B6FCB271EBD184400B35B0C /* twitterfied.small.pjpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1201,6 +1245,7 @@
 			files = (
 				8BA975651D77E34D00601D70 /* TIPDownloadContextTest.m in Sources */,
 				8BA975681D77E34D00601D70 /* TIPImageTest.m in Sources */,
+				8B4F99971ECA9C5200E3DE74 /* TIPImageViewTests.m in Sources */,
 				8BA9756E1D77E34D00601D70 /* TIPUtilitiesTests.m in Sources */,
 				8BA975661D77E34D00601D70 /* TIPImageFetchDelegateTests.m in Sources */,
 				8BA9756B1D77E34D00601D70 /* TIPTestImageFetchDownloadInternalWithStubbing.m in Sources */,
@@ -1234,6 +1279,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8B6FCB291EBD18CB00B35B0C /* TIPXWebPCodec.m in Sources */,
 				8BE31C8E1B9A1BF5009BC0B2 /* ViewController.m in Sources */,
 				8BE31C8B1B9A1BF5009BC0B2 /* AppDelegate.m in Sources */,
 				8BE31C881B9A1BF5009BC0B2 /* main.m in Sources */,
@@ -1259,7 +1305,7 @@
 				8BC217A81DDF69DB0017B0DA /* TIPURLStringCoding.m in Sources */,
 				8B2031D41D6E36FF00E9E88F /* TIPImageFetchDownload.m in Sources */,
 				8BC2179D1DDF69DB0017B0DA /* TIPImageRenderedCache.m in Sources */,
-				8BC2179F1DDF69DB0017B0DA /* TIPImageStoreOperation.m in Sources */,
+				8BC2179F1DDF69DB0017B0DA /* TIPImageStoreAndMoveOperations.m in Sources */,
 				8BC217861DDF69DB0017B0DA /* TIP_ProjectCommon.m in Sources */,
 				8BC2178C1DDF69DB0017B0DA /* TIPImageCacheEntry.m in Sources */,
 				8B228B561DD14D1E009E8F6F /* TIPImageCodecs.m in Sources */,
@@ -1278,6 +1324,7 @@
 				8BC217901DDF69DB0017B0DA /* TIPImageDiskCacheTemporaryFile.m in Sources */,
 				8BC217A61DDF69DB0017B0DA /* TIPTiming.m in Sources */,
 				8BC217941DDF69DB0017B0DA /* TIPImageDownloadInternalContext.m in Sources */,
+				8B1EE8941EE0D942007B2D76 /* TIPSafeOperation.m in Sources */,
 				8BC217841DDF69DB0017B0DA /* TIP_Project.m in Sources */,
 				8BC217991DDF69DB0017B0DA /* TIPImageMemoryCache.m in Sources */,
 			);
@@ -1390,7 +1437,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				INFOPLIST_FILE = "TIP Swift Sample App/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.2;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twitter.TIP-Swift-Sample-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1418,7 +1465,7 @@
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				INFOPLIST_FILE = "TIP Swift Sample App/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.2;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twitter.TIP-Swift-Sample-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1564,6 +1611,10 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/TwitterImagePipelineTests",
+				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = ImageSpeedComparison/Info.plist;
@@ -1586,6 +1637,10 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_NS_ASSERTIONS = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/TwitterImagePipelineTests",
+				);
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = ImageSpeedComparison/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
@@ -1623,7 +1678,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2.3;
+				CURRENT_PROJECT_VERSION = 2.4;
 				DEAD_CODE_STRIPPING = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(CURRENT_PROJECT_VERSION)";
@@ -1636,6 +1691,7 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
@@ -1643,6 +1699,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_SHADOW = YES;
 				GCC_WARN_SIGN_COMPARE = YES;
+				GCC_WARN_STRICT_SELECTOR_MATCH = YES;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
@@ -1687,13 +1744,14 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 2.3;
+				CURRENT_PROJECT_VERSION = 2.4;
 				DEAD_CODE_STRIPPING = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				ENABLE_BITCODE = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
@@ -1701,6 +1759,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_SHADOW = YES;
 				GCC_WARN_SIGN_COMPARE = YES;
+				GCC_WARN_STRICT_SELECTOR_MATCH = YES;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;

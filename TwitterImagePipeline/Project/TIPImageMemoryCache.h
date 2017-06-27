@@ -8,12 +8,16 @@
 
 #import "TIPInspectableCache.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageMemoryCache : NSObject <TIPImageCache, TIPInspectableCache>
 
-- (nullable TIPImageMemoryCacheEntry *)imageEntryForIdentifier:(nonnull NSString *)identifier;
-- (void)updateImageEntry:(nonnull TIPImageCacheEntry *)entry forciblyReplaceExisting:(BOOL)force;
-- (void)touchImageWithIdentifier:(nonnull NSString *)identifier;
-- (void)clearImageWithIdentifier:(nonnull NSString *)identifier;
-- (void)clearAllImages:(void (^ __nullable)(void))completion;
+- (nullable TIPImageMemoryCacheEntry *)imageEntryForIdentifier:(NSString *)identifier;
+- (void)updateImageEntry:(TIPImageCacheEntry *)entry forciblyReplaceExisting:(BOOL)force;
+- (void)touchImageWithIdentifier:(NSString *)identifier;
+- (void)clearImageWithIdentifier:(NSString *)identifier;
+- (void)clearAllImages:(nullable void (^)(void))completion;
 
 @end
+
+NS_ASSUME_NONNULL_END

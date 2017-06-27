@@ -14,6 +14,8 @@
 #import "TIPImageUtils.h"
 #import "UIImage+TIPAdditions.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageContainer ()
 @property (nonatomic, readonly) NSUInteger loopCount;
 @end
@@ -67,12 +69,12 @@
     return (_animated) ? _image.images.count : 1;
 }
 
-- (NSArray *)frames
+- (nullable NSArray *)frames
 {
     return _image.images;
 }
 
-- (NSArray *)frameDurations
+- (nullable NSArray *)frameDurations
 {
     if (!_frameDurations && _animated) {
         const NSUInteger count = _image.images.count;
@@ -86,7 +88,7 @@
     return _frameDurations;
 }
 
-- (UIImage *)frameAtIndex:(NSUInteger)index
+- (nullable UIImage *)frameAtIndex:(NSUInteger)index
 {
     if (_animated) {
         if (index < _image.images.count) {
@@ -129,7 +131,7 @@
 
 @implementation TIPImageContainer (Convenience)
 
-+ (instancetype)imageContainerWithImageSource:(CGImageSourceRef)imageSource
++ (nullable instancetype)imageContainerWithImageSource:(CGImageSourceRef)imageSource
 {
     if (!imageSource) {
         return nil;
@@ -142,16 +144,16 @@
         CGImageRef cgImage = CGImageSourceCreateImageAtIndex(imageSource, 0, NULL);
         TIPDeferRelease(cgImage);
         UIImage *image = (cgImage) ? [UIImage imageWithCGImage:cgImage scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp] : nil;
-        return (image) ? [[[self class] alloc] initWithImage:image] : nil;
+        return (image) ? [(TIPImageContainer *)[[self class] alloc] initWithImage:image] : nil;
     }
 
     NSArray *durations;
     NSUInteger loopCount;
     UIImage *image = [UIImage tip_imageWithAnimatedImageSource:imageSource durations:&durations loopCount:&loopCount];
-    return [[[self class] alloc] initWithAnimatedImage:image loopCount:loopCount frameDurations:durations];
+    return [(TIPImageContainer *)[[self class] alloc] initWithAnimatedImage:image loopCount:loopCount frameDurations:durations];
 }
 
-+ (instancetype)imageContainerWithData:(NSData *)data codecCatalogue:(TIPImageCodecCatalogue *)catalogue
++ (nullable instancetype)imageContainerWithData:(NSData *)data codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
 {
     if (!catalogue) {
         catalogue = [TIPImageCodecCatalogue sharedInstance];
@@ -160,12 +162,12 @@
     return [catalogue decodeImageWithData:data imageType:NULL];
 }
 
-+ (instancetype)imageContainerWithFilePath:(NSString *)filePath codecCatalogue:(TIPImageCodecCatalogue *)catalogue
++ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
 {
     return [self imageContainerWithFileURL:[NSURL fileURLWithPath:filePath isDirectory:NO] codecCatalogue:catalogue];
 }
 
-+ (instancetype)imageContainerWithFileURL:(NSURL *)fileURL codecCatalogue:(TIPImageCodecCatalogue *)catalogue
++ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
 {
     if (!fileURL.isFileURL) {
         return nil;
@@ -189,7 +191,7 @@
     return [self.image tip_dimensions];
 }
 
-- (BOOL)saveToFilePath:(NSString *)path type:(NSString *)type codecCatalogue:(TIPImageCodecCatalogue *)catalogue options:(TIPImageEncodingOptions)options quality:(float)quality atomic:(BOOL)atomic error:(out NSError **)error
+- (BOOL)saveToFilePath:(NSString *)path type:(nullable NSString *)type codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue options:(TIPImageEncodingOptions)options quality:(float)quality atomic:(BOOL)atomic error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     if (!catalogue) {
         catalogue = [TIPImageCodecCatalogue sharedInstance];
@@ -202,7 +204,7 @@
     return [catalogue encodeImage:self toFilePath:path withImageType:type quality:quality options:options atomic:atomic error:error];
 }
 
-- (TIPImageContainer *)scaleToTargetDimensions:(CGSize)dimensions contentMode:(UIViewContentMode)contentMode
+- (nullable TIPImageContainer *)scaleToTargetDimensions:(CGSize)dimensions contentMode:(UIViewContentMode)contentMode
 {
     TIPAssert(self.image != nil);
     UIImage *image = [self.image tip_scaledImageWithTargetDimensions:dimensions contentMode:contentMode];
@@ -219,3 +221,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

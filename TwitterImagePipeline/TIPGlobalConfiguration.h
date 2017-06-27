@@ -8,6 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Default max bytes for rendered caches.
  Resolves to being the greater of `System RAM / 12` or `64 MBs`
@@ -35,10 +37,11 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllRenderedCachesDefault;
 FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
 
 //! block for providing the estimated bitrate using the given _domain_
-typedef int64_t(^TIPEstimatedBitrateProviderBlock)(NSString * __nonnull domain);
+typedef int64_t(^TIPEstimatedBitrateProviderBlock)(NSString *domain);
 
 @protocol TIPImagePipelineObserver;
 @protocol TIPImageFetchDownloadProvider;
+@protocol TIPImageFetchTransformer;
 @protocol TIPLogger;
 @protocol TIPProblemObserver;
 
@@ -206,6 +209,15 @@ typedef int64_t(^TIPEstimatedBitrateProviderBlock)(NSString * __nonnull domain);
  */
 @property (atomic) NSInteger maxConcurrentImagePipelineDownloadCount;
 
+#pragma mark Behavior
+
+/**
+ Provide a `TIPImageFetchTransformer` to support transforming the fetched images.
+ `TIPImageFetchRequest` instances can provide specific a _transformer_ too, which takes
+ precedence over this _transformer_.
+ */
+@property (nullable, atomic) id<TIPImageFetchTransformer> transformer;
+
 #pragma mark Observing
 
 /**
@@ -213,12 +225,12 @@ typedef int64_t(^TIPEstimatedBitrateProviderBlock)(NSString * __nonnull domain);
 
  Callbacks are not synchronized, that is the responsibility of the observer.
  */
-- (void)addImagePipelineObserver:(nonnull id<TIPImagePipelineObserver>)observer;
+- (void)addImagePipelineObserver:(id<TIPImagePipelineObserver>)observer;
 
 /**
  Remove a global observer.
  */
-- (void)removeImagePipelineObserver:(nonnull id<TIPImagePipelineObserver>)observer;
+- (void)removeImagePipelineObserver:(id<TIPImagePipelineObserver>)observer;
 
 #pragma mark Runtime Configuration
 
@@ -270,12 +282,12 @@ typedef int64_t(^TIPEstimatedBitrateProviderBlock)(NSString * __nonnull domain);
 /**
  Accessor to the shared instance
  */
-+ (nonnull instancetype)sharedInstance;
++ (instancetype)sharedInstance;
 
 /** `NS_UNAVAILABLE` */
-- (nonnull instancetype)init NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 /** `NS_UNAVAILABLE` */
-+ (nonnull instancetype)new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 @end
 
@@ -284,7 +296,7 @@ typedef int64_t(^TIPEstimatedBitrateProviderBlock)(NSString * __nonnull domain);
 @class TIPImagePipelineInspectionResult;
 
 //! The callback providing all the inspection results for every registered `TIPImagePipeline`
-typedef void(^TIPGlobalConfigurationInspectionCallback)(NSDictionary<NSString *, TIPImagePipelineInspectionResult*> * __nonnull results);
+typedef void(^TIPGlobalConfigurationInspectionCallback)(NSDictionary<NSString *, TIPImagePipelineInspectionResult*> *results);
 
 /**
  Category for inspecting all `TIPImagePipeline` instances.  See `TIPImagePipeline(Inspect)` also.
@@ -297,6 +309,8 @@ typedef void(^TIPGlobalConfigurationInspectionCallback)(NSDictionary<NSString *,
  @param callback A callback to be called with an `NSDictionary` of image pipeline identifers as keys
  and `TIPImagePipelineInspectionResult` objects as values.
  */
-- (void)inspect:(nonnull TIPGlobalConfigurationInspectionCallback)callback;
+- (void)inspect:(TIPGlobalConfigurationInspectionCallback)callback;
 
 @end
+
+NS_ASSUME_NONNULL_END

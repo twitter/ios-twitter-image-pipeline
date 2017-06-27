@@ -13,6 +13,8 @@
 
 #import "TIPLogger.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 #pragma mark - Binary
 
 FOUNDATION_EXTERN BOOL TIPIsExtension();
@@ -168,7 +170,7 @@ __strong tip_defer_block_t tip_macro_concat(tip_stack_defer_block_, __LINE__) __
 //          }
 //      }
 
-NS_INLINE void tip_dispatch_async_autoreleasing(dispatch_queue_t __nonnull queue, dispatch_block_t __nonnull block)
+NS_INLINE void tip_dispatch_async_autoreleasing(dispatch_queue_t queue, dispatch_block_t block)
 {
     dispatch_async(queue, ^{
         @autoreleasepool {
@@ -177,7 +179,7 @@ NS_INLINE void tip_dispatch_async_autoreleasing(dispatch_queue_t __nonnull queue
     });
 }
 
-NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t __nonnull queue, dispatch_block_t __nonnull block)
+NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t queue, dispatch_block_t block)
 {
     dispatch_sync(queue, ^{
         @autoreleasepool {
@@ -185,3 +187,5 @@ NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t __nonnull queue,
         }
     });
 }
+
+NS_ASSUME_NONNULL_END

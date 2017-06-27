@@ -11,6 +11,8 @@
 @protocol TIPLRUCacheDelegate;
 @protocol TIPLRUEntry;
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPLRUCache : NSObject <NSFastEnumeration>
 
 @property (nonatomic, weak, nullable) id<TIPLRUCacheDelegate> delegate;
@@ -19,17 +21,17 @@
 
 - (NSUInteger)numberOfEntries;
 
-- (nonnull instancetype)initWithEntries:(nullable NSArray<id<TIPLRUEntry>> *)arrayOfLRUEntries delegate:(nullable id<TIPLRUCacheDelegate>)delegate NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithEntries:(nullable NSArray<id<TIPLRUEntry>> *)arrayOfLRUEntries delegate:(nullable id<TIPLRUCacheDelegate>)delegate NS_DESIGNATED_INITIALIZER;
 
-- (nullable id<TIPLRUEntry>)entryWithIdentifier:(nonnull NSString *)identifier canMutate:(BOOL)moveToHead;
+- (nullable id<TIPLRUEntry>)entryWithIdentifier:(NSString *)identifier canMutate:(BOOL)moveToHead;
 
-- (nullable id<TIPLRUEntry>)entryWithIdentifier:(nonnull NSString *)identifier;
+- (nullable id<TIPLRUEntry>)entryWithIdentifier:(NSString *)identifier;
 
-- (nonnull NSArray<id<TIPLRUEntry>> *)allEntries;
+- (NSArray<id<TIPLRUEntry>> *)allEntries;
 
-- (void)addEntry:(nonnull id<TIPLRUEntry>)entry;
+- (void)addEntry:(id<TIPLRUEntry>)entry;
 
-- (void)appendEntry:(nonnull id<TIPLRUEntry>)entry;
+- (void)appendEntry:(id<TIPLRUEntry>)entry;
 
 - (void)removeEntry:(nullable id<TIPLRUEntry>)entry;
 
@@ -42,8 +44,8 @@
 @protocol TIPLRUCacheDelegate <NSObject>
 
 @optional
-- (void)tip_cache:(nonnull TIPLRUCache *)cache didEvictEntry:(nonnull id<TIPLRUEntry>)entry;
-- (BOOL)tip_cache:(nonnull TIPLRUCache *)cache canEvictEntry:(nonnull id<TIPLRUEntry>)entry;
+- (void)tip_cache:(TIPLRUCache *)cache didEvictEntry:(id<TIPLRUEntry>)entry;
+- (BOOL)tip_cache:(TIPLRUCache *)cache canEvictEntry:(id<TIPLRUEntry>)entry;
 
 @end
 
@@ -52,9 +54,11 @@
 
 @required
 
-- (nonnull NSString *)LRUEntryIdentifier;
+- (NSString *)LRUEntryIdentifier;
 - (BOOL)shouldAccessMoveLRUEntryToHead;
 @property (nonatomic, nullable) id<TIPLRUEntry> nextLRUEntry;
 @property (nonatomic, nullable, weak) id<TIPLRUEntry> previousLRUEntry;
 
 @end
+
+NS_ASSUME_NONNULL_END

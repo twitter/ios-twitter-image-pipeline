@@ -13,6 +13,8 @@
 #import "TIPImageCodecCatalogue.h"
 #import "TIPImageTypes.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 static const UInt8 kBMP1MagicNumbers[]      = { 0x42, 0x4D };
 static const UInt8 kJPEGMagicNumbers[]      = { 0xFF, 0xD8, 0xFF };
 static const UInt8 kGIFMagicNumbers[]       = { 0x47, 0x49, 0x46 };
@@ -81,7 +83,7 @@ static NSSet<NSString *> *TIPWriteableImageTypes()
 
 #pragma mark - Functions
 
-NSString *TIPDetectImageTypeViaMagicNumbers(NSData *dataObj)
+NSString * __nullable TIPDetectImageTypeViaMagicNumbers(NSData *dataObj)
 {
     CFDataRef data = (__bridge CFDataRef)dataObj;
     const CFIndex length = (data) ? CFDataGetLength(data) : 0;
@@ -110,7 +112,7 @@ NSString *TIPDetectImageTypeViaMagicNumbers(NSData *dataObj)
     return nil;
 }
 
-static BOOL TIPImageTypeHasProgressiveVariant(NSString *type)
+static BOOL TIPImageTypeHasProgressiveVariant(NSString * __nullable type)
 {
     const BOOL hasProgressiveVariant = [type isEqualToString:TIPImageTypeJPEG]
                                     || [type isEqualToString:TIPImageTypeJPEG2000]
@@ -118,7 +120,7 @@ static BOOL TIPImageTypeHasProgressiveVariant(NSString *type)
     return hasProgressiveVariant;
 }
 
-BOOL TIPImageTypeSupportsLossyQuality(NSString *type)
+BOOL TIPImageTypeSupportsLossyQuality(NSString * __nullable type)
 {
     const BOOL hasLossy =  [type isEqualToString:TIPImageTypeJPEG]
                         || [type isEqualToString:TIPImageTypeJPEG2000];
@@ -129,7 +131,7 @@ BOOL TIPImageTypeSupportsLossyQuality(NSString *type)
     return hasLossy;
 }
 
-NSString *TIPImageTypeToUTType(NSString *type)
+NSString * __nullable TIPImageTypeToUTType(NSString * __nullable type)
 {
     TIPWorkAroundCoreGraphicsUTTypeLoadBug();
 
@@ -139,7 +141,7 @@ NSString *TIPImageTypeToUTType(NSString *type)
     return nil;
 }
 
-NSString *TIPImageTypeFromUTType(NSString *utType)
+NSString * __nullable TIPImageTypeFromUTType(NSString * __nullable utType)
 {
     CFStringRef imageType = (__bridge CFStringRef)utType;
 
@@ -174,12 +176,12 @@ NSString *TIPImageTypeFromUTType(NSString *utType)
     return nil;
 }
 
-BOOL TIPImageTypeCanReadWithImageIO(NSString *imageType)
+BOOL TIPImageTypeCanReadWithImageIO(NSString * __nullable imageType)
 {
     return (imageType) ? [TIPReadableImageTypes() containsObject:imageType] : NO;
 }
 
-BOOL TIPImageTypeCanWriteWithImageIO(NSString *imageType)
+BOOL TIPImageTypeCanWriteWithImageIO(NSString * __nullable imageType)
 {
     return (imageType) ? [TIPWriteableImageTypes() containsObject:imageType] : NO;
 }
@@ -202,7 +204,7 @@ TIPRecommendedImageTypeOptions TIPRecommendedImageTypeOptionsFromEncodingOptions
 
 #pragma mark Debug Stuff
 
-NSString *TIPDetectImageType(NSData *data, TIPImageEncodingOptions *optionsOut, NSUInteger *animationFrameCountOut, BOOL hasCompleteImageData)
+NSString * __nullable TIPDetectImageType(NSData *data, TIPImageEncodingOptions * __nullable optionsOut, NSUInteger * __nullable animationFrameCountOut, BOOL hasCompleteImageData)
 {
     NSString *type = nil;
 
@@ -331,3 +333,5 @@ NSUInteger TIPImageDetectProgressiveScanCount(NSData *data)
     }
     return count;
 }
+
+NS_ASSUME_NONNULL_END

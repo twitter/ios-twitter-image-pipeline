@@ -8,6 +8,10 @@
 
 #import <Foundation/Foundation.h>
 
+@class TIPLRUCache;
+
+NS_ASSUME_NONNULL_BEGIN
+
 typedef NS_ENUM(NSInteger, TIPImageCacheType)
 {
     TIPImageCacheTypeRendered,
@@ -15,12 +19,12 @@ typedef NS_ENUM(NSInteger, TIPImageCacheType)
     TIPImageCacheTypeDisk,
 };
 
-@class TIPLRUCache;
-
 #pragma mark - TIPImageCache
 
 @protocol TIPImageCache <NSObject>
 @property (nonatomic, readonly) TIPImageCacheType cacheType;
-@property (nonatomic, readonly, nonnull) TIPLRUCache *manifest;
+@property (nonatomic, readonly) TIPLRUCache *manifest;
 @property (nonatomic, readonly) NSUInteger totalCost; // not thread safe!! Be careful...should only be used for debugging/testing
 @end
+
+NS_ASSUME_NONNULL_END

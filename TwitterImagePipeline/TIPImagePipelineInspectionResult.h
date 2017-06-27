@@ -13,25 +13,27 @@
 @class TIPImagePipeline;
 @protocol TIPImagePipelineInspectionResultEntry;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Results for the inspection of a `TIPImagePipeline`
  */
 @interface TIPImagePipelineInspectionResult : NSObject
 
 /** The inspected `TIPImagePipeline` */
-@property (nonatomic, readonly, nonnull) TIPImagePipeline *imagePipeline;
+@property (nonatomic, readonly) TIPImagePipeline *imagePipeline;
 
 /** The rendered cache entries that are complete */
-@property (nonatomic, readonly, nonnull) NSArray<id<TIPImagePipelineInspectionResultEntry>> *completeRenderedEntries;
+@property (nonatomic, readonly) NSArray<id<TIPImagePipelineInspectionResultEntry>> *completeRenderedEntries;
 /** The memory cache entries that are complete */
-@property (nonatomic, readonly, nonnull) NSArray<id<TIPImagePipelineInspectionResultEntry>> *completeMemoryEntries;
+@property (nonatomic, readonly) NSArray<id<TIPImagePipelineInspectionResultEntry>> *completeMemoryEntries;
 /** The disk cache entries that are complete */
-@property (nonatomic, readonly, nonnull) NSArray<id<TIPImagePipelineInspectionResultEntry>> *completeDiskEntries;
+@property (nonatomic, readonly) NSArray<id<TIPImagePipelineInspectionResultEntry>> *completeDiskEntries;
 
 /** The memory cache entries that are partial (incomplete) */
-@property (nonatomic, readonly, nonnull) NSArray<id<TIPImagePipelineInspectionResultEntry>> *partialMemoryEntries;
+@property (nonatomic, readonly) NSArray<id<TIPImagePipelineInspectionResultEntry>> *partialMemoryEntries;
 /** The disk cache entries that are partial (incomplete) */
-@property (nonatomic, readonly, nonnull) NSArray<id<TIPImagePipelineInspectionResultEntry>> *partialDiskEntries;
+@property (nonatomic, readonly) NSArray<id<TIPImagePipelineInspectionResultEntry>> *partialDiskEntries;
 
 /** number of bytes used in memory caches */
 @property (nonatomic, readonly) unsigned long long inMemoryBytesUsed;
@@ -39,9 +41,9 @@
 @property (nonatomic, readonly) unsigned long long onDiskBytesUsed;
 
 /** `NS_UNAVAILABLE` */
-- (nonnull instancetype)init NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 /** `NS_UNAVAILABLE` */
-+ (nonnull instancetype)new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 @end
 
@@ -67,3 +69,5 @@
 @property (nonatomic, readonly, nullable) UIImage *image;
 
 @end
+
+NS_ASSUME_NONNULL_END

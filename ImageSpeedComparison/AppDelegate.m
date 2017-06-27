@@ -7,7 +7,9 @@
 //
 
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
+
 #import "AppDelegate.h"
+#import "TIPXWebPCodec.h"
 
 @interface AppDelegate ()
 @end
@@ -20,6 +22,7 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     [TIPGlobalConfiguration sharedInstance].logger = self;
+    [TIPImageCodecCatalogue sharedInstance][TIPXImageTypeWebP] = [[TIPXWebPCodec alloc] init];
     return YES;
 }
 

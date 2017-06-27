@@ -10,12 +10,14 @@
 #import "TIPError.h"
 #import "TIPImageCodecs.h"
 
-TIPImageContainer *TIPDecodeImageFromData(id<TIPImageCodec> codec, NSData *imageData) __attribute__((overloadable))
+NS_ASSUME_NONNULL_BEGIN
+
+TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec, NSData *imageData) __attribute__((overloadable))
 {
     return TIPDecodeImageFromData(codec, imageData, nil);
 }
 
-TIPImageContainer *TIPDecodeImageFromData(id<TIPImageCodec> codec, NSData *imageData, NSString *earlyGuessImageType) __attribute__((overloadable))
+TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec, NSData *imageData, NSString * __nullable earlyGuessImageType) __attribute__((overloadable))
 {
     TIPImageContainer *container = nil;
     id<TIPImageDecoder> decoder = codec.tip_decoder;
@@ -33,7 +35,7 @@ TIPImageContainer *TIPDecodeImageFromData(id<TIPImageCodec> codec, NSData *image
     return container;
 }
 
-BOOL TIPEncodeImageToFile(id<TIPImageCodec> codec, TIPImageContainer *imageContainer, NSString *filePath, TIPImageEncodingOptions options, float quality, BOOL atomic, NSError **error)
+BOOL TIPEncodeImageToFile(id<TIPImageCodec> codec, TIPImageContainer *imageContainer, NSString *filePath, TIPImageEncodingOptions options, float quality, BOOL atomic, NSError * __autoreleasing __nullable * __nullable error)
 {
     BOOL success = NO;
     id<TIPImageEncoder> encoder = codec.tip_encoder;
@@ -61,3 +63,5 @@ BOOL TIPEncodeImageToFile(id<TIPImageCodec> codec, TIPImageContainer *imageConta
 
     return success;
 }
+
+NS_ASSUME_NONNULL_END

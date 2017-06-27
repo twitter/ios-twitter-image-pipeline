@@ -10,11 +10,15 @@
 
 @class TIPImagePipelineInspectionResult;
 
+NS_ASSUME_NONNULL_BEGIN
+
 typedef void(^TIPInspectableCacheCallback)(NSArray<TIPImagePipelineInspectionResult *> * __nullable completedEntries, NSArray<TIPImagePipelineInspectionResult *> * __nullable partialEntries);
 
 @protocol TIPInspectableCache <NSObject>
 
 @required
-- (void)inspect:(nonnull TIPInspectableCacheCallback)callback;
+- (void)inspect:(TIPInspectableCacheCallback)callback;
 
 @end
+
+NS_ASSUME_NONNULL_END

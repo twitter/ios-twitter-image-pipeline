@@ -17,18 +17,20 @@
 #import "TIPLRUCache.h"
 #import "UIImage+TIPAdditions.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageRenderedEntriesCollection : NSObject <TIPLRUEntry>
 
-@property (nonatomic, readonly, copy, nonnull) NSString *identifier;
+@property (nonatomic, readonly, copy) NSString *identifier;
 
-- (nonnull instancetype)initWithIdentifier:(nonnull NSString *)identifier;
-- (nonnull instancetype)init NS_UNAVAILABLE;
-+ (nonnull instancetype)new NS_UNAVAILABLE;
+- (instancetype)initWithIdentifier:(NSString *)identifier;
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 - (NSUInteger)collectionCost;
-- (void)addImageEntry:(nonnull TIPImageCacheEntry *)entry;
+- (void)addImageEntry:(TIPImageCacheEntry *)entry;
 - (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)size contentMode:(UIViewContentMode)mode;
-- (nullable NSArray *)allEntries;
+- (NSArray *)allEntries;
 
 #pragma mark TIPLRUEntry
 
@@ -92,7 +94,7 @@
     TIP_UPDATE_BYTES([TIPGlobalConfiguration sharedInstance].internalTotalBytesForAllRenderedCaches, bytesAdded, bytesRemoved, @"All Rendered Caches Size");
 }
 
-- (void)clearAllImages:(void (^)(void))completion
+- (void)clearAllImages:(nullable void (^)(void))completion
 {
     if (![NSThread mainThread]) {
         [self performSelectorOnMainThread:_cmd withObject:completion waitUntilDone:NO];
@@ -120,7 +122,7 @@
     }
 }
 
-- (TIPImageCacheEntry *)imageEntryWithIdentifier:(NSString *)identifier targetDimensions:(CGSize)size targetContentMode:(UIViewContentMode)mode
+- (nullable TIPImageCacheEntry *)imageEntryWithIdentifier:(NSString *)identifier targetDimensions:(CGSize)size targetContentMode:(UIViewContentMode)mode
 {
     TIPAssert(identifier != nil);
     if (identifier != nil && [NSThread isMainThread]) {
@@ -213,7 +215,7 @@
 
 #pragma mark Delegate
 
-- (void)tip_cache:(nonnull TIPLRUCache *)manifest didEvictEntry:(nonnull TIPImageRenderedEntriesCollection *)entry
+- (void)tip_cache:(TIPLRUCache *)manifest didEvictEntry:(TIPImageRenderedEntriesCollection *)entry
 {
     [TIPGlobalConfiguration sharedInstance].internalTotalCountForAllRenderedCaches -= 1;
     [self _tip_addByteCount:0 removeByteCount:entry.collectionCost];
@@ -291,7 +293,7 @@
     }
 }
 
-- (TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)dimensions contentMode:(UIViewContentMode)mode
+- (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)dimensions contentMode:(UIViewContentMode)mode
 {
     if (!TIPSizeGreaterThanZero(dimensions) || mode >= UIViewContentModeRedraw) {
         return nil;
@@ -335,7 +337,7 @@
     return cost;
 }
 
-- (nonnull NSString *)LRUEntryIdentifier
+- (NSString *)LRUEntryIdentifier
 {
     return self.identifier;
 }
@@ -346,3 +348,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

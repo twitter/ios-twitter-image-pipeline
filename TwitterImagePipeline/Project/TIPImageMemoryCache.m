@@ -16,12 +16,14 @@
 #import "TIPImagePipelineInspectionResult+Project.h"
 #import "TIPLRUCache.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageMemoryCache () <TIPLRUCacheDelegate>
 @property (atomic) SInt64 atomicTotalCost;
-- (BOOL)_tip_memoryCache_updatePartialImage:(nonnull TIPImageMemoryCacheEntry *)entry partialImage:(nonnull TIPPartialImage *)partialImage context:(nonnull TIPPartialImageEntryContext *)context;
-- (BOOL)_tip_memoryCache_updateCompleteImage:(nonnull TIPImageMemoryCacheEntry *)entry completeImage:(nonnull TIPImageContainer *)image context:(nonnull TIPCompleteImageEntryContext *)context;
-- (void)_tip_memoryCache_didEvictEntry:(nonnull TIPImageMemoryCacheEntry *)entry;
-- (void)_tip_memoryCache_inspect:(nonnull TIPInspectableCacheCallback)callback;
+- (BOOL)_tip_memoryCache_updatePartialImage:(TIPImageMemoryCacheEntry *)entry partialImage:(TIPPartialImage *)partialImage context:(TIPPartialImageEntryContext *)context;
+- (BOOL)_tip_memoryCache_updateCompleteImage:(TIPImageMemoryCacheEntry *)entry completeImage:(TIPImageContainer *)image context:(TIPCompleteImageEntryContext *)context;
+- (void)_tip_memoryCache_didEvictEntry:(TIPImageMemoryCacheEntry *)entry;
+- (void)_tip_memoryCache_inspect:(TIPInspectableCacheCallback)callback;
 - (void)_tip_memoryCache_addByteCount:(UInt64)bytesAdded removeByteCount:(UInt64)bytesRemoved;
 @end
 
@@ -72,7 +74,7 @@
     [self clearAllImages:NULL];
 }
 
-- (TIPImageMemoryCacheEntry *)imageEntryForIdentifier:(NSString *)identifier
+- (nullable TIPImageMemoryCacheEntry *)imageEntryForIdentifier:(NSString *)identifier
 {
     TIPAssert(identifier != nil);
     if (!identifier) {
@@ -239,7 +241,7 @@
     });
 }
 
-- (void)clearAllImages:(void (^)(void))completion
+- (void)clearAllImages:(nullable void (^)(void))completion
 {
     tip_dispatch_async_autoreleasing(_globalConfig.queueForMemoryCaches, ^{
         const SInt16 totalCount = (SInt16)self->_manifest.numberOfEntries;
@@ -398,3 +400,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

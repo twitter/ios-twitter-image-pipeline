@@ -9,9 +9,11 @@
 #import <objc/runtime.h>
 #import "NSData+TIPAdditions.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @implementation NSData (TIPAdditions)
 
-- (nonnull NSData *)tip_safeSubdataNoCopyWithRange:(NSRange)range
+- (NSData *)tip_safeSubdataNoCopyWithRange:(NSRange)range
 {
     if (range.location == 0 && range.length == self.length) {
         return self;
@@ -27,3 +29,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

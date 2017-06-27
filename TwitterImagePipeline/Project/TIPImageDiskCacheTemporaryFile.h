@@ -12,22 +12,26 @@
 
 @class TIPImageDiskCache;
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageDiskCacheTemporaryFile : NSObject
 
-@property (nonatomic, readonly, copy, nonnull) NSString *imageIdentifier;
+@property (nonatomic, readonly, copy) NSString *imageIdentifier;
 
 - (NSUInteger)appendData:(nullable NSData *)data;
-- (void)finalizeWithContext:(nonnull TIPImageCacheEntryContext *)context;
+- (void)finalizeWithContext:(TIPImageCacheEntryContext *)context;
 
-+ (nonnull instancetype)new NS_UNAVAILABLE;
-- (nonnull instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 
 @end
 
 #pragma mark - Private
 
 @interface TIPImageDiskCacheTemporaryFile (DiskCache)
-@property (nonatomic, readonly, copy, nonnull) NSString *temporaryPath;
-@property (nonatomic, readonly, copy, nonnull) NSString *finalPath;
-- (nonnull instancetype)initWithIdentifier:(nonnull NSString *)identifier temporaryPath:(nonnull NSString *)tempPath finalPath:(nonnull NSString *)finalPath diskCache:(nullable TIPImageDiskCache *)diskCache;
+@property (nonatomic, readonly, copy) NSString *temporaryPath;
+@property (nonatomic, readonly, copy) NSString *finalPath;
+- (instancetype)initWithIdentifier:(NSString *)identifier temporaryPath:(NSString *)tempPath finalPath:(NSString *)finalPath diskCache:(nullable TIPImageDiskCache *)diskCache;
 @end
+
+NS_ASSUME_NONNULL_END

@@ -2,13 +2,41 @@
 
 ## Info
 
-**Document version:** 2.3.0
+**Document version:** 2.4.4
 
-**Last updated:** 03/24/2017
+**Last updated:** 05/29/2017
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.4.4 - protosphere
+
+- Fix WebP Encoder (channels could be mixed up)
+
+### 2.4.3
+
+- Update WebP codec to v0.6.0
+
+### 2.4.2
+
+- Add support for changing a cached image's identifier
+
+### 2.4.1 - Brandon Carpenter
+
+- Add category to `UIImageView` for setting a `TIPImageViewFetchHelper`
+  - offers convenience of __TIP__ work encapsulated in `TIPImageViewFetchHelper` without needing to refactor onto `TIPImageView`
+
+### 2.4.0
+
+- Add image transform support to __TIP__
+- A `TIPImageFetchTransform` can be set globally or on a specific request
+- Clean up some nullability notation
+- Update ImageSpeedComparison sample app
+    - add WebP
+    - add more bitrates
+    - add optional blur transform (for progress)
+    - add smaller PJPEG
 
 ### 2.3.0
 

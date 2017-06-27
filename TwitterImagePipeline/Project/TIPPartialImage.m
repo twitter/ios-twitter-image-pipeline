@@ -10,6 +10,8 @@
 #import "TIPImageCodecCatalogue.h"
 #import "TIPPartialImage.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPPartialImageCodecDetector : NSObject
 @property (nullable, nonatomic, readonly) NSMutableData *codecDetectionBuffer;
 @property (nullable, nonatomic, readonly) id<TIPImageCodec> detectedCodec;
@@ -79,7 +81,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     return _progressive;
 }
 
-- (NSData *)data
+- (nullable NSData *)data
 {
     __block NSData *data = nil;
     dispatch_sync(_renderQueue, ^{
@@ -113,7 +115,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     return progress;
 }
 
-- (TIPImageDecoderAppendResult)appendData:(NSData *)data final:(BOOL)final
+- (TIPImageDecoderAppendResult)appendData:(nullable NSData *)data final:(BOOL)final
 {
     __block TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
 
@@ -226,7 +228,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     }
 }
 
-- (TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode decoded:(BOOL)decode
+- (nullable TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode decoded:(BOOL)decode
 {
     __block TIPImageContainer *image = nil;
 
@@ -356,3 +358,5 @@ static const float kUnfinishedImageProgressCap = 0.999f;
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

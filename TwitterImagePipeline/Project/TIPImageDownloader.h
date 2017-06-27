@@ -24,19 +24,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 FOUNDATION_EXTERN NSString * const TIPImageDownloaderCancelSource;
 
-NS_ASSUME_NONNULL_END
-
 typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedBytes, NSString * __nullable lastModified);
 
 @interface TIPImageDownloader : NSObject
 
-+ (nonnull instancetype)sharedInstance;
-- (nonnull instancetype)init NS_UNAVAILABLE;
-+ (nonnull instancetype)new NS_UNAVAILABLE;
++ (instancetype)sharedInstance;
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
-- (nonnull id<TIPImageDownloadContext>)fetchImageWithDownloadDelegate:(nonnull id<TIPImageDownloadDelegate>)delegate;
-- (void)removeDelegate:(nonnull id<TIPImageDownloadDelegate>)delegate forContext:(nonnull id<TIPImageDownloadContext>)context;
-- (void)updatePriorityOfContext:(nonnull id<TIPImageDownloadContext>)context;
+- (id<TIPImageDownloadContext>)fetchImageWithDownloadDelegate:(id<TIPImageDownloadDelegate>)delegate;
+- (void)removeDelegate:(id<TIPImageDownloadDelegate>)delegate forContext:(id<TIPImageDownloadContext>)context;
+- (void)updatePriorityOfContext:(id<TIPImageDownloadContext>)context;
 
 @end
 
@@ -47,9 +45,9 @@ typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedByt
 
 @required
 
-// Image identity
-- (nonnull NSURL *)imageDownloadURL;
-- (nonnull NSString *)imageDownloadIdentifier;
+// Image identity - either returning `nil` is an invalid request
+- (nullable NSURL *)imageDownloadURL;
+- (nullable NSString *)imageDownloadIdentifier;
 
 // HTTP Request info
 - (nullable NSDictionary<NSString *, NSString *> *)imageDownloadHeaders;
@@ -75,26 +73,26 @@ typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedByt
 
 // Execution
 
-- (nonnull id<TIPImageDownloadRequest>)imageDownloadRequest;
+- (id<TIPImageDownloadRequest>)imageDownloadRequest;
 
 - (nullable dispatch_queue_t)imageDownloadDelegateQueue;
 
 - (nullable TIPImagePipeline *)imagePipeline;
 
-- (nonnull TIPImageDiskCacheTemporaryFile *)regenerateImageDownloadTemporaryFileForImageDownload:(nonnull id<TIPImageDownloadContext>)context;
+- (TIPImageDiskCacheTemporaryFile *)regenerateImageDownloadTemporaryFileForImageDownload:(id<TIPImageDownloadContext>)context;
 
 // Events
 
-- (void)imageDownloadDidStart:(nonnull id<TIPImageDownloadContext>)context;
+- (void)imageDownloadDidStart:(id<TIPImageDownloadContext>)context;
 
-- (void)imageDownload:(nonnull id<TIPImageDownloadContext>)context didResetFromPartialImage:(nonnull TIPPartialImage *)oldPartialImage;
+- (void)imageDownload:(id<TIPImageDownloadContext>)context didResetFromPartialImage:(TIPPartialImage *)oldPartialImage;
 
-- (void)imageDownload:(nonnull id<TIPImageDownloadContext>)op
+- (void)imageDownload:(id<TIPImageDownloadContext>)op
        didAppendBytes:(NSUInteger)byteCount
-       toPartialImage:(nonnull TIPPartialImage *)partialImage
+       toPartialImage:(TIPPartialImage *)partialImage
                result:(TIPImageDecoderAppendResult)result;
 
-- (void)imageDownload:(nonnull id<TIPImageDownloadContext>)op
+- (void)imageDownload:(id<TIPImageDownloadContext>)op
 didCompleteWithPartialImage:(nullable TIPPartialImage *)partialImage
          lastModified:(nullable NSString *)lastModified
              byteSize:(NSUInteger)bytes
@@ -104,3 +102,5 @@ didCompleteWithPartialImage:(nullable TIPPartialImage *)partialImage
                 error:(nullable NSError *)error;
 
 @end
+
+NS_ASSUME_NONNULL_END

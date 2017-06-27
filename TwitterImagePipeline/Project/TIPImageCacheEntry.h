@@ -28,6 +28,8 @@
 @class TIPImageMemoryCacheEntry;
 @class TIPImageDiskCacheEntry;
 
+NS_ASSUME_NONNULL_BEGIN
+
 #pragma mark - Context Declarations
 
 // Abstract base class
@@ -116,3 +118,5 @@
 @property (nonatomic) NSUInteger partialFileSize;
 
 @end
+
+NS_ASSUME_NONNULL_END

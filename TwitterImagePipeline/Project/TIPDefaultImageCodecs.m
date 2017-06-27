@@ -17,6 +17,8 @@
 #import "TIPImageContainer.h"
 #import "UIImage+TIPAdditions.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 #define kJPEG_MARKER_SPECIAL_BYTE   (0xFF)
 #define kJPEG_MARKER_START_FRAME    (0xDA)
 
@@ -40,7 +42,7 @@
 + (instancetype)new NS_UNAVAILABLE;
 
 - (TIPImageDecoderAppendResult)appendData:(NSData *)data;
-- (TIPImageContainer *)renderImage:(TIPImageDecoderRenderMode)mode;
+- (nullable TIPImageContainer *)renderImage:(TIPImageDecoderRenderMode)mode;
 - (TIPImageDecoderAppendResult)finalizeDecoding;
 
 @end
@@ -68,7 +70,7 @@
 
 @implementation TIPBasicCGImageSourceCodec
 
-+ (instancetype)codecWithImageType:(NSString *)imageType
++ (nullable instancetype)codecWithImageType:(NSString *)imageType
 {
     BOOL animated = NO;
     id<TIPImageDecoder> decoder = nil;
@@ -98,7 +100,7 @@
     return (decoder) ? [[TIPBasicCGImageSourceCodec alloc] initWithDecoder:decoder encoder:encoder animated:animated] : nil;
 }
 
-- (instancetype)initWithDecoder:(id<TIPImageDecoder>)decoder encoder:(id<TIPImageEncoder>)encoder animated:(BOOL)animated
+- (instancetype)initWithDecoder:(id<TIPImageDecoder>)decoder encoder:(nullable id<TIPImageEncoder>)encoder animated:(BOOL)animated
 {
     if (self = [super init]) {
         _tip_decoder = decoder;
@@ -120,7 +122,7 @@
     return self;
 }
 
-- (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data earlyGuessImageType:(NSString *)imageType
+- (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data earlyGuessImageType:(nullable NSString *)imageType
 {
     if (!imageType) {
         imageType = TIPDetectImageType(data, NULL, NULL, NO);
@@ -134,7 +136,7 @@
     return TIPImageDecoderDetectionResultNoMatch;
 }
 
-- (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer
+- (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
 {
     return [[TIPCGImageSourceDecoderContext alloc] initWithUTType:_UTType expectedDataLength:expectedDataLength buffer:buffer];
 }
@@ -144,7 +146,7 @@
     return [(TIPCGImageSourceDecoderContext *)context appendData:data];
 }
 
-- (TIPImageContainer *)tip_renderImage:(id<TIPImageDecoderContext>)context mode:(TIPImageDecoderRenderMode)mode
+- (nullable TIPImageContainer *)tip_renderImage:(id<TIPImageDecoderContext>)context mode:(TIPImageDecoderRenderMode)mode
 {
     return [(TIPCGImageSourceDecoderContext *)context renderImage:mode];
 }
@@ -159,7 +161,7 @@
     return NO;
 }
 
-- (TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData
+- (nullable TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData
 {
     CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)imageData, NULL);
     TIPDeferRelease(imageSource);
@@ -179,7 +181,7 @@
     return [self initWithUTType:(NSString *)kUTTypeJPEG];
 }
 
-- (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer
+- (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
 {
     return [[TIPJPEGCGImageSourceDecoderContext alloc] initWithUTType:self.UTType expectedDataLength:expectedDataLength buffer:buffer supportsProgressiveLoading:[self tip_supportsProgressiveDecoding]];
 }
@@ -193,7 +195,7 @@
 
 @implementation TIPAnimatedCGImageSourceDecoder
 
-- (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer
+- (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
 {
     return [[TIPCGImageSourceDecoderContext alloc] initWithUTType:self.UTType expectedDataLength:expectedDataLength buffer:buffer potentiallyAnimated:YES];
 }
@@ -210,10 +212,10 @@
     return self;
 }
 
-- (NSData *)tip_writeDataWithImage:(TIPImageContainer *)image
-                   encodingOptions:(TIPImageEncodingOptions)encodingOptions
-                  suggestedQuality:(float)quality
-                             error:(out NSError **)error
+- (nullable NSData *)tip_writeDataWithImage:(TIPImageContainer *)image
+                            encodingOptions:(TIPImageEncodingOptions)encodingOptions
+                           suggestedQuality:(float)quality
+                                      error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     return [image.image tip_writeToDataWithType:TIPImageTypeFromUTType(_UTType) encodingOptions:encodingOptions quality:quality animationLoopCount:image.loopCount animationFrameDurations:image.frameDurations error:error];
 }
@@ -223,7 +225,7 @@
         encodingOptions:(TIPImageEncodingOptions)encodingOptions
        suggestedQuality:(float)quality
              atomically:(BOOL)atomic
-                  error:(out NSError **)error
+                  error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     return [image.image tip_writeToFile:filePath type:TIPImageTypeFromUTType(_UTType) encodingOptions:encodingOptions quality:quality animationLoopCount:image.loopCount animationFrameDurations:image.frameDurations atomically:atomic error:error];
 }
@@ -302,7 +304,7 @@
     return [self _tip_appendData:data complete:NO];
 }
 
-- (TIPImageContainer *)renderImage:(TIPImageDecoderRenderMode)mode
+- (nullable TIPImageContainer *)renderImage:(TIPImageDecoderRenderMode)mode
 {
     TIPImageContainer *imageContainer = nil;
 
@@ -327,7 +329,7 @@
 
 #pragma mark - Private
 
-- (void)_tip_cacheImage:(TIPImageContainer *)imageContainer mode:(TIPImageDecoderRenderMode)mode
+- (void)_tip_cacheImage:(nullable TIPImageContainer *)imageContainer mode:(TIPImageDecoderRenderMode)mode
 {
     if (!imageContainer) {
         return;
@@ -340,7 +342,7 @@
     }
 }
 
-- (TIPImageContainer *)_tip_cachedImageWithMode:(TIPImageDecoderRenderMode)mode
+- (nullable TIPImageContainer *)_tip_cachedImageWithMode:(TIPImageDecoderRenderMode)mode
 {
     TIPImageContainer *imageContainer = nil;
     if (_cachedImageContainer) {
@@ -370,7 +372,7 @@
     return imageContainer;
 }
 
-- (NSData *)_tip_extractChunkWithMode:(TIPImageDecoderRenderMode)mode
+- (nullable NSData *)_tip_extractChunkWithMode:(TIPImageDecoderRenderMode)mode
 {
     if (_handledError != nil) {
         return nil;
@@ -406,7 +408,7 @@
     return nil;
 }
 
-- (TIPImageContainer *)_tip_generateImageWithChunk:(NSData *)chunk complete:(BOOL)complete
+- (nullable TIPImageContainer *)_tip_generateImageWithChunk:(NSData *)chunk complete:(BOOL)complete
 {
     if (_handledError != nil) {
         return nil;
@@ -468,7 +470,7 @@
     }
 }
 
-- (TIPImageDecoderAppendResult)_tip_appendData:(NSData *)data complete:(BOOL)complete
+- (TIPImageDecoderAppendResult)_tip_appendData:(nullable NSData *)data complete:(BOOL)complete
 {
     // Check state
     if (_flags.didCompleteLoading) {
@@ -749,7 +751,7 @@
     return oldFrameCount != _frameCount;
 }
 
-- (void)_tip_readMoreBytes:(nonnull const unsigned char *)bytes range:(NSRange)byteRange
+- (void)_tip_readMoreBytes:(const unsigned char *)bytes range:(NSRange)byteRange
 {
     const NSUInteger limitIndex = byteRange.location + byteRange.length;
 
@@ -783,3 +785,5 @@
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

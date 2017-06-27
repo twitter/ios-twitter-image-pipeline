@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nullable, nonatomic, readonly) id<TIPImageEncoder> tip_encoder;
 @property (nonatomic, readonly) BOOL tip_isAnimated;
 
-+ (instancetype)codecWithImageType:(NSString *)imageType;
++ (nullable instancetype)codecWithImageType:(NSString *)imageType;
 
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;

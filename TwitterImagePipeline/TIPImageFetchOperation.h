@@ -11,12 +11,15 @@
 #import "TIPDefinitions.h"
 #import "TIPImageContainer.h"
 #import "TIPImageUtils.h"
+#import "TIPSafeOperation.h"
 
 @class TIPImagePipeline;
 @class TIPImageFetchMetrics;
 @protocol TIPImageFetchRequest;
 @protocol TIPImageFetchDelegate;
 @protocol TIPImageFetchResult;
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  Enum of different states the `TIPImageFetchOperation` can transition through.
@@ -60,13 +63,13 @@ typedef NS_ENUM(NSInteger, TIPImageFetchOperationState){
 /**
  The `NSOperation` subclass for encapsulating the work of fetching an image.
  */
-@interface TIPImageFetchOperation : NSOperation
+@interface TIPImageFetchOperation : TIPSafeOperation
 
 /** The state of the operation (KVO compliant) */
 @property (nonatomic, readonly) TIPImageFetchOperationState state;
 
 /** The request for the operation */
-@property (nonatomic, readonly, nonnull) id<TIPImageFetchRequest> request;
+@property (nonatomic, readonly) id<TIPImageFetchRequest> request;
 
 /**
  The delegate for the operation.
@@ -75,7 +78,7 @@ typedef NS_ENUM(NSInteger, TIPImageFetchOperationState){
 @property (atomic, readonly, weak, nullable) id<TIPImageFetchDelegate> delegate;
 
 /** The image pipeline for the operation */
-@property (nonatomic, readonly, nonnull) TIPImagePipeline *imagePipeline;
+@property (nonatomic, readonly) TIPImagePipeline *imagePipeline;
 
 /** Result data for preview load */
 @property (nonatomic, readonly, nullable) id<TIPImageFetchResult> previewResult;
@@ -123,9 +126,9 @@ typedef NS_ENUM(NSInteger, TIPImageFetchOperationState){
 @property (nonatomic, nullable) id context;
 
 /** Initialization is private to the _Twitter Image Pipeline_ so `init` is unavailable. */
-- (nonnull instancetype)init NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 /** Initialization is private to the _Twitter Image Pipeline_ so `new` is unavailable. */
-+ (nonnull instancetype)new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  Wait for the operation to finish.  See `[NSOperation waitUntilFinished]`.
@@ -188,16 +191,20 @@ typedef NS_ENUM(NSInteger, TIPImageFetchOperationState){
 @required
 
 /** The result image container, if loaded */
-@property (nonatomic, readonly, nonnull) TIPImageContainer *imageContainer;
+@property (nonatomic, readonly) TIPImageContainer *imageContainer;
 /** Source of result image */
 @property (nonatomic, readonly) TIPImageLoadSource imageSource;
 /** The `NSURL` of the image that was loaded for this result */
-@property (nonatomic, readonly, nonnull) NSURL *imageURL;
+@property (nonatomic, readonly) NSURL *imageURL;
 /** The dimensions of the result image prior to being scaled for completion. */
 @property (nonatomic, readonly) CGSize imageOriginalDimensions;
 /** Whether the result image is a placeholder or not.  Always `false` for progressive results. */
 @property (nonatomic, readonly) BOOL imageIsTreatedAsPlaceholder;
+/** Whether the result image was a transformed image or not. */
+@property (nonatomic, readonly) BOOL imageWasTransformed;
 /** Identifier for the result image */
-@property (nonatomic, readonly, copy, nonnull) NSString *imageIdentifier;
+@property (nonatomic, readonly, copy) NSString *imageIdentifier;
 
 @end
+
+NS_ASSUME_NONNULL_END

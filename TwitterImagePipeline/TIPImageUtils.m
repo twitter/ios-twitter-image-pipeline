@@ -21,8 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 static CGSize TIPSizeAlignToPixelEx(CGSize size, CGFloat scale);
 
-NS_ASSUME_NONNULL_END
-
 #pragma mark - Functions
 
 BOOL TIPSizeMatchesTargetSizing(const CGSize size, CGSize targetSize, const UIViewContentMode targetContentMode, const CGFloat scale)
@@ -308,3 +306,5 @@ static CGSize TIPSizeAlignToPixelEx(CGSize size, CGFloat scale)
 {
     return CGSizeMake(__tg_ceil(size.width * scale) / scale, __tg_ceil(size.height * scale) / scale);
 }
+
+NS_ASSUME_NONNULL_END

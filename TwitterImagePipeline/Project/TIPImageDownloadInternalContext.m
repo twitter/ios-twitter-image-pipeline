@@ -12,6 +12,8 @@
 #import "TIPImageDownloadInternalContext.h"
 #import "TIPTiming.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 static NSUInteger const kSmallPacketSize = 1 * 1024;
 
 @implementation TIPImageDownloadInternalContext
@@ -33,7 +35,7 @@ static NSUInteger const kSmallPacketSize = 1 * 1024;
     return _delegates.count;
 }
 
-- (TIPImageFetchOperation *)associatedImageFetchOperation
+- (nullable TIPImageFetchOperation *)associatedImageFetchOperation
 {
     for (id<TIPImageDownloadDelegate> delegate in _delegates) {
         if ([delegate isKindOfClass:[TIPImageFetchOperation class]]) {
@@ -43,7 +45,7 @@ static NSUInteger const kSmallPacketSize = 1 * 1024;
     return nil;
 }
 
-- (id<TIPImageDownloadDelegate>)firstDelegate
+- (nullable id<TIPImageDownloadDelegate>)firstDelegate
 {
     return _delegates.firstObject;
 }
@@ -184,14 +186,14 @@ static NSUInteger const kSmallPacketSize = 1 * 1024;
     }
 }
 
-- (void)executePerDelegateSuspendingQueue:(dispatch_queue_t)queue block:(void(^)(id<TIPImageDownloadDelegate>))block;
+- (void)executePerDelegateSuspendingQueue:(nullable dispatch_queue_t)queue block:(void(^)(id<TIPImageDownloadDelegate>))block;
 {
     for (id<TIPImageDownloadDelegate> delegate in _delegates) {
         [TIPImageDownloadInternalContext executeDelegate:delegate suspendingQueue:queue block:block];
     }
 }
 
-+ (void)executeDelegate:(id<TIPImageDownloadDelegate>)delegate suspendingQueue:(dispatch_queue_t)queue block:(void (^)(id<TIPImageDownloadDelegate>))block;
++ (void)executeDelegate:(id<TIPImageDownloadDelegate>)delegate suspendingQueue:(nullable dispatch_queue_t)queue block:(void (^)(id<TIPImageDownloadDelegate>))block;
 {
     dispatch_queue_t delegateQueue = [delegate respondsToSelector:@selector(imageDownloadDelegateQueue)] ? delegate.imageDownloadDelegateQueue : NULL;
     if (delegateQueue) {
@@ -210,3 +212,5 @@ static NSUInteger const kSmallPacketSize = 1 * 1024;
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

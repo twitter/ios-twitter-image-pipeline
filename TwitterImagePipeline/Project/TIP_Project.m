@@ -14,6 +14,8 @@
 #import "TIP_Project.h"
 #import "TIPURLStringCoding.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 const NSTimeInterval TIPTimeToLiveDefault = 30 * 24 * 60 * 60;
 
 #pragma mark Problem Names
@@ -40,7 +42,7 @@ NSString * const TIPProblemInfoKeyImageIsAnimated = @"animated";
 
 NSString *TIPVersion()
 {
-    return @"2.3";
+    return @"2.4";
 }
 
 void TIPSwizzle(Class cls, SEL originalSelector, SEL swizzledSelector)
@@ -132,3 +134,5 @@ NSString *TIPRawFromSafe(NSString *safe)
     TIPAssert(raw);
     return raw;
 }
+
+NS_ASSUME_NONNULL_END

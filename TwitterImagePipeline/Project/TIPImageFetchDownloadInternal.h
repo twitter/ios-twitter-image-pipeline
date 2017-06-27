@@ -8,10 +8,14 @@
 
 #import "TIPImageFetchDownload.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface TIPImageFetchDownloadInternal : NSObject <TIPImageFetchDownload>
-- (nonnull NSURLSession *)URLSession;
-- (nonnull instancetype)initWithContext:(nonnull id<TIPImageFetchDownloadContext>)context;
+- (NSURLSession *)URLSession;
+- (instancetype)initWithContext:(id<TIPImageFetchDownloadContext>)context;
 @end
 
 @interface TIPImageFetchDownloadProviderInternal : NSObject <TIPImageFetchDownloadProvider>
 @end
+
+NS_ASSUME_NONNULL_END
