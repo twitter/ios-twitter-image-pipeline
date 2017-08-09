@@ -8,11 +8,10 @@
 
 #import <ImageIO/CGImageProperties.h>
 #import <ImageIO/CGImageSource.h>
+#import <TwitterImagePipeline/TIPImageTypes.h>
 #import <UIKit/UIImage.h>
 #import <UIKit/UIScreen.h>
 #import <UIKit/UIView.h>
-
-#import "TIPImageTypes.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

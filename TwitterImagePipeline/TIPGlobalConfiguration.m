@@ -31,7 +31,6 @@ SInt16 const TIPMaxCountForAllMemoryCachesDefault = INT16_MAX >> 6;
 SInt16 const TIPMaxCountForAllRenderedCachesDefault = INT16_MAX >> 6;
 SInt16 const TIPMaxCountForAllDiskCachesDefault = INT16_MAX >> 4;
 NSInteger const TIPMaxConcurrentImagePipelineDownloadCountDefault = 4;
-NSTimeInterval const TIPMaxEstimatedTimeRemainingForDetachedHTTPDownloadsDefault = 3.0;
 NSUInteger const TIPMaxRatioSizeOfCacheEntryDefault = 6;
 
 // Arbitrarily cap the default max memory bytes at 64MB for Rendered and Memory caches
@@ -122,7 +121,6 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
         _internalMaxCountForAllRenderedCaches = TIPMaxCountForAllRenderedCachesDefault;
 
         _maxConcurrentImagePipelineDownloadCount = TIPMaxConcurrentImagePipelineDownloadCountDefault;
-        _maxEstimatedTimeRemainingForDetachedHTTPDownloads = TIPMaxEstimatedTimeRemainingForDetachedHTTPDownloadsDefault;
         _maxRatioSizeOfCacheEntry = TIPMaxRatioSizeOfCacheEntryDefault;
         _clearMemoryCachesOnApplicationBackgroundEnabled = NO;
         _serializeCGContextAccess = YES;
@@ -529,7 +527,11 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 
         NSArray<TIPImagePipeline *> *allPipelines = nil;
         NSInteger knownTotalEntries = -1;
-        NSInteger knownPriorityEntries = priorityCache ? (NSInteger)priorityCache.manifest.numberOfEntries : 0;
+        NSInteger knownPriorityEntries = 0;
+        if (priorityCache) {
+            TIPLRUCache *manifest = (TIPImageCacheTypeDisk == type) ? [(TIPImageDiskCache *)priorityCache diskCache_syncAccessManifest] : priorityCache.manifest;
+            knownPriorityEntries = (NSInteger)manifest.numberOfEntries;
+        }
 
         // Remove entries from the non-priority caches to alleviate memory pressure
         while (([self internalTotalBytesForAllCachesOfType:type] > globalMaxBytes || [self internalTotalCountForAllCachesOfType:type] > globalMaxCount) && knownTotalEntries != knownPriorityEntries) {
@@ -667,6 +669,7 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
         TIPStartMethodScopedBackgroundTask();
 
         [self pruneAllCachesOfType:TIPImageCacheTypeRendered withPriorityCache:nil toGlobalMaxBytes:[self internalMaxBytesForAllRenderedCaches] / 2 toGlobalMaxCount:0];
+        // Memory caches are cleared per pipeline
     }
 }
 

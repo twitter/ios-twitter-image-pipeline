@@ -2,13 +2,25 @@
 
 ## Info
 
-**Document version:** 2.4.4
+**Document version:** 2.5.0
 
-**Last updated:** 05/29/2017
+**Last updated:** 08/07/2017
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.5.0
+
+- Remove detached downloads support for TIP image fetches
+  - using HTTP/2 is the ideal solution, removing the complexity to remove the crutch
+
+### 2.4.5
+
+- reduce thread count for TIP by unifying all disk caches to using 1 manifest queue
+  - make disk cache manifest load async instead of sync now that it is shared
+  - no real speed improvements, just fewer threads need to be used in multi-pipeline apps
+- clean up some large inline functions to be regular functions
 
 ### 2.4.4 - protosphere
 

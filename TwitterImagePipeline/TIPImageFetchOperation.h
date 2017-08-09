@@ -6,12 +6,11 @@
 //  Copyright (c) 2015 Twitter. All rights reserved.
 //
 
+#import <TwitterImagePipeline/TIPDefinitions.h>
+#import <TwitterImagePipeline/TIPImageContainer.h>
+#import <TwitterImagePipeline/TIPImageUtils.h>
+#import <TwitterImagePipeline/TIPSafeOperation.h>
 #import <UIKit/UIImage.h>
-
-#import "TIPDefinitions.h"
-#import "TIPImageContainer.h"
-#import "TIPImageUtils.h"
-#import "TIPSafeOperation.h"
 
 @class TIPImagePipeline;
 @class TIPImageFetchMetrics;

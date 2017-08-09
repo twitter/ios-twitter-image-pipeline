@@ -6,10 +6,9 @@
 //  Copyright © 2016 Twitter. All rights reserved.
 //
 
+#import <TwitterImagePipeline/TIPImageFetchDelegate.h>
+#import <TwitterImagePipeline/TIPImageUtils.h>
 #import <UIKit/UIImageView.h>
-
-#import "TIPImageFetchDelegate.h"
-#import "TIPImageUtils.h"
 
 @class TIPImageFetchMetrics;
 @protocol TIPImageFetchRequest;

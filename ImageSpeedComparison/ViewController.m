@@ -368,95 +368,9 @@ static const NSUInteger kDefaultBitrateIndex = 5;
     if (shouldScaleFirst) {
         image = [image tip_scaledImageWithTargetDimensions:targetDimensions contentMode:targetContentMode];
     }
-    UIImage *transformed = [self applyBlurToImage:image withRadius:blurRadius];
+    UIImage *transformed = [image tip_blurredImageWithRadius:blurRadius];
     NSAssert(CGSizeEqualToSize([image tip_dimensions], [transformed tip_dimensions]), @"sizing missmatch!");
     return transformed;
-}
-
-// This is a modified version of Apple's 2013 WWDC sample code for UIImage(ImageEffects)
-// https://developer.apple.com/library/content/samplecode/UIImageEffects/Listings/UIImageEffects_UIImageEffects_m.html
-- (UIImage *)applyBlurToImage:(UIImage *)image withRadius:(CGFloat)blurRadius
-{
-    // Check pre-conditions
-    if (image.size.width < 1 || image.size.height < 1) {
-        return nil;
-    }
-    if (!image.CGImage) {
-        return nil;
-    }
-
-    CGRect imageRect = { CGPointZero, image.size };
-    UIImage *effectImage = image;
-
-    const BOOL hasBlur = blurRadius > __FLT_EPSILON__;
-    if (hasBlur) {
-        UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
-        CGContextRef effectInContext = UIGraphicsGetCurrentContext();
-        CGContextScaleCTM(effectInContext, 1.0, -1.0);
-        CGContextTranslateCTM(effectInContext, 0, -image.size.height);
-        CGContextDrawImage(effectInContext, imageRect, image.CGImage);
-
-        vImage_Buffer effectInBuffer;
-        effectInBuffer.data     = CGBitmapContextGetData(effectInContext);
-        effectInBuffer.width    = CGBitmapContextGetWidth(effectInContext);
-        effectInBuffer.height   = CGBitmapContextGetHeight(effectInContext);
-        effectInBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectInContext);
-
-        UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
-        CGContextRef effectOutContext = UIGraphicsGetCurrentContext();
-        vImage_Buffer effectOutBuffer;
-        effectOutBuffer.data     = CGBitmapContextGetData(effectOutContext);
-        effectOutBuffer.width    = CGBitmapContextGetWidth(effectOutContext);
-        effectOutBuffer.height   = CGBitmapContextGetHeight(effectOutContext);
-        effectOutBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectOutContext);
-
-        // A description of how to compute the box kernel width from the Gaussian
-        // radius (aka standard deviation) appears in the SVG spec:
-        // http://www.w3.org/TR/SVG/filters.html#feGaussianBlurElement
-        //
-        // For larger values of 's' (s >= 2.0), an approximation can be used: Three
-        // successive box-blurs build a piece-wise quadratic convolution kernel, which
-        // approximates the Gaussian kernel to within roughly 3%.
-        //
-        // let d = floor(s * 3*sqrt(2*pi)/4 + 0.5)
-        //
-        // ... if d is odd, use three box-blurs of size 'd', centered on the output pixel.
-        //
-        const CGFloat inputRadius = blurRadius * [[UIScreen mainScreen] scale];
-        uint32_t radius = (uint32_t)floor(inputRadius * 3. * sqrt(2 * M_PI) / 4 + 0.5);
-        if (radius % 2 != 1) {
-            radius += 1; // force radius to be odd so that the three box-blur methodology works.
-        }
-        vImageBoxConvolve_ARGB8888(&effectInBuffer, &effectOutBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
-        vImageBoxConvolve_ARGB8888(&effectOutBuffer, &effectInBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
-        vImageBoxConvolve_ARGB8888(&effectInBuffer, &effectOutBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
-
-        effectImage = UIGraphicsGetImageFromCurrentImageContext();
-        UIGraphicsEndImageContext();
-        UIGraphicsEndImageContext();
-    }
-
-    // Set up output context.
-    UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
-    CGContextRef outputContext = UIGraphicsGetCurrentContext();
-    CGContextScaleCTM(outputContext, 1.0, -1.0);
-    CGContextTranslateCTM(outputContext, 0, -image.size.height);
-
-    // Draw base image.
-    CGContextDrawImage(outputContext, imageRect, image.CGImage);
-
-    // Draw effect image.
-    if (hasBlur) {
-        CGContextSaveGState(outputContext);
-        CGContextDrawImage(outputContext, imageRect, effectImage.CGImage);
-        CGContextRestoreGState(outputContext);
-    }
-
-    // Output image is ready.
-    UIImage *outputImage = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-
-    return outputImage;
 }
 
 //- (NSDictionary *)progressiveLoadingPolicies

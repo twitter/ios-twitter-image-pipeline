@@ -260,7 +260,6 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     }
     TIPAssert(context.hydratedRequest);
 
-    context.doesProtocolSupportCancel = NO; // TODO: get the protocol so we can figure this out
     if (200 /* OK */ == context.response.statusCode) {
         TIPPartialImage *partialImage = context.partialImage;
         // reset the resuming info
@@ -314,12 +313,6 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     if (!context.partialImage) {
         context.partialImage = [[TIPPartialImage alloc] initWithExpectedContentLength:context.contentLength];
     }
-    if (!context.firstBytesReceivedMachTime) {
-        context.firstBytesReceivedMachTime = mach_absolute_time();
-    } else {
-        context.latestBytesReceivedMachTime = mach_absolute_time();
-        context.totalBytesReceived += byteCount;
-    }
 
     // Update partial image
     result = [context.partialImage appendData:data final:NO];
@@ -333,12 +326,9 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
             [delegate imageDownload:(id)download didAppendBytes:byteCount toPartialImage:partialImage result:result];
         }];
     } else {
-        // Running as a "detached" download, should we keep that up?
-        if (![context canContinueAsDetachedDownload]) {
-            // Stop the "detached" download
-            [self _tip_background_clearDownload:download];
-            [download cancelWithDescription:TIPImageDownloaderCancelSource];
-        }
+        // Running as a "detached" download, time to clean it up
+        [self _tip_background_clearDownload:download];
+        [download cancelWithDescription:TIPImageDownloaderCancelSource];
     }
 }
 
@@ -612,17 +602,6 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     // Is it a known delegate?
     if (![context containsDelegate:delegate]) {
         // Unknown delegate, just no-op
-        return;
-    }
-
-    // Is the time remaining on the image short enough to just let it finish?
-    if ([context canContinueAsDetachedDownload]) {
-        // Time remaining is short so...
-        // 1) remove the delegate (which will elicit a cancel to that delegate)
-        // 2) don't actually cancel the op, just let it finish (so it can cache to disk)
-        // 3) if any subsequent downloads for this request happen, the op is still running and can be coalesced
-        [context removeDelegate:delegate];
-        TIPLogInformation(@"Download[%p] has no more delegates, continuing 'detached' download anyway", download);
         return;
     }
 

@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "TIPImageCodecs.h"
+#import <TwitterImagePipeline/TIPImageCodecs.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

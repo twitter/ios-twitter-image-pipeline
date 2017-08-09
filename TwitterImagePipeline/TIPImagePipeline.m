@@ -472,26 +472,37 @@ static BOOL TIPRegisterImagePipelineWithIdentifier(TIPImagePipeline *pipeline, N
 
     TIPEnsureStaticImagePipelineVariables();
 
-    __block BOOL didRegister = NO;
+    __block struct {
+        BOOL didRegister:1;
+        BOOL alreadyRegistered:1;
+        BOOL isInvalidIdentifier:1;
+    } flags;
+    flags.didRegister = flags.alreadyRegistered = flags.isInvalidIdentifier = 0;
+
     dispatch_sync(sRegistrationQueue, ^{
 
         if (TIPImagePipelineIdentifierIsValid(identifier)) {
 
             if (![sStrongIdentifierToWeakImagePipelineMap objectForKey:identifier]) {
                 [sStrongIdentifierToWeakImagePipelineMap setObject:pipeline forKey:identifier];
-                didRegister = YES;
-                TIPLogDebug(@"<%@ '%@'> registered!", NSStringFromClass([pipeline class]), identifier);
+                flags.didRegister = 1;
             } else {
-                TIPRegisterAssertMessage(NO, @"%@ already exists with identifier '%@'!", NSStringFromClass([TIPImagePipeline class]), identifier);
+                flags.alreadyRegistered = 1;
             }
 
         } else {
-            TIPRegisterAssertMessage(TIPImagePipelineIdentifierIsValid(identifier), @"%@ cannot be created with identifier '%@'!", NSStringFromClass([TIPImagePipeline class]), identifier);
+            flags.isInvalidIdentifier = 1;
         }
 
     });
 
-    return didRegister;
+    TIPRegisterAssertMessage(!flags.alreadyRegistered, @"%@ already exists with identifier '%@'!", NSStringFromClass([TIPImagePipeline class]), identifier);
+    TIPRegisterAssertMessage(!flags.isInvalidIdentifier, @"%@ cannot be created with identifier '%@'!", NSStringFromClass([TIPImagePipeline class]), identifier);
+    if (flags.didRegister) {
+        TIPLogDebug(@"<%@ '%@'> registered!", NSStringFromClass([pipeline class]), identifier);
+    }
+
+    return flags.didRegister;
 }
 
 static void TIPUnregisterImagePipelineWithIdentifier(NSString *identifier)

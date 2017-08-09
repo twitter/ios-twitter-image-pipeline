@@ -6,6 +6,7 @@
 //  Copyright © 2016 Twitter. All rights reserved.
 //
 
+#import <Accelerate/Accelerate.h>
 #import <CoreGraphics/CoreGraphics.h>
 #import <UIKit/UIKit.h>
 
@@ -119,37 +120,142 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
 
 #pragma mark Transform Methods
 
+- (nullable UIImage *)_tip_CoreGraphics_scaleImageToSpecificDimensions:(CGSize)scaledDimensions scale:(CGFloat)scale
+{
+    CGImageRef cgImage = self.CGImage;
+    if (!cgImage) {
+        return nil;
+    }
+
+    const UIImageOrientation orientation = self.imageOrientation;
+    switch (orientation) {
+        case UIImageOrientationLeft:
+        case UIImageOrientationRight:
+        case UIImageOrientationLeftMirrored:
+        case UIImageOrientationRightMirrored:
+            // swap the dimensions
+            scaledDimensions = CGSizeMake(scaledDimensions.height, scaledDimensions.width);
+            break;
+        default:
+            break;
+    }
+
+    const size_t bitsPerComponent = 8;
+    const CGColorSpaceRef colorSpace = CGImageGetColorSpace(cgImage);
+    const uint32_t bitmapInfo = [self tip_hasAlpha:NO] ? kCGImageAlphaPremultipliedLast : kCGImageAlphaNoneSkipLast;
+    __block UIImage *image = nil;
+
+    TIPExecuteCGContextBlock(^{
+        CGContextRef context = CGBitmapContextCreate(NULL /* void * data */,
+                                                     (size_t)scaledDimensions.width,
+                                                     (size_t)scaledDimensions.height,
+                                                     bitsPerComponent,
+                                                     0 /* bytesPerRow (auto) */,
+                                                     colorSpace,
+                                                     bitmapInfo);
+        TIPDeferRelease(context);
+        if (!context) {
+            return;
+        }
+
+        CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
+
+        CGRect rect = CGRectZero;
+        rect.size = scaledDimensions;
+        CGContextDrawImage(context, rect, cgImage);
+
+        CGImageRef scaledCGImage = CGBitmapContextCreateImage(context);
+        TIPDeferRelease(scaledCGImage);
+
+        image = [UIImage imageWithCGImage:scaledCGImage scale:((0.0 == scale) ? [UIScreen mainScreen].scale : scale) orientation:orientation];
+    });
+    return image;
+}
+
+- (UIImage *)_tip_UIKit_scaleImageToSpecificDimensions:(CGSize)scaledDimensions scale:(CGFloat)scale
+{
+    if (0.0 == scale) {
+        scale = [UIScreen mainScreen].scale;
+    }
+    __block UIImage *image = self;
+    const CGRect drawRect = CGRectMake(0, 0, scaledDimensions.width / scale, scaledDimensions.height / scale);
+    const BOOL hasAlpha = [image tip_hasAlpha:NO];
+
+#if 0
+    // Using UIGraphicsImageRenderer is 25x slower than using the old
+    // UIGraphicsBeginImageContextWithOptions way... so we'll stick with that and
+    // keep this code disabled
+    if ([UIGraphicsImageRenderer class] != Nil && !image.images.count) {
+        UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
+        format.scale = scale;
+        format.opaque = !hasAlpha;
+        UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:drawRect.size format:format];
+        TIPExecuteCGContextBlock(^{
+            UIImage *renderedImage = [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
+                [image drawInRect:drawRect];
+            }];
+            image = renderedImage;
+        });
+        if (image) {
+            return image;
+        } else {
+            image = self;
+        }
+    }
+#endif
+
+    TIPExecuteCGContextBlock(^{
+        UIGraphicsBeginImageContextWithOptions(drawRect.size, !hasAlpha, scale);
+        if (!image.images.count) {
+            [image drawInRect:drawRect];
+            image = UIGraphicsGetImageFromCurrentImageContext();
+        } else {
+            NSMutableArray *newFrames = [[NSMutableArray alloc] initWithCapacity:image.images.count];
+            for (UIImage *frame in image.images) {
+                @autoreleasepool {
+                    [frame drawInRect:drawRect];
+                    UIImage *newFrame = UIGraphicsGetImageFromCurrentImageContext();
+                    [newFrames addObject:newFrame];
+                    CGContextClearRect(UIGraphicsGetCurrentContext(), drawRect);
+                }
+            }
+            image = [UIImage animatedImageWithImages:newFrames duration:image.duration];
+        }
+        UIGraphicsEndImageContext();
+    });
+
+    return image;
+}
+
 - (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions contentMode:(UIViewContentMode)targetContentMode;
 {
-    __block UIImage *image = self;
-
-    const CGSize dimensions = [image tip_dimensions];
+    const CGSize dimensions = [self tip_dimensions];
     const CGSize scaledTargetDimensions = TIPSizeGreaterThanZero(targetDimensions) ? TIPDimensionsScaledToTargetSizing(dimensions, targetDimensions, targetContentMode) : CGSizeZero;
+    UIImage *image;
 
     // If we have a target size and the target size is not the same as our source image's size, draw the resized image
     if (TIPSizeGreaterThanZero(scaledTargetDimensions) && !CGSizeEqualToSize(dimensions, scaledTargetDimensions)) {
-        const CGFloat scale = [UIScreen mainScreen].scale;
-        const CGRect drawRect = CGRectMake(0, 0, scaledTargetDimensions.width / scale, scaledTargetDimensions.height / scale);
-        const BOOL hasAlpha = [image tip_hasAlpha:NO];
 
-        TIPExecuteCGContextBlock(^{
-            UIGraphicsBeginImageContextWithOptions(drawRect.size, !hasAlpha, scale);
-            if (!image.images.count) {
-                [image drawInRect:drawRect];
-                image = UIGraphicsGetImageFromCurrentImageContext();
-            } else {
-                NSMutableArray *newFrames = [[NSMutableArray alloc] initWithCapacity:image.images.count];
-                for (UIImage *frame in image.images) {
-                    @autoreleasepool {
-                        [frame drawInRect:drawRect];
-                        UIImage *newFrame = UIGraphicsGetImageFromCurrentImageContext();
-                        [newFrames addObject:newFrame];
-                    }
-                }
-                image = [UIImage animatedImageWithImages:newFrames duration:image.duration];
-            }
-            UIGraphicsEndImageContext();
-        });
+        // OK, so, to provide some context:
+        //
+        // The UIKit and CoreGraphics mechanisms for scaling occasionally yield a `nil` image.
+        // We cannot repro locally, but externally, it is clearly an issue that affects users.
+        // It has noticeably upticked in iOS 11 as well.
+        //
+        // There are numerous radars out there against this, including #33057552 and #22097047.
+        // It has not been fixed in years and we see no reason to expect a fix in the future.
+        //
+        // Rather than incur complexity of implementing our own custom pixel buffer scaling
+        // as a fallback, we'll instead just return `self` unscaled.  This is not ideal,
+        // but returning a `nil` image is crash prone while returning the image unscaled
+        // would merely be prone to a performance hit.
+
+        // scale with UIKit at screen scale
+        image = [self _tip_UIKit_scaleImageToSpecificDimensions:scaledTargetDimensions scale:0.0];
+        // image = [self _tip_CoreGraphics_scaleImageToSpecificDimensions:scaledTargetDimensions scale:0.0];
+
+    } else {
+        image = self;
     }
 
     if (image == self) {
@@ -163,8 +269,10 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
                                    TIPProblemInfoKeyTargetContentMode : @(targetContentMode),
                                    TIPProblemInfoKeyScaledDimensions : [NSValue valueWithCGSize:scaledTargetDimensions],
                                    TIPProblemInfoKeyImageIsAnimated : @(self.images.count > 1),
+                                   @"scale" : @([UIScreen mainScreen].scale),
                                    };
         [[TIPGlobalConfiguration sharedInstance] postProblem:TIPProblemImageFailedToScale userInfo:userInfo];
+        image = self; // yuck!
     }
     TIPAssert(image != nil);
 
@@ -326,6 +434,92 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
         return self;
     }
     return [UIImage imageWithCGImage:grayscaleImageRef];
+}
+
+- (nullable UIImage *)tip_blurredImageWithRadius:(CGFloat)blurRadius
+{
+    UIImage *image = self;
+
+    // Check pre-conditions
+    if (image.size.width < 1 || image.size.height < 1) {
+        return nil;
+    }
+    if (!image.CGImage) {
+        return nil;
+    }
+
+    CGRect imageRect = { CGPointZero, image.size };
+    UIImage *effectImage = image;
+
+    const BOOL hasBlur = blurRadius > __FLT_EPSILON__;
+    if (hasBlur) {
+        UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
+        CGContextRef effectInContext = UIGraphicsGetCurrentContext();
+        CGContextScaleCTM(effectInContext, 1.0, -1.0);
+        CGContextTranslateCTM(effectInContext, 0, -image.size.height);
+        CGContextDrawImage(effectInContext, imageRect, image.CGImage);
+
+        vImage_Buffer effectInBuffer;
+        effectInBuffer.data     = CGBitmapContextGetData(effectInContext);
+        effectInBuffer.width    = CGBitmapContextGetWidth(effectInContext);
+        effectInBuffer.height   = CGBitmapContextGetHeight(effectInContext);
+        effectInBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectInContext);
+
+        UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
+        CGContextRef effectOutContext = UIGraphicsGetCurrentContext();
+        vImage_Buffer effectOutBuffer;
+        effectOutBuffer.data     = CGBitmapContextGetData(effectOutContext);
+        effectOutBuffer.width    = CGBitmapContextGetWidth(effectOutContext);
+        effectOutBuffer.height   = CGBitmapContextGetHeight(effectOutContext);
+        effectOutBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectOutContext);
+
+        // A description of how to compute the box kernel width from the Gaussian
+        // radius (aka standard deviation) appears in the SVG spec:
+        // http://www.w3.org/TR/SVG/filters.html#feGaussianBlurElement
+        //
+        // For larger values of 's' (s >= 2.0), an approximation can be used: Three
+        // successive box-blurs build a piece-wise quadratic convolution kernel, which
+        // approximates the Gaussian kernel to within roughly 3%.
+        //
+        // let d = floor(s * 3*sqrt(2*pi)/4 + 0.5)
+        //
+        // ... if d is odd, use three box-blurs of size 'd', centered on the output pixel.
+        //
+        const CGFloat inputRadius = blurRadius;
+        uint32_t radius = (uint32_t)floor(inputRadius * 3. * sqrt(2 * M_PI) / 4 + 0.5);
+        if (radius % 2 != 1) {
+            radius += 1; // force radius to be odd so that the three box-blur methodology works.
+        }
+        vImageBoxConvolve_ARGB8888(&effectInBuffer, &effectOutBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
+        vImageBoxConvolve_ARGB8888(&effectOutBuffer, &effectInBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
+        vImageBoxConvolve_ARGB8888(&effectInBuffer, &effectOutBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
+
+        effectImage = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        UIGraphicsEndImageContext();
+    }
+
+    // Set up output context.
+    UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
+    CGContextRef outputContext = UIGraphicsGetCurrentContext();
+    CGContextScaleCTM(outputContext, 1.0, -1.0);
+    CGContextTranslateCTM(outputContext, 0, -image.size.height);
+
+    // Draw base image.
+    CGContextDrawImage(outputContext, imageRect, image.CGImage);
+
+    // Draw effect image.
+    if (hasBlur) {
+        CGContextSaveGState(outputContext);
+        CGContextDrawImage(outputContext, imageRect, effectImage.CGImage);
+        CGContextRestoreGState(outputContext);
+    }
+
+    // Output image is ready.
+    UIImage *outputImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+
+    return outputImage;
 }
 
 #pragma mark Decode Methods
@@ -737,7 +931,7 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
     // TODO: investigate if we should be using kCGImageDestinationOptimizeColorForSharing
     /*
      if (&kCGImageDestinationOptimizeColorForSharing != NULL) {
-     properties[(NSString *)kCGImageDestinationOptimizeColorForSharing] = (__bridge id)kCFBooleanTrue;
+        properties[(NSString *)kCGImageDestinationOptimizeColorForSharing] = (__bridge id)kCFBooleanTrue;
      }
      */
 

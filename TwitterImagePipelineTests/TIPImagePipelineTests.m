@@ -46,7 +46,6 @@ typedef struct _TIPImageFetchTestStruct {
     BOOL isProgressive;
     BOOL isAnimated;
     uint64_t bps;
-    NSTimeInterval maxDetachedInterval;
 } TIPImageFetchTestStruct;
 
 @interface TestImageStoreRequest : NSObject <TIPImageStoreRequest>
@@ -158,7 +157,6 @@ static TIPImagePipeline *sPipeline = nil;
     sPipeline = [[TIPImagePipeline alloc] initWithIdentifier:NSStringFromClass(self)];
     globalConfig.imageFetchDownloadProvider = [[TIPTestsImageFetchDownloadProviderOverrideClass() alloc] init];
     globalConfig.maxConcurrentImagePipelineDownloadCount = 4;
-    globalConfig.maxEstimatedTimeRemainingForDetachedHTTPDownloads = -1;
     globalConfig.maxBytesForAllRenderedCaches = 12 * 1024 * 1024;
     globalConfig.maxBytesForAllMemoryCaches = 36 * 1024 * 1024;
     globalConfig.maxBytesForAllDiskCaches = 16 * 1024 * 1024;
@@ -174,24 +172,13 @@ static TIPImagePipeline *sPipeline = nil;
     [sPipeline.memoryCache clearAllImages:NULL];
     [sPipeline.diskCache clearAllImages:NULL];
     globalConfig.imageFetchDownloadProvider = nil;
-    globalConfig.maxEstimatedTimeRemainingForDetachedHTTPDownloads = TIPMaxEstimatedTimeRemainingForDetachedHTTPDownloadsDefault;
     globalConfig.maxBytesForAllRenderedCaches = -1;
     globalConfig.maxBytesForAllMemoryCaches = -1;
     globalConfig.maxBytesForAllDiskCaches = -1;
     globalConfig.maxConcurrentImagePipelineDownloadCount = TIPMaxConcurrentImagePipelineDownloadCountDefault;
     globalConfig.maxRatioSizeOfCacheEntry = -1;
 
-    // flush
-    if (sPipeline) {
-        __block BOOL didInspect = NO;
-        [sPipeline inspect:^(TIPImagePipelineInspectionResult *result) {
-            didInspect = YES;
-        }];
-        while (!didInspect) {
-            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-        }
-        sPipeline = nil;
-    }
+    sPipeline = nil;
 }
 
 - (void)tearDown
@@ -202,6 +189,15 @@ static TIPImagePipeline *sPipeline = nil;
 
     id<TIPImageFetchDownloadProviderWithStubbingSupport> provider = (id<TIPImageFetchDownloadProviderWithStubbingSupport>)[TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider;
     [provider removeAllDownloadStubs];
+
+    // Flush ALL pipelines
+    __block BOOL didInspect = NO;
+    [[TIPGlobalConfiguration sharedInstance] inspect:^(NSDictionary *results) {
+        didInspect = YES;
+    }];
+    while (!didInspect) {
+        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+    }
 
     [super tearDown];
 }
@@ -456,70 +452,42 @@ static TIPImagePipeline *sPipeline = nil;
         [op waitUntilFinishedWithoutBlockingRunLoop];
         [self _validateFetchOperation:op context:context source:TIPImageLoadSourceNetwork state:TIPImageFetchOperationStateSucceeded];
         XCTAssertLessThan(context.firstProgress, progress);
-
-        // Network Load Cancelled - but detached finish
-        [TIPGlobalConfiguration sharedInstance].maxEstimatedTimeRemainingForDetachedHTTPDownloads = imageStruct.maxDetachedInterval;
-        [sPipeline.memoryCache clearAllImages:NULL];
-        [sPipeline.diskCache clearAllImages:NULL];
-        [sPipeline.renderedCache clearAllImages:NULL];
-        context = [[TIPImagePipelineTestContext alloc] init];
-        context.shouldSupportProgressiveLoading = progressive;
-        context.shouldSupportAnimatedLoading = animated;
-        context.cancelPoint = 0.2f;
-        op = [sPipeline undeprecatedFetchImageWithRequest:request context:context delegate:self];
-        [op waitUntilFinishedWithoutBlockingRunLoop];
-        [self _validateFetchOperation:op context:context source:TIPImageLoadSourceNetwork state:TIPImageFetchOperationStateCancelled];
-        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:imageStruct.maxDetachedInterval + 0.1]]; // allow detached download to finish
-
-        // Disk Load
-        progress = op.progress;
-        context = [[TIPImagePipelineTestContext alloc] init];
-        context.shouldSupportProgressiveLoading = progressive;
-        context.shouldSupportAnimatedLoading = animated;
-        op = [sPipeline undeprecatedFetchImageWithRequest:request context:context delegate:self];
-        [op waitUntilFinishedWithoutBlockingRunLoop];
-        [self _validateFetchOperation:op context:context source:TIPImageLoadSourceDiskCache state:TIPImageFetchOperationStateSucceeded];
-        XCTAssertLessThan(context.firstProgress, progress);
-        [TIPGlobalConfiguration sharedInstance].maxEstimatedTimeRemainingForDetachedHTTPDownloads = -1;
-
-        id<TIPImageFetchDownloadProviderWithStubbingSupport> provider = (id<TIPImageFetchDownloadProviderWithStubbingSupport>)[TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider;
-        [provider removeDownloadStubForRequestURL:request.imageURL];
     }
 }
 
 - (void)testFetchingPNG
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypePNG, NO, NO, NO, 3 * 1024 * 1024 * 8, 3.0 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypePNG, NO, NO, NO, 3 * 1024 * 1024 * 8 };
     [self _runFetching:imageStruct];
 }
 
 - (void)testFetchingJPEG
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, NO, NO, NO, 2 * 1024 * 1024 * 8, 3.0 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, NO, NO, NO, 2 * 1024 * 1024 * 8 };
     [self _runFetching:imageStruct];
 }
 
 - (void)testFetchingPJPEG_notProgressive
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, YES, NO, NO, 1 * 1024 * 1024 * 8, 3.0 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, YES, NO, NO, 1 * 1024 * 1024 * 8 };
     [self _runFetching:imageStruct];
 }
 
 - (void)testFetchingPJPEG_isProgressive
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, YES, YES, NO, 1 * 1024 * 1024 * 8, 3.0 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, YES, YES, NO, 1 * 1024 * 1024 * 8 };
     [self _runFetching:imageStruct];
 }
 
 - (void)testFetchingJPEG2000
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG2000, YES, NO, NO, 256 * 1024 * 8, 4.0 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG2000, YES, NO, NO, 256 * 1024 * 8 };
     [self _runFetching:imageStruct];
 }
 
 - (void)testFetchingPJPEG2000
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG2000, YES, YES, NO, 256 * 1024 * 8, 4.0 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG2000, YES, YES, NO, 256 * 1024 * 8 };
     if ([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:imageStruct.type]) {
         [self _runFetching:imageStruct];
     } else {
@@ -529,7 +497,7 @@ static TIPImagePipeline *sPipeline = nil;
 
 - (void)testFetchingGIF
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeGIF, NO, NO, YES, 160 * 1024 * 8, 5.0 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeGIF, NO, NO, YES, 160 * 1024 * 8 };
     [self _runFetching:imageStruct];
 }
 
@@ -562,8 +530,6 @@ static TIPImagePipeline *sPipeline = nil;
         op = [sPipeline undeprecatedFetchImageWithRequest:request context:context delegate:self];
         [op waitUntilFinishedWithoutBlockingRunLoop];
         [self _validateFetchOperation:op context:context source:TIPImageLoadSourceNetwork state:TIPImageFetchOperationStateSucceeded];
-
-        [TIPGlobalConfiguration sharedInstance].maxEstimatedTimeRemainingForDetachedHTTPDownloads = -1;
     }
 }
 

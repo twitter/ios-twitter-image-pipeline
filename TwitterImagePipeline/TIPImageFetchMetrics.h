@@ -8,8 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import "TIPDefinitions.h"
-#import "TIPImageFetchOperation.h"
+#import <TwitterImagePipeline/TIPDefinitions.h>
+#import <TwitterImagePipeline/TIPImageFetchOperation.h>
 
 @class TIPImageFetchMetricInfo;
 

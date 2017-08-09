@@ -42,7 +42,7 @@ NSString * const TIPProblemInfoKeyImageIsAnimated = @"animated";
 
 NSString *TIPVersion()
 {
-    return @"2.4";
+    return @"2.5";
 }
 
 void TIPSwizzle(Class cls, SEL originalSelector, SEL swizzledSelector)
@@ -82,29 +82,57 @@ void TIPSetShouldAssertDuringPipelineRegistation(BOOL shouldAssertDuringPipeline
     sShouldAssertDuringPipelineRegistration = shouldAssertDuringPipelineRegistration;
 }
 
-NS_INLINE NSString *TIPDataToHexString(NSData *data)
+CGSize TIPScaleToFillKeepingAspectRatio(CGSize sourceSize, CGSize targetSize, CGFloat scale)
 {
-    NSUInteger length = data.length;
-    unichar* hexChars = (unichar*)malloc(sizeof(unichar) * (length*2));
-    unsigned char* bytes = (unsigned char*)data.bytes;
-    for (NSUInteger i = 0; i < length; i++) {
-        unichar c = bytes[i] / 16;
-        if (c < 10) {
-            c += '0';
-        } else {
-            c += 'a' - 10;
-        }
-        hexChars[i*2] = c;
-        c = bytes[i] % 16;
-        if (c < 10) {
-            c += '0';
-        } else {
-            c += 'a' - 10;
-        }
-        hexChars[i*2+1] = c;
+    const CGSize scaledTargetSize = CGSizeMake(__tg_ceil(targetSize.width * scale), __tg_ceil(targetSize.height * scale));
+    const CGSize scaledSourceSize = CGSizeMake(__tg_ceil(sourceSize.width * scale), __tg_ceil(sourceSize.height * scale));
+    const CGFloat rx = scaledTargetSize.width / scaledSourceSize.width;
+    const CGFloat ry = scaledTargetSize.height / scaledSourceSize.height;
+    CGSize size;
+    if (rx > ry) {
+        // cap width to scaled target size's width
+        // and floor the larger dimension (height)
+        size = CGSizeMake((MIN(__tg_ceil(scaledSourceSize.width * rx), scaledTargetSize.width) / scale), (__tg_floor(scaledSourceSize.height * rx) / scale));
+    } else {
+        // cap width to scaled target size's width
+        // and floor the larger dimension (height)
+        size = CGSizeMake((__tg_floor(scaledSourceSize.width * ry) / scale), (MIN(__tg_ceil(scaledSourceSize.height * ry), scaledTargetSize.height) / scale));
     }
-    NSString* retVal = [[NSString alloc] initWithCharactersNoCopy:hexChars length:length*2 freeWhenDone:YES];
-    return retVal;
+    return size;
+}
+
+CGSize TIPScaleToFitKeepingAspectRatio(CGSize sourceSize, CGSize targetSize, CGFloat scale)
+{
+    const CGSize scaledTargetSize = CGSizeMake(__tg_ceil(targetSize.width * scale), __tg_ceil(targetSize.height * scale));
+    const CGSize scaledSourceSize = CGSizeMake(__tg_ceil(sourceSize.width * scale), __tg_ceil(sourceSize.height * scale));
+    const CGFloat rx = scaledTargetSize.width / scaledSourceSize.width;
+    const CGFloat ry = scaledTargetSize.height / scaledSourceSize.height;
+    const CGFloat ratio = MIN(rx, ry);
+    const CGSize size = CGSizeMake((MIN(__tg_ceil(scaledSourceSize.width * ratio), scaledTargetSize.width) / scale), (MIN(__tg_ceil(scaledSourceSize.height * ratio), scaledTargetSize.height) / scale));
+    return size;
+}
+
+static NSString *TIPDataToHexString(NSData *data);
+static NSString *TIPDataToHexString(NSData *data)
+{
+    static const unsigned char hexLookup[] = "0123456789abcdef";
+    const NSUInteger hexLength = data.length * 2;
+    if (!hexLength) {
+        return @"";
+    }
+
+    unichar* hexChars = (unichar*)malloc(sizeof(unichar) * (hexLength));
+    __block unichar *hexCharPtr = hexChars;
+    [data enumerateByteRangesUsingBlock:^(const void *bytes, NSRange byteRange, BOOL *stop) {
+        unsigned char *bytePtr = (unsigned char *)bytes;
+        for (NSUInteger i = 0; i < byteRange.length; ++i) {
+            const unsigned char byte = *bytePtr++;
+            *hexCharPtr++ = hexLookup[(byte >> 4) & 0xF];
+            *hexCharPtr++ = hexLookup[byte & 0xF];
+        }
+    }];
+
+    return [[NSString alloc] initWithCharactersNoCopy:hexChars length:hexLength freeWhenDone:YES];
 }
 
 NSString *TIPHash(NSString *string)
@@ -133,6 +161,23 @@ NSString *TIPRawFromSafe(NSString *safe)
     NSString *raw = TIPURLDecodeString(safe, NO);
     TIPAssert(raw);
     return raw;
+}
+
+dispatch_block_t __nullable TIPStartBackgroundTask(NSString * __nullable name)
+{
+    __block NSUInteger taskId = UIBackgroundTaskInvalid;
+    dispatch_block_t clearTaskBlock = NULL;
+    Class UIApplicationClass = [UIApplication class];
+    if (!TIPIsExtension()) {
+        clearTaskBlock = ^{
+            if (taskId != UIBackgroundTaskInvalid) {
+                [[UIApplicationClass sharedApplication] endBackgroundTask:taskId];
+                taskId = UIBackgroundTaskInvalid;
+            }
+        };
+        taskId = [[UIApplicationClass sharedApplication] beginBackgroundTaskWithName:name expirationHandler:clearTaskBlock];
+    }
+    return clearTaskBlock;
 }
 
 NS_ASSUME_NONNULL_END
