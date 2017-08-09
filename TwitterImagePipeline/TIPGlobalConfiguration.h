@@ -24,8 +24,6 @@ FOUNDATION_EXTERN SInt64 const TIPMaxBytesForAllMemoryCachesDefault;
 FOUNDATION_EXTERN SInt64 const TIPMaxBytesForAllDiskCachesDefault;
 //! Default max number of concurrent image downloads.  `4`
 FOUNDATION_EXTERN NSInteger const TIPMaxConcurrentImagePipelineDownloadCountDefault;
-//! Default maximum estimated time for detached _HTTP/1.1_ downloads before cancel. `3.0 seconds`
-FOUNDATION_EXTERN NSTimeInterval const TIPMaxEstimatedTimeRemainingForDetachedHTTPDownloadsDefault;
 //! Default maximum size of a cache entry by ratio to the cache max size.  `1:6` - `1/6th` the size
 FOUNDATION_EXTERN NSUInteger const TIPMaxRatioSizeOfCacheEntryDefault;
 
@@ -35,9 +33,6 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllMemoryCachesDefault;
 FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllRenderedCachesDefault;
 //! Default max count for all disk caches to hold. `INT16_MAX >> 4` (2044)
 FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
-
-//! block for providing the estimated bitrate using the given _domain_
-typedef int64_t(^TIPEstimatedBitrateProviderBlock)(NSString *domain);
 
 @protocol TIPImagePipelineObserver;
 @protocol TIPImageFetchDownloadProvider;
@@ -65,9 +60,6 @@ typedef int64_t(^TIPEstimatedBitrateProviderBlock)(NSString *domain);
 
     // Default is 4 concurrent operations
     FOUNDATION_EXTERN NSInteger const TIPMaxConcurrentImagePipelineDownloadCountDefault;
-
-    // Equivalent to 3 seconds.  This is an arbitrary choice a.t.m.
-    FOUNDATION_EXTERN NSTimeInterval const TIPMaxEstimatedTimeRemainingForDetachedHTTPDownloadsDefault;
  */
 @interface TIPGlobalConfiguration : NSObject
 
@@ -158,39 +150,6 @@ typedef int64_t(^TIPEstimatedBitrateProviderBlock)(NSString *domain);
 - (void)clearAllMemoryCaches;
 
 #pragma mark Downloads
-
-/**
- The maximum time (estimated) that a `TIPImagePipeline` will permit a download to continue after all
- associated `TIPImageFetchOperation` instances have been disassociated (from `cancel`).
-
- Since HTTP/1.1 does not support cancelling a request mid-flight without closing a connection,
- it is often more efficient to let a download complete so that the connection can be kept alive with
- its enlarged window sizes.
-
- Since SPDY and HTTP/2 support cancellation, if it can be detected that we are running over one of
- these modern protocols, we will always cancel the download when all associated
- `TIPImageFetchOperation` instances are disassociated (aka cancelled).
-
- Default == `3.0` seconds.
- `0.0` seconds (or negative) == disabled (all downloads will be cancelled and connections closed over
- HTTP/1.1)
- */
-@property (atomic) NSTimeInterval maxEstimatedTimeRemainingForDetachedHTTPDownloads;
-
-/**
- A block that will be called anytime an external opinion on the download bitrate is needed by a
- `TIPImagePipeline`.
- In particular, this block will be used to inform an image download on whether or not it should be
- cancelled or continue to download after it has disassociated from all related operations (via
- `cancel`).  It can be the case that there isn't enough information to determine the bitrate of a
- download from the bytes that have been downloaded at that point in time, so an outside opinion will
- be consulted to make the best choice.
- If the block is `NULL`, or returns a negative value, the estimated bandwidth will be treated as
- _unknown_.
- @note Reminder that bitrate is in _bits per second_ (aka _bps).
- To convert from _bytes per second_ (aka _Bps_) to _bps_, just multiply the _Bps_ by `8`.
- */
-@property (atomic, copy, nullable) TIPEstimatedBitrateProviderBlock estimatedBitrateProviderBlock;
 
 /**
  The `TIPImageFetchDownloadProvider` to use with __TIP__.

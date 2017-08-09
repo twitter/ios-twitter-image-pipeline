@@ -7,9 +7,8 @@
 //
 
 #import <ImageIO/ImageIO.h>
+#import <TwitterImagePipeline/TIPImageTypes.h>
 #import <UIKit/UIImage.h>
-
-#import "TIPImageTypes.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -82,6 +81,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param targetDimensions the target size in pixels to scale to.
  @param targetContentMode the target `UIViewContentMode` used to confine the scaling
  @note only _targetContentMode_ values that have `UIViewContentModeScale*` will be scaled (others are just positional and do not scale)
+ @warning there is a bug in Apple's frameworks that can yield a `nil` image when scaling.  The issue is years old and there are many radars against it (for example #33057552 and #22097047).  Rather than expose a pain point of this method potentially returning `nil`, this method will just return `self` in the case that the bug is triggered.
  */
 - (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions contentMode:(UIViewContentMode)targetContentMode;
 
@@ -105,6 +105,16 @@ NS_ASSUME_NONNULL_BEGIN
  @return a grayscale image or `nil` if there was an issue
  */
 - (nullable UIImage *)tip_grayscaleImage;
+
+
+/**
+ Return a copy of the target `UIImage` but transformed so that it is blurred.
+ @note This is a modified version of Apple's 2013 WWDC sample code for UIImage(ImageEffects).
+ See https://developer.apple.com/library/content/samplecode/UIImageEffects/Listings/UIImageEffects_UIImageEffects_m.html
+ @param blurRadius The radius of the blur in pixels
+ @return a blurred image or `nil` if there was an issue
+ */
+- (nullable UIImage *)tip_blurredImageWithRadius:(CGFloat)blurRadius;
 
 #pragma mark Decode Methods
 

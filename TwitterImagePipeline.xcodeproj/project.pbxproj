@@ -86,7 +86,6 @@
 		8BA232721DD430D70097B1DE /* TIPXWebPCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BA232701DD430D70097B1DE /* TIPXWebPCodec.m */; };
 		8BA232761DD4F43D0097B1DE /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BA232751DD4F43D0097B1DE /* WebP.framework */; };
 		8BA9755D1D77E30E00601D70 /* TIPTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BA975531D77E2C900601D70 /* TIPTests.framework */; };
-		8BA975651D77E34D00601D70 /* TIPDownloadContextTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BD54D681BCF10B9002C66C9 /* TIPDownloadContextTest.m */; };
 		8BA975661D77E34D00601D70 /* TIPImageFetchDelegateTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B9607AF1C63CF1800C99B71 /* TIPImageFetchDelegateTests.m */; };
 		8BA975671D77E34D00601D70 /* TIPImagePipelineTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B4F59931AEEE3CA0071AD95 /* TIPImagePipelineTests.m */; };
 		8BA975681D77E34D00601D70 /* TIPImageTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B96C0941AA9311700C44222 /* TIPImageTest.m */; };
@@ -451,7 +450,6 @@
 		8BC2177A1DDF69DB0017B0DA /* TIPTiming.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TIPTiming.m; path = Project/TIPTiming.m; sourceTree = "<group>"; };
 		8BC2177B1DDF69DB0017B0DA /* TIPURLStringCoding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TIPURLStringCoding.h; path = Project/TIPURLStringCoding.h; sourceTree = "<group>"; };
 		8BC2177C1DDF69DB0017B0DA /* TIPURLStringCoding.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TIPURLStringCoding.m; path = Project/TIPURLStringCoding.m; sourceTree = "<group>"; };
-		8BD54D681BCF10B9002C66C9 /* TIPDownloadContextTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPDownloadContextTest.m; sourceTree = "<group>"; };
 		8BDF142A1B2F592000F46E71 /* TIPImagePipelineInspectionResult.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImagePipelineInspectionResult.h; sourceTree = "<group>"; };
 		8BDF142B1B2F592000F46E71 /* TIPImagePipelineInspectionResult.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImagePipelineInspectionResult.m; sourceTree = "<group>"; };
 		8BE31C831B9A1BF5009BC0B2 /* ImageSpeedComparison.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ImageSpeedComparison.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -805,7 +803,6 @@
 			isa = PBXGroup;
 			children = (
 				8BFBD3571AA77DB2007A08DD /* Supporting Files */,
-				8BD54D681BCF10B9002C66C9 /* TIPDownloadContextTest.m */,
 				8B9607AF1C63CF1800C99B71 /* TIPImageFetchDelegateTests.m */,
 				8B4F59931AEEE3CA0071AD95 /* TIPImagePipelineTests.m */,
 				8B96C0941AA9311700C44222 /* TIPImageTest.m */,
@@ -1243,7 +1240,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8BA975651D77E34D00601D70 /* TIPDownloadContextTest.m in Sources */,
 				8BA975681D77E34D00601D70 /* TIPImageTest.m in Sources */,
 				8B4F99971ECA9C5200E3DE74 /* TIPImageViewTests.m in Sources */,
 				8BA9756E1D77E34D00601D70 /* TIPUtilitiesTests.m in Sources */,
@@ -1429,6 +1425,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1441,6 +1438,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twitter.TIP-Swift-Sample-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OBJC_BRIDGING_HEADER = "TIP Swift Sample App/Sample-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -1456,6 +1454,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -1469,6 +1468,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.twitter.TIP-Swift-Sample-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "TIP Swift Sample App/Sample-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				SWIFT_VERSION = 3.0;
@@ -1571,7 +1571,7 @@
 				INFOPLIST_FILE = "TIP Sample App/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.twitter.TIP-Sample-App";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twitter.TIP-ObjC-Sample-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1598,7 +1598,7 @@
 				INFOPLIST_FILE = "TIP Sample App/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.twitter.TIP-Sample-App";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twitter.TIP-ObjC-Sample-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1678,7 +1678,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2.4;
+				CURRENT_PROJECT_VERSION = 2.5;
 				DEAD_CODE_STRIPPING = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(CURRENT_PROJECT_VERSION)";
@@ -1744,7 +1744,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 2.4;
+				CURRENT_PROJECT_VERSION = 2.5;
 				DEAD_CODE_STRIPPING = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(CURRENT_PROJECT_VERSION)";
@@ -1775,6 +1775,7 @@
 				OTHER_LDFLAGS = "-ObjC";
 				SDKROOT = iphoneos;
 				STRIP_INSTALLED_PRODUCT = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;

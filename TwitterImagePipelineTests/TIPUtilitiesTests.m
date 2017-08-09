@@ -7,7 +7,16 @@
 //
 
 #import <XCTest/XCTest.h>
+
 #import "TIP_Project.h"
+#import "TIPImageContainer.h"
+#import "TIPTests.h"
+#import "UIImage+TIPAdditions.h"
+
+@interface UIImage (Testing)
+- (UIImage *)_tip_CoreGraphics_scaleImageToSpecificDimensions:(CGSize)scaledDimensions scale:(CGFloat)scale;
+- (UIImage *)_tip_UIKit_scaleImageToSpecificDimensions:(CGSize)scaledDimensions scale:(CGFloat)scale;
+@end
 
 @interface TIPUtilitiesTests : XCTestCase
 
@@ -65,5 +74,97 @@
         }
     }
 }
+
+- (void)testOddBoundaryScaling
+{
+    // We see lots of problems like this:
+    /*
+     <TIPProblemImageFailedToScale {
+        animated = 0;
+        dimensions = "NSSize: {1538, 2048}";
+        scaledDimensions = "NSSize: {1243, 1656}";
+        targetContentMode = 2;
+        targetDimensions = "NSSize: {1242, 1656}";
+     }>
+     */
+    // This unit test tries to catch that issue.
+    // As of yet, it does not repro with unit test :(
+
+    NSString *imagePath = [TIPTestsResourceBundle() pathForResource:@"1538x2048" ofType:@"jpg"];
+    TIPImageContainer *originalImage = [TIPImageContainer imageContainerWithFilePath:imagePath codecCatalogue:nil];
+    XCTAssertNotNil(originalImage);
+    XCTAssertEqual(originalImage.dimensions.width, (CGFloat)1538.0);
+    XCTAssertEqual(originalImage.dimensions.height, (CGFloat)2048.0);
+
+    TIPImageContainer *scaledImage;
+    scaledImage = [originalImage scaleToTargetDimensions:CGSizeMake(1243, 1656) contentMode:UIViewContentModeScaleAspectFill];
+    XCTAssertNotNil(scaledImage);
+    scaledImage = nil;
+
+    scaledImage = [originalImage scaleToTargetDimensions:CGSizeMake(1242, 1656) contentMode:UIViewContentModeScaleAspectFill];
+    XCTAssertNotNil(scaledImage);
+    scaledImage = nil;
+}
+
+- (void)testScalingWithOrientation
+{
+    NSString *imagePath = [TIPTestsResourceBundle() pathForResource:@"twitterfied" ofType:@"png"];
+    TIPImageContainer *originalContainer = [TIPImageContainer imageContainerWithFilePath:imagePath codecCatalogue:nil];
+    XCTAssertEqual(originalContainer.dimensions.width, 1024);
+    XCTAssertEqual(originalContainer.dimensions.height, 576);
+
+    UIImage *leftyImage = [UIImage imageWithCGImage:originalContainer.image.CGImage scale:originalContainer.image.scale orientation:UIImageOrientationLeft];
+    XCTAssertEqual(leftyImage.tip_dimensions.width, 576);
+    XCTAssertEqual(leftyImage.tip_dimensions.height, 1024);
+
+    UIImage *scaledLeftyImage1 = [leftyImage _tip_UIKit_scaleImageToSpecificDimensions:CGSizeMake(288, 512) scale:leftyImage.scale];
+    // UIKit method apply the image orientation to the render
+    XCTAssertEqual(scaledLeftyImage1.imageOrientation, UIImageOrientationUp);
+    XCTAssertEqual(scaledLeftyImage1.tip_dimensions.width, 288);
+    XCTAssertEqual(scaledLeftyImage1.tip_dimensions.height, 512);
+
+    UIImage *scaledLeftyImage2 = [leftyImage _tip_CoreGraphics_scaleImageToSpecificDimensions:CGSizeMake(288, 512) scale:leftyImage.scale];
+    // Core Graphics method preserves the image orientation property
+    XCTAssertEqual(scaledLeftyImage2.imageOrientation, UIImageOrientationLeft);
+    XCTAssertEqual(scaledLeftyImage2.tip_dimensions.width, 288);
+    XCTAssertEqual(scaledLeftyImage2.tip_dimensions.height, 512);
+}
+
+#if 0
+- (void)testScalingSpeed
+{
+    NSString *imagePath = [TIPTestsResourceBundle() pathForResource:@"1538x2048" ofType:@"jpg"];
+    TIPImageContainer *originalImageContainer = [TIPImageContainer imageContainerWithFilePath:imagePath codecCatalogue:nil];
+    XCTAssertNotNil(originalImageContainer);
+    XCTAssertEqual(originalImageContainer.dimensions.width, (CGFloat)1538.0);
+    XCTAssertEqual(originalImageContainer.dimensions.height, (CGFloat)2048.0);
+
+    const CGSize scaledSize = CGSizeMake(1243, 1656);
+    UIImage *originalImage = originalImageContainer.image;
+    double count = 10;
+
+    CFAbsoluteTime startUIKit = CFAbsoluteTimeGetCurrent();
+    for (NSUInteger i = 0; i < count; i++) {
+        @autoreleasepool {
+            UIImage *scaledImage = [originalImage _tip_UIKit_scaleImageToSpecificDimensions:scaledSize scale:0.0];
+            XCTAssertNotNil(scaledImage);
+        }
+    }
+    CFAbsoluteTime endUIKit = CFAbsoluteTimeGetCurrent();
+
+    CFAbsoluteTime startCoreGraphics = CFAbsoluteTimeGetCurrent();
+    for (NSUInteger i = 0; i < count; i++) {
+        @autoreleasepool {
+            UIImage *scaledImage = [originalImage _tip_CoreGraphics_scaleImageToSpecificDimensions:scaledSize scale:0.0];
+            XCTAssertNotNil(scaledImage);
+        }
+    }
+    CFAbsoluteTime endCoreGraphics = CFAbsoluteTimeGetCurrent();
+
+    NSLog(@"Tested Scaling Perf:\n"\
+          @"UIKit:        %fs\n"\
+          @"CoreGraphics: %fs\n", (endUIKit - startUIKit) / count, (endCoreGraphics - startCoreGraphics) / count);
+}
+#endif
 
 @end

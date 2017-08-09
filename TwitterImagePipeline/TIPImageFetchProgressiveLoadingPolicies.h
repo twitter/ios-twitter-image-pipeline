@@ -6,7 +6,7 @@
 //  Copyright (c) 2015 Twitter. All rights reserved.
 //
 
-#import "TIPProgressive.h"
+#import <TwitterImagePipeline/TIPProgressive.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

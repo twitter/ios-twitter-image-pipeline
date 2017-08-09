@@ -8,7 +8,7 @@
 
 #import <CoreGraphics/CGGeometry.h>
 #import <Foundation/Foundation.h>
-#import "TIPImageTypes.h"
+#import <TwitterImagePipeline/TIPImageTypes.h>
 
 @protocol TIPImageEncoder;
 @protocol TIPImageDecoder;

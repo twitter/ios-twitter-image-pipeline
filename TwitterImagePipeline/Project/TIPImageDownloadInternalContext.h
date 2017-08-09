@@ -27,7 +27,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, nullable) NSError *progressStateError;
 
-@property (nonatomic) BOOL doesProtocolSupportCancel;
 @property (nonatomic) BOOL didRequestHydration;
 @property (nonatomic) BOOL didStart;
 @property (nonatomic) BOOL didReceiveResponse;
@@ -37,11 +36,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable) NSHTTPURLResponse *response;
 @property (nonatomic) NSUInteger contentLength;
 @property (nonatomic, readonly) NSUInteger delegateCount;
-@property (nonatomic) NSUInteger totalBytesReceived;
-@property (nonatomic) uint64_t firstBytesReceivedMachTime;
-@property (nonatomic) uint64_t latestBytesReceivedMachTime;
-- (int64_t)latestBytesPerSecond;
-- (BOOL)canContinueAsDetachedDownload;
 
 - (NSOperationQueuePriority)downloadPriority;
 - (nullable id<TIPImageDownloadDelegate>)firstDelegate;

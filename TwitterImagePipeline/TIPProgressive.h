@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "TIPImageUtils.h"
+#import <TwitterImagePipeline/TIPImageUtils.h>
 
 @class TIPImageFetchOperation;
 
@@ -84,7 +84,7 @@ NS_ASSUME_NONNULL_END
 
 #pragma mark - Class Methods
 
-#import "TIPImageFetchProgressiveLoadingPolicy+StaticClass.h"
+#import <TwitterImagePipeline/TIPImageFetchProgressiveLoadingPolicy+StaticClass.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

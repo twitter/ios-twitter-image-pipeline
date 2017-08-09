@@ -7,10 +7,9 @@
 //
 
 #import <ImageIO/CGImageSource.h>
+#import <TwitterImagePipeline/TIPImageUtils.h>
 #import <UIKit/UIImage.h>
 #import <UIKit/UIView.h>
-
-#import "TIPImageUtils.h"
 
 @class TIPImageCodecCatalogue;
 
