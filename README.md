@@ -63,7 +63,7 @@ in-memory cache, the in-memory cache, and the on-disk cache.  Entries in the
 caches are keyed by an _image identifier_ which is provided by the creator of
 the fetch request or automatically generated from the image fetch's URL.
 
-- The _On-Disk Cache_ will maintain both the latest partial image and the largest matching image (based on the image identifier)
+- The _On-Disk Cache_ will maintain both the latest partial image and the largest completed image for an _image identifier_
 - The _In-Memory Cache_ will maintain the largest matching UIImage (based on the image identifier), but has no bias to the image being rendered/decoded or not
 - The _Rendered In-Memory Cache_ will maintain the 3 most recently sized and rendered/decoded UIImages that match (based on the image identifier)
 
@@ -71,7 +71,7 @@ The image will simultaneously be loaded into memory (as raw bytes) and
 written to the disk cache when retrieving from the Network.  Partial images
 will be persisted as well and not replace any completed images in the cache.
 
-Once the image is either hit or retrieved from any of the caches or the
+Once the image is either retrieved from any of the caches or the
 network, the retrieved image will percolate back through the caches in its
 various forms.
 
@@ -92,8 +92,8 @@ When the request is made, the fetch operation will perform the following:
 
 - Synchronously consult the _Rendered In-Memory Cache_ for an image that will fit the target dimensions and content mode.
 - On miss, asynchronously consult the _In-Memory Cache_ that maintains the UIImage of the largest matching image (based on identifier).
-- On miss, asynchronously consult the _On-Disk Cache_ that maintains the raw bytes of the largest matching image (based on identifier).
-- On miss, asynchronously consult any provided _additional caches_ (based on URL).  This is so that legacy caches can be pulled from when transitioning to *TIP* without having to forcibly load all assets again.  Twitter additionally uses this with its segregated pipeline design to pull an image from another account's pipeline while maintaining separation in the even of an account's removal which will clear that account's pipeline's caches.
+- On miss, asynchronously consult the _On-Disk Cache_ that maintains the raw bytes of the largest matching image (based on identifier).  As an optimization, *TIP* will take it a step further and also consult all other registered _pipeline disk caches_ - thus saving on the cost of network load by pulling from disk. The cross pipeline retrieved image will be stored to the fetching pipeline's caches to maintain image pipeline siloing.  _Note:_ this cross pipeline access requires the fetching image identifier and image URL to match.
+- On miss, asynchronously consult any provided _additional caches_ (based on URL).  This is so that legacy caches can be pulled from when transitioning to *TIP* without having to forcibly load all assets again.
 - On miss, asynchronously retrieve the image from the _Network_, resuming any partially loaded data that may exist in the _On-Disk Cache_.
 
 ### Preview Support
@@ -102,14 +102,15 @@ In addition to this simple progression, the fetch operation will offer the first
 (based on image identifier) complete image in the In-Memory Cache or On-Disk Cache
 (rendered and resized to the request's specified target sizing) as a preview image when the URLs
 don't match.  At that point, the fetch delegate can choose to just use the preview image or continue
-with the _Network_ loading the final image.
+with the _Network_ loading the final image.  This is particularly useful when the fetch image URL is
+for a smaller image than the image in cache, no need to hit the network :)
 
 ### Progressive Support
 
 A great value that the _image pipeline_ offers is the ability to stream progressive scans of an
 image, if it is PJPEG, as the image is loaded from the Network.  This progressive rendering is
-natively supported by iOS 8+, but will not be supported in iOS 7 or below.  Progressive support is
-opt-in and also configurable in how scans should load.
+natively supported by iOS 8+, but will not be supported in iOS 7 (the minimum OS for *TIP*).
+Progressive support is opt-in and also configurable in how scans should load.
 
 ### Resuming Image Downloads
 
@@ -204,12 +205,16 @@ image pipeline works.
 - `TIPImageContainer`
   - object to encapsulate the relevant info for a fetched image
   - the `TIPImageFetchDelegate` will use `TIPImageContainer` instances for callbacks, and the `TIPImageFetchOperation` will maintain `TIPImageFetchOperation` properties as it progresses.
-- `TIPImageView`
-  - convenience encapsulation for dealing with loading a image for display by subclassing `UIImageView`
+- `TIPImageViewFetchHelper`
+  - powerful class that can encapsulate the majority of use cases for loading an image and displaying it in a `UIImageView`
+  - 99% of image loading and displaying use cases can be solved by using this class, configuring it and providing a delegate and/or data source
+  - having the logic in this class avoid coupling _controller_ code with _view_ code in the _MVC_ practice
+- `UIImageView(TIPImageViewFetchHelper)`
+  - convenience category on `UIImageView` for associating a `TIPImageViewFetchHelper`
 
 ## Usage
 
-The simplest way to use *TIP* is with the `TIPImageView` and its `TIPImageViewHelper` counterpart.
+The simplest way to use *TIP* is with the `TIPImageViewHelper` counterpart.
 
 For concrete coding samples, look at the *TIP Sample App* and *TIP Swift Sample App* (in Objective-C and Swift, respectively).
 
