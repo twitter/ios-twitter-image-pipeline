@@ -24,6 +24,8 @@
 		8B2031D41D6E36FF00E9E88F /* TIPImageFetchDownload.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B2031D21D6E36FF00E9E88F /* TIPImageFetchDownload.m */; };
 		8B228B551DD14D1E009E8F6F /* TIPImageCodecs.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B228B531DD14D1E009E8F6F /* TIPImageCodecs.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B228B561DD14D1E009E8F6F /* TIPImageCodecs.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B228B541DD14D1E009E8F6F /* TIPImageCodecs.m */; };
+		8B3446D41FC35032005F87C8 /* TwitterImagePipeline.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BFF176A1DF5B4AD005DE734 /* TwitterImagePipeline.framework */; };
+		8B3446D51FC35032005F87C8 /* TwitterImagePipeline.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8BFF176A1DF5B4AD005DE734 /* TwitterImagePipeline.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8B36938B1DD3B7A900285774 /* TIPImageCodecCatalogue.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B3693891DD3B7A900285774 /* TIPImageCodecCatalogue.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B36938C1DD3B7A900285774 /* TIPImageCodecCatalogue.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B36938A1DD3B7A900285774 /* TIPImageCodecCatalogue.m */; };
 		8B375B401ABB5A1000EAAC71 /* UIImageView+TIPImageViewFetchHelper.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B375B3D1ABB5A1000EAAC71 /* UIImageView+TIPImageViewFetchHelper.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -48,7 +50,6 @@
 		8B6301941E6918C900C9A86A /* placeholder.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8B129A161E519DC4009796AD /* placeholder.jpg */; };
 		8B6301951E69199A00C9A86A /* TwitterAPI.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BB66A2F1E4528EA00A8F241 /* TwitterAPI.m */; };
 		8B63019B1E69224C00C9A86A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BFB14F91C6F80CA00A4DB02 /* UIKit.framework */; };
-		8B63019C1E69225100C9A86A /* TwitterImagePipeline.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BFF176A1DF5B4AD005DE734 /* TwitterImagePipeline.framework */; };
 		8B63019D1E69226600C9A86A /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BA232751DD4F43D0097B1DE /* WebP.framework */; };
 		8B63019F1E69254C00C9A86A /* TIPXWebPCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BA232701DD430D70097B1DE /* TIPXWebPCodec.m */; };
 		8B6301A31E6928CC00C9A86A /* SettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BB66A1C1E450DFB00A8F241 /* SettingsViewController.m */; };
@@ -268,6 +269,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		8B3446D61FC35032005F87C8 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				8B3446D51FC35032005F87C8 /* TwitterImagePipeline.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8BB66A331E46537600A8F241 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -460,7 +472,6 @@
 		8BE31CAE1B9A276F009BC0B2 /* twitterfied.jp2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = twitterfied.jp2; sourceTree = "<group>"; };
 		8BE31CAF1B9A276F009BC0B2 /* twitterfied.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = twitterfied.jpg; sourceTree = "<group>"; };
 		8BE31CB01B9A276F009BC0B2 /* twitterfied.pjpg */ = {isa = PBXFileReference; lastKnownFileType = file; path = twitterfied.pjpg; sourceTree = "<group>"; };
-		8BE5A8871D8D9843005CF75E /* AppledocSettings.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = AppledocSettings.plist; sourceTree = "<group>"; };
 		8BF17B5B1ADED888004F5CAA /* TIPImageFetchProgressiveLoadingPolicies.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageFetchProgressiveLoadingPolicies.h; sourceTree = "<group>"; };
 		8BF17B5C1ADED888004F5CAA /* TIPImageFetchProgressiveLoadingPolicies.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageFetchProgressiveLoadingPolicies.m; sourceTree = "<group>"; };
 		8BF17B661ADEE27D004F5CAA /* TIPImageFetchProgressiveLoadingPolicy+StaticClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "TIPImageFetchProgressiveLoadingPolicy+StaticClass.h"; sourceTree = "<group>"; };
@@ -479,8 +490,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8B63019C1E69225100C9A86A /* TwitterImagePipeline.framework in Frameworks */,
 				8B63019B1E69224C00C9A86A /* UIKit.framework in Frameworks */,
+				8B3446D41FC35032005F87C8 /* TwitterImagePipeline.framework in Frameworks */,
 				8B63019D1E69226600C9A86A /* WebP.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -713,7 +724,6 @@
 			isa = PBXGroup;
 			children = (
 				8B129A161E519DC4009796AD /* placeholder.jpg */,
-				8BE5A8871D8D9843005CF75E /* AppledocSettings.plist */,
 				8B8607F21D90415A00939554 /* CHANGELOG.md */,
 				8B8607F11D90408700939554 /* LICENSE */,
 				8B8607F31D90415A00939554 /* README.md */,
@@ -972,6 +982,7 @@
 				8B63017C1E68F9B400C9A86A /* Sources */,
 				8B63017D1E68F9B400C9A86A /* Frameworks */,
 				8B63017E1E68F9B400C9A86A /* Resources */,
+				8B3446D61FC35032005F87C8 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1119,7 +1130,6 @@
 					};
 					8BE31C821B9A1BF5009BC0B2 = {
 						CreatedOnToolsVersion = 6.4;
-						DevelopmentTeam = 9YG77X724H;
 					};
 					8BFBD3461AA77DB2007A08DD = {
 						CreatedOnToolsVersion = 6.1.1;
@@ -1129,7 +1139,6 @@
 					};
 					8BFF17691DF5B4AD005DE734 = {
 						CreatedOnToolsVersion = 8.1;
-						DevelopmentTeam = 9YG77X724H;
 						ProvisioningStyle = Manual;
 					};
 				};
@@ -1590,6 +1599,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = ImageSpeedComparison/Info.plist;
@@ -1611,6 +1621,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = ImageSpeedComparison/Info.plist;
@@ -1828,7 +1839,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = 9YG77X724H;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
@@ -1860,7 +1870,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = 9YG77X724H;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
