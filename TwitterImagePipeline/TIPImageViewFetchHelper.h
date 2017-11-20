@@ -11,6 +11,7 @@
 #import <UIKit/UIImageView.h>
 
 @class TIPImageFetchMetrics;
+@class TIPImagePipeline;
 @protocol TIPImageFetchRequest;
 @protocol TIPImageViewFetchHelperDelegate;
 @protocol TIPImageViewFetchHelperDataSource;
@@ -53,6 +54,8 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 @property (nonatomic, readonly, nullable) NSError *fetchError;
 /** metrics of fetch */
 @property (nonatomic, readonly, nullable) TIPImageFetchMetrics *fetchMetrics;
+/** dimensions of the fetched image */
+@property (nonatomic, readonly) CGSize fetchResultDimensions;
 /** source of fetch */
 @property (nonatomic, readonly) TIPImageLoadSource fetchSource;
 /** is the fetched image treated as a placeholder? */
@@ -99,6 +102,10 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 - (void)setImageAsIfLoaded:(UIImage *)image;
 /** mark the image as loaded from a fetch */
 - (void)markAsIfLoaded;
+/** set the image, as if it was a placeholder image */
+- (void)setImageAsIfPlaceholder:(UIImage *)image;
+/** mark the image as a placeholder */
+- (void)markAsIfPlaceholder;
 
 #pragma mark Triggers - Do NOT override
 
@@ -113,56 +120,19 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 /** call when view is laying out subviews */
 - (void)triggerViewLayingOutSubviews NS_REQUIRES_SUPER;
 
-#pragma mark Helper Triggers - Do NOT override
-
-/** call when view hidden changes */
-- (void)setViewHidden:(BOOL)hidden;
+/** call when view's hidden property changes */
+- (void)triggerViewWillChangeHidden NS_REQUIRES_SUPER;
+/** call when view's hidden property changes */
+- (void)triggerViewDidChangeHidden NS_REQUIRES_SUPER;
 /** call when view will move to window _newWindow_ (can be `nil` when removed from all windows) */
-- (void)viewWillMoveToWindow:(nullable UIWindow *)newWindow;
+- (void)triggerViewWillMoveToWindow:(nullable UIWindow *)newWindow NS_REQUIRES_SUPER;
 /** call when view did move to window (or `nil`) */
-- (void)viewDidMoveToWindow;
+- (void)triggerViewDidMoveToWindow NS_REQUIRES_SUPER;
+
+#pragma mark Transition a UIImageView between fetch helpers
 
 /** call to transition view from one fetch helper to a new fetch helper */
 + (void)transitionView:(UIImageView *)imageView fromFetchHelper:(nullable TIPImageViewFetchHelper *)fromHelper toFetchHelper:(nullable TIPImageViewFetchHelper *)toHelper;
-
-#pragma mark Decider Methods - Override if desired
-
-/** should update image with preview image?  default == `NO` */
-- (BOOL)shouldUpdateImageWithPreviewImageResult:(id<TIPImageFetchResult>)previewImageResult;
-/**
- should continue to load after fetching preview?
- Default behavior:
-    - If preview result is a placeholder, `YES`.
-    - If fetching request is placeholder, `NO`.
-    - If preview is larger or equal to target sizing, `NO`.
-    - Otherwise, `YES`.
- */
-- (BOOL)shouldContinueLoadingAfterFetchingPreviewImageResult:(id<TIPImageFetchResult>)previewImageResult;
-/**
- should load progressively?  default == `NO`
- Called via a background thread synchronously.
- */
-- (BOOL)shouldLoadProgressivelyWithIdentifier:(NSString *)identifier URL:(NSURL *)URL imageType:(NSString *)imageType originalDimensions:(CGSize)originalDimensions;
-/**
- should reload after a different fetch completed?
- Has automatic/default behavior, call super to utilize auto behavior
- */
-- (BOOL)shouldReloadAfterDifferentFetchCompletedWithImage:(UIImage *)image dimensions:(CGSize)dimensions identifier:(NSString *)identifier URL:(NSURL *)URL treatedAsPlaceholder:(BOOL)placeholder manuallyStored:(BOOL)manuallyStored;
-
-#pragma mark Events - Override if desired, call super so events reach delegate too
-
-/** fetch did start loading */
-- (void)didStartLoading;
-/** fetch did update progress */
-- (void)didUpdateProgress:(float)progress;
-/** fetch did update displayed image */
-- (void)didUpdateDisplayedImage:(UIImage *)image fromSourceDimensions:(CGSize)size isFinal:(BOOL)isFinal;
-/** fetch did load final image */
-- (void)didLoadFinalImageFromSource:(TIPImageLoadSource)source;
-/** fetch did fail */
-- (void)didFailToLoadFinalImage:(NSError *)error;
-/** fetch did reset */
-- (void)didReset;
 
 @end
 

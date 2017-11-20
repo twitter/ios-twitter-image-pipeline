@@ -448,76 +448,88 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
         return nil;
     }
 
-    CGRect imageRect = { CGPointZero, image.size };
-    UIImage *effectImage = image;
+    __block UIImage *outputImage = nil;
+    TIPExecuteCGContextBlock(^{
+        CGRect imageRect = { CGPointZero, image.size };
+        UIImage *effectImage = image;
 
-    const BOOL hasBlur = blurRadius > __FLT_EPSILON__;
-    if (hasBlur) {
-        UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
-        CGContextRef effectInContext = UIGraphicsGetCurrentContext();
-        CGContextScaleCTM(effectInContext, 1.0, -1.0);
-        CGContextTranslateCTM(effectInContext, 0, -image.size.height);
-        CGContextDrawImage(effectInContext, imageRect, image.CGImage);
+        const BOOL hasBlur = blurRadius > __FLT_EPSILON__;
+        if (hasBlur) {
+            UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
+            tip_defer(^{
+                UIGraphicsEndImageContext();
+            });
 
-        vImage_Buffer effectInBuffer;
-        effectInBuffer.data     = CGBitmapContextGetData(effectInContext);
-        effectInBuffer.width    = CGBitmapContextGetWidth(effectInContext);
-        effectInBuffer.height   = CGBitmapContextGetHeight(effectInContext);
-        effectInBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectInContext);
+            CGContextRef effectInContext = UIGraphicsGetCurrentContext();
+            CGContextScaleCTM(effectInContext, 1.0, -1.0);
+            CGContextTranslateCTM(effectInContext, 0, -image.size.height);
+            CGContextDrawImage(effectInContext, imageRect, image.CGImage);
 
-        UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
-        CGContextRef effectOutContext = UIGraphicsGetCurrentContext();
-        vImage_Buffer effectOutBuffer;
-        effectOutBuffer.data     = CGBitmapContextGetData(effectOutContext);
-        effectOutBuffer.width    = CGBitmapContextGetWidth(effectOutContext);
-        effectOutBuffer.height   = CGBitmapContextGetHeight(effectOutContext);
-        effectOutBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectOutContext);
+            vImage_Buffer effectInBuffer;
+            effectInBuffer.data     = CGBitmapContextGetData(effectInContext);
+            effectInBuffer.width    = CGBitmapContextGetWidth(effectInContext);
+            effectInBuffer.height   = CGBitmapContextGetHeight(effectInContext);
+            effectInBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectInContext);
 
-        // A description of how to compute the box kernel width from the Gaussian
-        // radius (aka standard deviation) appears in the SVG spec:
-        // http://www.w3.org/TR/SVG/filters.html#feGaussianBlurElement
-        //
-        // For larger values of 's' (s >= 2.0), an approximation can be used: Three
-        // successive box-blurs build a piece-wise quadratic convolution kernel, which
-        // approximates the Gaussian kernel to within roughly 3%.
-        //
-        // let d = floor(s * 3*sqrt(2*pi)/4 + 0.5)
-        //
-        // ... if d is odd, use three box-blurs of size 'd', centered on the output pixel.
-        //
-        const CGFloat inputRadius = blurRadius;
-        uint32_t radius = (uint32_t)floor(inputRadius * 3. * sqrt(2 * M_PI) / 4 + 0.5);
-        if (radius % 2 != 1) {
-            radius += 1; // force radius to be odd so that the three box-blur methodology works.
+            UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
+            tip_defer(^{
+                UIGraphicsEndImageContext();
+            });
+
+            CGContextRef effectOutContext = UIGraphicsGetCurrentContext();
+            vImage_Buffer effectOutBuffer;
+            effectOutBuffer.data     = CGBitmapContextGetData(effectOutContext);
+            effectOutBuffer.width    = CGBitmapContextGetWidth(effectOutContext);
+            effectOutBuffer.height   = CGBitmapContextGetHeight(effectOutContext);
+            effectOutBuffer.rowBytes = CGBitmapContextGetBytesPerRow(effectOutContext);
+
+            // A description of how to compute the box kernel width from the Gaussian
+            // radius (aka standard deviation) appears in the SVG spec:
+            // http://www.w3.org/TR/SVG/filters.html#feGaussianBlurElement
+            //
+            // For larger values of 's' (s >= 2.0), an approximation can be used: Three
+            // successive box-blurs build a piece-wise quadratic convolution kernel, which
+            // approximates the Gaussian kernel to within roughly 3%.
+            //
+            // let d = floor(s * 3*sqrt(2*pi)/4 + 0.5)
+            //
+            // ... if d is odd, use three box-blurs of size 'd', centered on the output pixel.
+            //
+            const CGFloat inputRadius = blurRadius;
+            uint32_t radius = (uint32_t)floor(inputRadius * 3. * sqrt(2 * M_PI) / 4 + 0.5);
+            if (radius % 2 != 1) {
+                radius += 1; // force radius to be odd so that the three box-blur methodology works.
+            }
+            vImageBoxConvolve_ARGB8888(&effectInBuffer, &effectOutBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
+            vImageBoxConvolve_ARGB8888(&effectOutBuffer, &effectInBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
+            vImageBoxConvolve_ARGB8888(&effectInBuffer, &effectOutBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
+
+            effectImage = UIGraphicsGetImageFromCurrentImageContext();
         }
-        vImageBoxConvolve_ARGB8888(&effectInBuffer, &effectOutBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
-        vImageBoxConvolve_ARGB8888(&effectOutBuffer, &effectInBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
-        vImageBoxConvolve_ARGB8888(&effectInBuffer, &effectOutBuffer, NULL, 0, 0, radius, radius, 0, kvImageEdgeExtend);
 
-        effectImage = UIGraphicsGetImageFromCurrentImageContext();
-        UIGraphicsEndImageContext();
-        UIGraphicsEndImageContext();
-    }
+        // Set up output context.
+        UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
+        tip_defer(^{
+            UIGraphicsEndImageContext();
+        });
 
-    // Set up output context.
-    UIGraphicsBeginImageContextWithOptions(image.size, NO, [[UIScreen mainScreen] scale]);
-    CGContextRef outputContext = UIGraphicsGetCurrentContext();
-    CGContextScaleCTM(outputContext, 1.0, -1.0);
-    CGContextTranslateCTM(outputContext, 0, -image.size.height);
+        CGContextRef outputContext = UIGraphicsGetCurrentContext();
+        CGContextScaleCTM(outputContext, 1.0, -1.0);
+        CGContextTranslateCTM(outputContext, 0, -image.size.height);
 
-    // Draw base image.
-    CGContextDrawImage(outputContext, imageRect, image.CGImage);
+        // Draw base image.
+        CGContextDrawImage(outputContext, imageRect, image.CGImage);
 
-    // Draw effect image.
-    if (hasBlur) {
-        CGContextSaveGState(outputContext);
-        CGContextDrawImage(outputContext, imageRect, effectImage.CGImage);
-        CGContextRestoreGState(outputContext);
-    }
+        // Draw effect image.
+        if (hasBlur) {
+            CGContextSaveGState(outputContext);
+            CGContextDrawImage(outputContext, imageRect, effectImage.CGImage);
+            CGContextRestoreGState(outputContext);
+        }
 
-    // Output image is ready.
-    UIImage *outputImage = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
+        // Output image is ready.
+        outputImage = UIGraphicsGetImageFromCurrentImageContext();
+    });
 
     return outputImage;
 }

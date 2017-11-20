@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - Binary
 
-FOUNDATION_EXTERN BOOL TIPIsExtension();
+FOUNDATION_EXTERN BOOL TIPIsExtension(void);
 
 #pragma mark - Bitmask Helpers
 
@@ -85,9 +85,9 @@ do { \
 
 #if DEBUG
 FOUNDATION_EXTERN void __TIPAssert(BOOL expression);
-FOUNDATION_EXTERN BOOL TIPIsDebuggerAttached();
-FOUNDATION_EXTERN void TIPTriggerDebugSTOP();
-FOUNDATION_EXTERN BOOL TIPIsDebugSTOPOnAssertEnabled();
+FOUNDATION_EXTERN BOOL TIPIsDebuggerAttached(void);
+FOUNDATION_EXTERN void TIPTriggerDebugSTOP(void);
+FOUNDATION_EXTERN BOOL TIPIsDebugSTOPOnAssertEnabled(void);
 FOUNDATION_EXTERN void TIPSetDebugSTOPOnAssertEnabled(BOOL stopOnAssert);
 #else
 #define __TIPAssert(exp) ((void)0)
@@ -97,7 +97,7 @@ FOUNDATION_EXTERN void TIPSetDebugSTOPOnAssertEnabled(BOOL stopOnAssert);
 #define TIPSetDebugSTOPOnAssertEnabled(stopOnAssert) ((void)0)
 #endif
 
-FOUNDATION_EXTERN BOOL TIPAmIBeingUnitTested();
+FOUNDATION_EXTERN BOOL TIPAmIBeingUnitTested(void);
 
 #pragma mark - Style Check support
 
@@ -118,7 +118,7 @@ FOUNDATION_EXTERN BOOL TIPAmIBeingUnitTested();
 
 #pragma mark - tip_defer support
 
-typedef void(^tip_defer_block_t)();
+typedef void(^tip_defer_block_t)(void);
 NS_INLINE void tip_deferFunc(__strong tip_defer_block_t __nonnull * __nonnull blockRef)
 {
     tip_defer_block_t actualBlock = *blockRef;

@@ -91,7 +91,7 @@
     // As of yet, it does not repro with unit test :(
 
     NSString *imagePath = [TIPTestsResourceBundle() pathForResource:@"1538x2048" ofType:@"jpg"];
-    TIPImageContainer *originalImage = [TIPImageContainer imageContainerWithFilePath:imagePath codecCatalogue:nil];
+    TIPImageContainer *originalImage = [TIPImageContainer imageContainerWithFilePath:imagePath decoderConfigMap:nil codecCatalogue:nil memoryMap:NO];
     XCTAssertNotNil(originalImage);
     XCTAssertEqual(originalImage.dimensions.width, (CGFloat)1538.0);
     XCTAssertEqual(originalImage.dimensions.height, (CGFloat)2048.0);
@@ -109,7 +109,7 @@
 - (void)testScalingWithOrientation
 {
     NSString *imagePath = [TIPTestsResourceBundle() pathForResource:@"twitterfied" ofType:@"png"];
-    TIPImageContainer *originalContainer = [TIPImageContainer imageContainerWithFilePath:imagePath codecCatalogue:nil];
+    TIPImageContainer *originalContainer = [TIPImageContainer imageContainerWithFilePath:imagePath decoderConfigMap:nil codecCatalogue:nil memoryMap:NO];
     XCTAssertEqual(originalContainer.dimensions.width, 1024);
     XCTAssertEqual(originalContainer.dimensions.height, 576);
 

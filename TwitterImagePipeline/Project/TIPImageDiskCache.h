@@ -29,7 +29,7 @@ typedef NS_OPTIONS(NSInteger, TIPImageDiskCacheFetchOptions) {
 
 - (instancetype)initWithPath:(NSString *)cachePath;
 
-- (nullable TIPImageDiskCacheEntry *)imageEntryForIdentifier:(NSString *)identifier options:(TIPImageDiskCacheFetchOptions)options;
+- (nullable TIPImageDiskCacheEntry *)imageEntryForIdentifier:(NSString *)identifier options:(TIPImageDiskCacheFetchOptions)options decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
 - (void)updateImageEntry:(TIPImageCacheEntry *)entry forciblyReplaceExisting:(BOOL)force;
 - (void)touchImageWithIdentifier:(NSString *)imageIdentifier orSaveImageEntry:(nullable TIPImageDiskCacheEntry *)entry;
 - (void)clearImageWithIdentifier:(NSString *)identifier;
@@ -52,7 +52,7 @@ typedef NS_OPTIONS(NSInteger, TIPImageDiskCacheFetchOptions) {
 - (TIPLRUCache *)diskCache_syncAccessManifest;
 - (nullable NSString *)diskCache_imageEntryFilePathForIdentifier:(NSString *)identifier hitShouldMoveEntryToHead:(BOOL)hitToHead context:(out TIPImageCacheEntryContext * __nullable * __nullable)context;
 - (void)diskCache_updateImageEntry:(TIPImageCacheEntry *)entry forciblyReplaceExisting:(BOOL)force;
-- (nullable TIPImageDiskCacheEntry *)diskCache_imageEntryForIdentifier:(NSString *)identifier options:(TIPImageDiskCacheFetchOptions)options;
+- (nullable TIPImageDiskCacheEntry *)diskCache_imageEntryForIdentifier:(NSString *)identifier options:(TIPImageDiskCacheFetchOptions)options decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
 @end
 
 NS_ASSUME_NONNULL_END

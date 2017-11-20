@@ -2,13 +2,47 @@
 
 ## Info
 
-**Document version:** 2.5.0
+**Document version:** 2.7.2
 
-**Last updated:** 08/07/2017
+**Last updated:** 10/24/2017
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.7.2
+
+- improve `TIPImageFetchTransformer` support with optional identifier
+  - was easy to get the rendered cache images mixed up between transformed and non-transformed fetches
+  - now, transform requests can only fetch images from the rendered cache if there is a match with the `tip_tranformerIdentifier`
+  - transformers that don't provide an identifier cannot be cached nor retrieved from the rendered cache
+- removed transformer from `TIPGlobalConfiguration` (would interfere with above improvement)
+
+### 2.7.1
+
+- add generic concrete class for `TIPImageFetchRequest` as convenience
+  - generic fetch request is mutable/immutable pair: `TIPGenericImageFetchRequest` and `TIPMutableGenericImageFetchRequest`
+
+### 2.7.0
+
+- add decoder config support
+  - enables custom TIPImageDecoder implementations to have configurable ways of being decoded
+- add memory map loading option for images
+  - default continues to not use memory map loading, but it's now exposed on TIPImageContainer
+- add MP4 decoder to TIP (as an extended decoder, not bundled by default)
+  - decodes MP4s as animated images
+
+### 2.6.0
+
+- Remove `TIPImageView`, just use `UIImageView` category instead
+  - Add `hidden` property support to `UIImageView` fetch helper category
+- Remove `TIPImageViewFetchHelper` subclassing event methods
+  - Use delegate pattern for eventing instead of polymorphism #Simplify
+- Remove `setViewHidden:` method for `TIPImageViewFetchHelper`
+  - It never did what it was advertised to do and muddied the control flow
+- Add `fetchResultDimensions` to `TIPImageViewFetchHelper` for more insight into results
+
+
 
 ### 2.5.0
 

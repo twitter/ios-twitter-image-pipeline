@@ -24,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable) TIPImageDiskCacheTemporaryFile *temporaryFile;
 @property (nonatomic, nullable) TIPPartialImage *partialImage;
 @property (nonatomic, copy, nullable) NSString *lastModified;
+@property (nonatomic, copy, nullable) NSDictionary<NSString *, id> *decoderConfigMap;
 
 @property (nonatomic, nullable) NSError *progressStateError;
 

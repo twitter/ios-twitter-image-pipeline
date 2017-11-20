@@ -22,6 +22,8 @@ FOUNDATION_EXTERN NSString * const TIPTestURLProtocolErrorDomain;
 + (void)unregisterEndpoint:(NSURL *)endpoint;
 + (void)unregisterAllEndpoints;
 
++ (BOOL)isEndpointRegistered:(NSURL *)endpoint;
+
 @end
 
 @interface TIPTestURLProtocolResponseConfig : NSObject <NSCopying>

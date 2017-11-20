@@ -343,6 +343,16 @@ typedef void(^TIPImagePipelineInspectionCallback)(TIPImagePipelineInspectionResu
 @optional
 
 /**
+ Callback when a `TIPImageFetchOperation` has started.
+ */
+- (void)tip_imageFetchOperationDidStart:(TIPImageFetchOperation *)op;
+
+/**
+ Callback when a `TIPImageFetchOperation` has finished.
+ */
+- (void)tip_imageFetchOperationDidFinish:(TIPImageFetchOperation *)op;
+
+/**
  Callback when a `TIPImageFetchOperation` has started downloading an image.
 
  @param op The `TIPImageFetchOperation` that started

@@ -136,7 +136,7 @@ NS_ASSUME_NONNULL_BEGIN
     return TIPImageDecoderDetectionResultNoMatch;
 }
 
-- (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
+- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config expectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
 {
     return [[TIPCGImageSourceDecoderContext alloc] initWithUTType:_UTType expectedDataLength:expectedDataLength buffer:buffer];
 }
@@ -161,7 +161,7 @@ NS_ASSUME_NONNULL_BEGIN
     return NO;
 }
 
-- (nullable TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData
+- (nullable TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData config:(nullable id)config
 {
     CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)imageData, NULL);
     TIPDeferRelease(imageSource);
@@ -181,7 +181,7 @@ NS_ASSUME_NONNULL_BEGIN
     return [self initWithUTType:(NSString *)kUTTypeJPEG];
 }
 
-- (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
+- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config expectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
 {
     return [[TIPJPEGCGImageSourceDecoderContext alloc] initWithUTType:self.UTType expectedDataLength:expectedDataLength buffer:buffer supportsProgressiveLoading:[self tip_supportsProgressiveDecoding]];
 }
@@ -195,7 +195,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation TIPAnimatedCGImageSourceDecoder
 
-- (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
+- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config expectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
 {
     return [[TIPCGImageSourceDecoderContext alloc] initWithUTType:self.UTType expectedDataLength:expectedDataLength buffer:buffer potentiallyAnimated:YES];
 }
@@ -265,6 +265,11 @@ NS_ASSUME_NONNULL_BEGIN
 @synthesize tip_data = _data;
 @synthesize tip_frameCount = _frameCount;
 @synthesize tip_isProgressive = _progressive;
+
+- (nullable id)tip_config
+{
+    return nil;
+}
 
 - (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer
 {
@@ -527,10 +532,23 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)_tip_attemptToLoadMoreImageWithResult:(inout TIPImageDecoderAppendResult *)result complete:(BOOL)complete
 {
-    NSUInteger lastFrameCount = _frameCount;
+    const NSUInteger lastFrameCount = _frameCount;
     if (_tip_isAnimated) {
         [self _tip_updateImageSourceData:_data complete:complete];
-        _frameCount = CGImageSourceGetCount(_imageSourceRef);
+        BOOL canUpdateFrameCount;
+        if (@available(iOS 11.0, *)) {
+            // We want to avoid decoding the animation data here in case it conflicts with
+            // the data already being decoded in the UI.
+            // On iOS 10, concurrent decoding of the same image (triggered by
+            // CGImageSourceGetCount and a UIImageView displaying the same image data)
+            // easily leads to crashes.
+            canUpdateFrameCount = YES;
+        } else {
+            canUpdateFrameCount = complete;
+        }
+        if (canUpdateFrameCount) {
+            _frameCount = CGImageSourceGetCount(_imageSourceRef);
+        }
     } else {
         [self readMore:complete];
     }

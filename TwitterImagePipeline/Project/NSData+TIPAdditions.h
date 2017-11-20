@@ -12,6 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NSData (TIPAdditions)
 - (NSData *)tip_safeSubdataNoCopyWithRange:(NSRange)range;
+- (NSString *)tip_hexStringValue;
 @end
 
 NS_ASSUME_NONNULL_END

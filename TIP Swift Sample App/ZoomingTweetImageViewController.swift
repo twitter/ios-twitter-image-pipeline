@@ -12,12 +12,13 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
 
     var tweetImageInfo: TweetImageInfo?
 
-    var scrollView: UIScrollView?
-    var imageView: UIImageView?
-    var progressView: UIProgressView?
-    var doubleTapGestureRecognizer: UITapGestureRecognizer?
+    private var scrollView: UIScrollView?
+    private var imageView: UIImageView?
+    private var progressView: UIProgressView?
 
-    var fetchOp: TIPImageFetchOperation?
+    private var doubleTapGestureRecognizer: UITapGestureRecognizer?
+
+    private var fetchOp: TIPImageFetchOperation?
 
     init(tweetImage imageInfo:TweetImageInfo)
     {
@@ -31,9 +32,10 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
         self.navigationItem.title = "Tweet Image"
     }
 
+    @available(*, unavailable)
     required init?(coder aDecoder: NSCoder)
     {
-        fatalError("init(coder:) has not been implemented")
+        fatalError("\(#function) has not been implemented")
     }
 
     override func viewDidLoad()
@@ -95,7 +97,7 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
 
     // MARK: Double tap
 
-    @objc func doubleTapTriggered(_ tapper: UITapGestureRecognizer)
+    @objc private func doubleTapTriggered(_ tapper: UITapGestureRecognizer)
     {
         if tapper.state == .recognized, let scrollView = self.scrollView {
             if scrollView.zoomScale == scrollView.maximumZoomScale {
@@ -108,12 +110,12 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
 
     // MARK: Scroll view delegate
 
-    @objc func viewForZooming(in scrollView: UIScrollView) -> UIView?
+    func viewForZooming(in scrollView: UIScrollView) -> UIView?
     {
         return self.imageView
     }
 
-    @objc func scrollViewDidZoom(_ scrollView: UIScrollView)
+    func scrollViewDidZoom(_ scrollView: UIScrollView)
     {
         let offsetX = max((scrollView.bounds.size.width - scrollView.contentInset.left - scrollView.contentInset.right - scrollView.contentSize.width) * 0.5, 0.0)
         let offsetY = max((scrollView.bounds.size.height - scrollView.contentInset.top - scrollView.contentInset.bottom - scrollView.contentSize.height) * 0.5, 0.0)
@@ -132,17 +134,17 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
 
     // MARK: TIP delegate
 
-    @objc func tip_imageFetchOperationDidStart(_ op: TIPImageFetchOperation)
+    func tip_imageFetchOperationDidStart(_ op: TIPImageFetchOperation)
     {
         print("starting Zoom fetch...")
     }
 
-    @objc func tip_imageFetchOperation(_ op: TIPImageFetchOperation, willAttemptToLoadFrom source: TIPImageLoadSource)
+    func tip_imageFetchOperation(_ op: TIPImageFetchOperation, willAttemptToLoadFrom source: TIPImageLoadSource)
     {
         print("...attempting load from next source: \(source)...");
     }
 
-    @objc func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didLoadPreviewImage previewResult: TIPImageFetchResult, completion: @escaping TIPImageFetchDidLoadPreviewCallback)
+    func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didLoadPreviewImage previewResult: TIPImageFetchResult, completion: @escaping TIPImageFetchDidLoadPreviewCallback)
     {
         print("...preview loaded...");
         self.progressView!.tintColor = UIColor.blue
@@ -150,7 +152,7 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
         completion(.continueLoading);
     }
 
-    @objc func tip_imageFetchOperation(_ op: TIPImageFetchOperation, shouldLoadProgressivelyWithIdentifier identifier: String, url URL: URL, imageType: String, originalDimensions: CGSize) -> Bool
+    func tip_imageFetchOperation(_ op: TIPImageFetchOperation, shouldLoadProgressivelyWithIdentifier identifier: String, url URL: URL, imageType: String, originalDimensions: CGSize) -> Bool
     {
         if nil != self.imageView?.image {
             return false
@@ -158,7 +160,7 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
         return true
     }
 
-    @objc func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didUpdateProgressiveImage progressiveResult: TIPImageFetchResult, progress: Float)
+    func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didUpdateProgressiveImage progressiveResult: TIPImageFetchResult, progress: Float)
     {
         print("...progressive update (\(progress))...")
         self.progressView!.tintColor = UIColor.orange
@@ -166,7 +168,7 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
         self.imageView!.image = progressiveResult.imageContainer.image
     }
 
-    @objc func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didLoadFirstAnimatedImageFrame progressiveResult: TIPImageFetchResult, progress: Float)
+    func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didLoadFirstAnimatedImageFrame progressiveResult: TIPImageFetchResult, progress: Float)
     {
         print("...animated first frame (\(progress))...")
         self.progressView!.tintColor = UIColor.purple
@@ -174,13 +176,13 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
         self.imageView!.image = progressiveResult.imageContainer.image
     }
 
-    @objc func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didUpdateProgress progress: Float)
+    func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didUpdateProgress progress: Float)
     {
         print("...progress (\(progress))...")
         self.progressView!.setProgress(progress, animated: true)
     }
 
-    @objc func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didLoadFinalImage finalResult: TIPImageFetchResult)
+    func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didLoadFinalImage finalResult: TIPImageFetchResult)
     {
         print("...completed zoom fetch")
         self.progressView!.tintColor = UIColor.green
@@ -189,7 +191,7 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
         self.fetchOp = nil
     }
 
-    @objc func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didFailToLoadFinalImage error: Error)
+    func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didFailToLoadFinalImage error: Error)
     {
         print("...failed zoom fetch: \(error)")
         self.progressView!.tintColor = UIColor.red

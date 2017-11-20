@@ -18,7 +18,7 @@ NSString * const TIPXImageTypeWebP = @"google.webp";
 
 #pragma mark - Defer support
 
-typedef void(^tipx_defer_block_t)();
+typedef void(^tipx_defer_block_t)(void);
 NS_INLINE void tipx_deferFunc(__strong tipx_defer_block_t __nonnull * __nonnull blockRef)
 {
     tipx_defer_block_t actualBlock = *blockRef;
@@ -105,7 +105,7 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer
     return TIPImageDecoderDetectionResultNeedMoreData;
 }
 
-- (id<TIPImageDecoderContext>)tip_initiateDecodingWithExpectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer
+- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config expectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
 {
     return [[TIPXWebPDecoderContext alloc] initWithExpectedContentLength:expectedDataLength buffer:buffer];
 }
@@ -125,7 +125,7 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer
     return [(TIPXWebPDecoderContext *)context finalizeDecoding];
 }
 
-- (TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData
+- (TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData config:(id)config
 {
     int width, height;
     Byte *rgbaBytes = WebPDecodeRGBA(imageData.bytes, imageData.length, &width, &height);
@@ -153,7 +153,7 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer
 - (NSData *)tip_writeDataWithImage:(TIPImageContainer *)imageContainer
                    encodingOptions:(TIPImageEncodingOptions)encodingOptions
                   suggestedQuality:(float)quality
-                             error:(out NSError **)error
+                             error:(out NSError * __autoreleasing *)error
 {
     __block WebPPicture *pictureRef = NULL;
     __block TIPErrorCode errorCode = TIPErrorCodeUnknown;
@@ -246,6 +246,11 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer
 }
 
 @synthesize tip_data = _dataBuffer;
+
+- (id)tip_config
+{
+    return nil;
+}
 
 - (instancetype)initWithExpectedContentLength:(NSUInteger)length buffer:(NSMutableData *)buffer
 {
@@ -444,7 +449,7 @@ static BOOL TIPXWebPPictureImport(WebPPicture *picture, CGImageRef imageRef)
         return NO;
     }
 
-    return WebPPictureImportRGBA(picture, convertedImageBuffer.data, (int)convertedImageBuffer.rowBytes);
+    return 0 != WebPPictureImportRGBA(picture, convertedImageBuffer.data, (int)convertedImageBuffer.rowBytes);
 }
 
 static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage, vImage_Buffer *convertedImageBuffer)

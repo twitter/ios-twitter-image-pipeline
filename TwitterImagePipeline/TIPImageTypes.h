@@ -71,7 +71,14 @@ FOUNDATION_EXTERN NSString * const TIPImageTypeICO;
  Only decoding is supported by __TIP__ by default.
  @note requires iOS 8+
  */
-FOUNDATION_EXTERN NSString * const TIPImageTypeRAW NS_AVAILABLE_IOS(8_0);
+FOUNDATION_EXTERN NSString * const TIPImageTypeRAW;
+/**
+ ICNS (Apple icon image)
+ Only decoding is supported by __TIP__ by default.
+ @note image format can contain multiple resolutions
+ @note requires iOS 11+
+ */
+FOUNDATION_EXTERN NSString * const TIPImageTypeICNS;
 
 #pragma mark Unsupported image types (cannot read nor write)
 
@@ -87,13 +94,6 @@ FOUNDATION_EXTERN NSString * const TIPImageTypePICT;
  a custom `TIPImageCodec` would be required to add support.
  */
 FOUNDATION_EXTERN NSString * const TIPImageTypeQTIF;
-/**
- ICNS (Apple icon image)
- Not supported by __TIP__ by default,
- a custom `TIPImageCodec` would be required to add support.
- @note image format can contain multiple resolutions
- */
-FOUNDATION_EXTERN NSString * const TIPImageTypeICNS;
 
 #pragma mark - TIPImageEncodingOptions
 

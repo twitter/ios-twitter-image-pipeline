@@ -139,7 +139,7 @@
 
 @implementation TweetWithMediaTableViewCell
 {
-    TIPImageView *_tweetImageView;
+    UIImageView *_tweetImageView;
     TIPImageViewFetchHelper *_tweetFetchHelper;
 }
 
@@ -147,13 +147,14 @@
 {
     if (self = [self initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:[[self class] reuseIdentifier]]) {
 
-        // TIPImageView logic is decoupled from the View via a "Helper" object
+        // logic is decoupled from the View via a "Helper" object
 
         // Create our helper
         _tweetFetchHelper = [[TIPImageViewFetchHelper alloc] initWithDelegate:self dataSource:self];
 
         // Create our image view
-        _tweetImageView = [[TIPImageView alloc] initWithFetchHelper:_tweetFetchHelper];
+        _tweetImageView = [[UIImageView alloc] init];
+        _tweetImageView.tip_fetchHelper = _tweetFetchHelper;
         _tweetImageView.contentMode = UIViewContentModeScaleAspectFill;
         _tweetImageView.clipsToBounds = YES;
         _tweetImageView.backgroundColor = [UIColor lightGrayColor];

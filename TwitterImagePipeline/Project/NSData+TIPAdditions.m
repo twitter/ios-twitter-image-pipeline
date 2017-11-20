@@ -28,6 +28,28 @@ NS_ASSUME_NONNULL_BEGIN
     return data;
 }
 
+- (NSString *)tip_hexStringValue
+{
+    static const unsigned char hexLookup[] = "0123456789abcdef";
+    const NSUInteger hexLength = self.length * 2;
+    if (!hexLength) {
+        return @"";
+    }
+
+    unichar* hexChars = (unichar*)malloc(sizeof(unichar) * (hexLength));
+    __block unichar *hexCharPtr = hexChars;
+    [self enumerateByteRangesUsingBlock:^(const void *bytes, NSRange byteRange, BOOL *stop) {
+        unsigned char *bytePtr = (unsigned char *)bytes;
+        for (NSUInteger i = 0; i < byteRange.length; ++i) {
+            const unsigned char byte = *bytePtr++;
+            *hexCharPtr++ = hexLookup[(byte >> 4) & 0xF];
+            *hexCharPtr++ = hexLookup[byte & 0xF];
+        }
+    }];
+
+    return [[NSString alloc] initWithCharactersNoCopy:hexChars length:hexLength freeWhenDone:YES];
+}
+
 @end
 
 NS_ASSUME_NONNULL_END

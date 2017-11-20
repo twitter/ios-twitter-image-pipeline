@@ -8,6 +8,9 @@
 
 #import <Foundation/Foundation.h>
 
+@class TIPImageFetchOperation;
+@class TIPImageStoreOperation;
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -36,7 +39,6 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
 
 @protocol TIPImagePipelineObserver;
 @protocol TIPImageFetchDownloadProvider;
-@protocol TIPImageFetchTransformer;
 @protocol TIPLogger;
 @protocol TIPProblemObserver;
 
@@ -168,15 +170,6 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
  */
 @property (atomic) NSInteger maxConcurrentImagePipelineDownloadCount;
 
-#pragma mark Behavior
-
-/**
- Provide a `TIPImageFetchTransformer` to support transforming the fetched images.
- `TIPImageFetchRequest` instances can provide specific a _transformer_ too, which takes
- precedence over this _transformer_.
- */
-@property (nullable, atomic) id<TIPImageFetchTransformer> transformer;
-
 #pragma mark Observing
 
 /**
@@ -269,6 +262,11 @@ typedef void(^TIPGlobalConfigurationInspectionCallback)(NSDictionary<NSString *,
  and `TIPImagePipelineInspectionResult` objects as values.
  */
 - (void)inspect:(TIPGlobalConfigurationInspectionCallback)callback;
+
+/**
+ Get all the running TIP operations.  Provide `NULL` to skip an output.
+ */
+- (void)getAllFetchOperations:(out NSArray<TIPImageFetchOperation *> * __nullable * __nullable)fetchOpsOut allStoreOperations:(out NSArray<TIPImageStoreOperation *> * __nullable * __nullable)storeOpsOut;
 
 @end
 

@@ -6,8 +6,8 @@
 //  Copyright © 2017 Twitter, Inc. All rights reserved.
 //
 
-#import "TIPImageView.h"
 #import "TIPImageViewFetchHelper.h"
+#import "UIImageView+TIPImageViewFetchHelper.h"
 
 @import XCTest;
 
@@ -105,6 +105,29 @@
     self.imageView.frame = CGRectMake(50.0, 50.0, 200.0, 200.0);
     [self.imageView layoutIfNeeded];
     XCTAssertEqual(self.fetchHelper.triggerViewLayingOutSubviewsCount, 1);
+}
+
+- (void)testImageViewHidden
+{
+    // Visible from set up
+    XCTAssertEqual(self.fetchHelper.triggerViewWillAppearCount, 1);
+    XCTAssertEqual(self.fetchHelper.triggerViewDidAppearCount, 1);
+    XCTAssertEqual(self.fetchHelper.triggerViewWillDisappearCount, 0);
+    XCTAssertEqual(self.fetchHelper.triggerViewDidDisappearCount, 0);
+
+    // Hide
+    self.imageView.hidden = YES;
+    XCTAssertEqual(self.fetchHelper.triggerViewWillAppearCount, 1);
+    XCTAssertEqual(self.fetchHelper.triggerViewDidAppearCount, 1);
+    XCTAssertEqual(self.fetchHelper.triggerViewWillDisappearCount, 1);
+    XCTAssertEqual(self.fetchHelper.triggerViewDidDisappearCount, 1);
+
+    // Show
+    self.imageView.hidden = NO;
+    XCTAssertEqual(self.fetchHelper.triggerViewWillAppearCount, 2);
+    XCTAssertEqual(self.fetchHelper.triggerViewDidAppearCount, 2);
+    XCTAssertEqual(self.fetchHelper.triggerViewWillDisappearCount, 1);
+    XCTAssertEqual(self.fetchHelper.triggerViewDidDisappearCount, 1);
 }
 
 @end

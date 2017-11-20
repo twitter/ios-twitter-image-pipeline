@@ -1,40 +1,20 @@
 //
-//  TIPImageView.h
+//  UIImageView+TIPImageViewFetchHelper.h
 //  TwitterImagePipeline
 //
 //  Created on 3/19/15.
 //  Copyright (c) 2015 Twitter. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
 #import <UIKit/UIImageView.h>
 
-@class TIPImagePipeline;
 @class TIPImageViewFetchHelper;
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- `TIPImageView` is a convenience subclass of `UIImageView` for displaying an image that is loaded
- from a given `TIPImagePipeline`.
-
- See `UIImageView(TIPImageViewFetchHelper)` category if subclassing `UIImageView` is not desired.
- */
-@interface TIPImageView : UIImageView
-
-/** The helper for fetching in this image view */
-@property (nonatomic, nullable) TIPImageViewFetchHelper *fetchHelper;
-
-/** initialize the view with a `TIPImageViewFetchHelper` */
-- (instancetype)initWithFetchHelper:(nullable TIPImageViewFetchHelper *)fetchHelper;
-
-@end
-
-/**
  Convenience category for `UIImageView` for displaying an image that is loaded from
  a `TIPImagePipeline` via a `TIPImageViewFetchHelper`
-
- Avoids the need of refactoring to use `TIPImageView`.
  */
 @interface UIImageView (TIPImageViewFetchHelper)
 

@@ -55,6 +55,7 @@ typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedByt
 // Request behavior info
 - (NSOperationQueuePriority)imageDownloadPriority;
 - (nullable TIPImageFetchHydrationBlock)imageDownloadHydrationBlock;
+- (nullable NSDictionary<NSString *, id> *)decoderConfigMap;
 
 // Loaded image behavior info
 - (NSTimeInterval)imageDownloadTTL;
@@ -99,6 +100,7 @@ didCompleteWithPartialImage:(nullable TIPPartialImage *)partialImage
             imageType:(nullable NSString *)imageType
                 image:(nullable TIPImageContainer *)image
    imageRenderLatency:(NSTimeInterval)latency
+           statusCode:(NSInteger)statusCode
                 error:(nullable NSError *)error;
 
 @end

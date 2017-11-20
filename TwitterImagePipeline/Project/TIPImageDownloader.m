@@ -312,6 +312,9 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     }
     if (!context.partialImage) {
         context.partialImage = [[TIPPartialImage alloc] initWithExpectedContentLength:context.contentLength];
+        if (context.decoderConfigMap) {
+            [context.partialImage updateDecoderConfigMap:context.decoderConfigMap];
+        }
     }
 
     // Update partial image
@@ -552,10 +555,11 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     // Pull out contextual values since accessing the context object from another thread is unsafe
     TIPPartialImage *partialImage = context.partialImage;
     NSString *lastModified = context.lastModified;
+    const NSInteger statusCode = context.response.statusCode;
     [context executePerDelegateSuspendingQueue:NULL block:^(id<TIPImageDownloadDelegate> delegateInner) {
         // only the first delegate is granted the honor of caching the partial image
         const BOOL isFirstDelegate = (delegateInner == firstDelegate);
-        [delegateInner imageDownload:(id)download didCompleteWithPartialImage:((isFirstDelegate) ? partialImage : nil) lastModified:((isFirstDelegate) ? lastModified : nil) byteSize:((isFirstDelegate) ? totalBytes : 0) imageType:((isFirstDelegate) ? imageType : nil) image:image imageRenderLatency:imageRenderLatency error:error];
+        [delegateInner imageDownload:(id)download didCompleteWithPartialImage:((isFirstDelegate) ? partialImage : nil) lastModified:((isFirstDelegate) ? lastModified : nil) byteSize:((isFirstDelegate) ? totalBytes : 0) imageType:((isFirstDelegate) ? imageType : nil) image:image imageRenderLatency:imageRenderLatency statusCode:statusCode error:error];
     }];
 }
 
@@ -705,6 +709,7 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
         context.lastModified = request.imageDownloadLastModified;
         context.partialImage = request.imageDownloadPartialImageForResuming;
         context.temporaryFile = request.imageDownloadTemporaryFileForResuming;
+        context.decoderConfigMap = request.decoderConfigMap;
 
         [context addDelegate:delegate];
 

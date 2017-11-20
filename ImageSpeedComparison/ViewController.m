@@ -373,6 +373,11 @@ static const NSUInteger kDefaultBitrateIndex = 5;
     return transformed;
 }
 
+- (NSString *)tip_transformerIdentifier
+{
+    return @"speed.test.transformer";
+}
+
 //- (NSDictionary *)progressiveLoadingPolicies
 //{
 //    return @{ TIPImageTypeJPEG : [[TIPGreedyProgressiveLoadingPolicy alloc] init] };

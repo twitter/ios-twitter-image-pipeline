@@ -47,7 +47,7 @@ do { \
 } while (0)
 
 @interface TIPSimpleImageFetchDelegate ()
-@property (nonatomic, readonly, nullable) TIPImagePipelineFetchCompletionBlock completion;
+@property (nonatomic, readonly, copy, nullable) TIPImagePipelineFetchCompletionBlock completion;
 - (instancetype)initWithCompletion:(nullable TIPImagePipelineFetchCompletionBlock)completion;
 @end
 
@@ -221,9 +221,9 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
     }
 
     // Perform synchronous access?
-    if ([NSThread isMainThread] && [op supportsLoadingFromSource:TIPImageLoadSourceMemoryCache] && op.imageIdentifier != nil) {
+    if ([NSThread isMainThread] && [op supportsLoadingFromRenderedCache] && op.imageIdentifier != nil) {
         // Sync Access, for optimization
-        entry = [_renderedCache imageEntryWithIdentifier:op.imageIdentifier targetDimensions:targetDimensions targetContentMode:targetContentMode];
+        entry = [_renderedCache imageEntryWithIdentifier:op.imageIdentifier transformerIdentifier:op.transformerIdentifier targetDimensions:targetDimensions targetContentMode:targetContentMode];
     }
 
     if (entry.completeImage) {

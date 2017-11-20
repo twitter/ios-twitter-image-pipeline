@@ -12,5 +12,6 @@
 #import "PipelineCacheInspectionResultsViewController.h"
 #import "PipelineInspectorViewController.h"
 #import "SettingsViewController.h"
+#import "TIPXMP4Codec.h"
 #import "TIPXWebPCodec.h"
 #import "TwitterAPI.h"

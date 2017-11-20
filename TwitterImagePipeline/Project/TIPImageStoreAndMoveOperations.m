@@ -36,6 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface TIPImageStoreOperation (Private)
 - (nullable NSData *)_tip_imageData;
 - (nullable NSString *)_tip_imageFilePath;
+- (nullable NSDictionary<NSString *, id> *)_tip_decoderConfigMap;
 - (nullable TIPImageContainer *)_tip_imageContainer;
 - (TIPCompleteImageEntryContext *)_tip_entryContext:(NSURL *)imageURL imageContainer:(nullable TIPImageContainer *)imageContainer;
 - (void)_tip_asyncStoreMemoryEntry:(TIPImageCacheEntry *)memoryEntry completion:(void(^)(BOOL))complete;
@@ -264,6 +265,11 @@ NS_ASSUME_NONNULL_BEGIN
     return [_request respondsToSelector:@selector(imageFilePath)] ? _request.imageFilePath : nil;
 }
 
+- (nullable NSDictionary<NSString *, id> *)_tip_decoderConfigMap
+{
+    return [_request respondsToSelector:@selector(decoderConfigMap)] ? _request.decoderConfigMap : nil;
+}
+
 - (nullable TIPImageContainer *)_tip_imageContainer
 {
     TIPImageContainer *imageContainer = nil;
@@ -319,12 +325,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)_tip_asyncStoreMemoryEntry:(TIPImageCacheEntry *)memoryEntry completion:(void(^)(BOOL))complete
 {
     TIPImageMemoryCache *memoryCache = self.pipeline.memoryCache;
+    NSDictionary<NSString *, id> *decoderConfigMap = [self _tip_decoderConfigMap];
     NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
         TIPImageContainer *container = nil;
         if (memoryEntry.completeImageData) {
-            container = [TIPImageContainer imageContainerWithData:memoryEntry.completeImageData codecCatalogue:nil];
+            container = [TIPImageContainer imageContainerWithData:memoryEntry.completeImageData decoderConfigMap:decoderConfigMap codecCatalogue:nil];
         } else if (memoryEntry.completeImageFilePath) {
-            container = [TIPImageContainer imageContainerWithFilePath:memoryEntry.completeImageFilePath codecCatalogue:nil];
+            container = [TIPImageContainer imageContainerWithFilePath:memoryEntry.completeImageFilePath decoderConfigMap:decoderConfigMap codecCatalogue:nil memoryMap:memoryEntry.completeImageContext.isAnimated];
         } else {
             container = memoryEntry.completeImage;
         }

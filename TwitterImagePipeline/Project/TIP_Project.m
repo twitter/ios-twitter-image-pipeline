@@ -11,6 +11,7 @@
 #include <CommonCrypto/CommonHMAC.h>
 #include <objc/runtime.h>
 
+#import "NSData+TIPAdditions.h"
 #import "TIP_Project.h"
 #import "TIPURLStringCoding.h"
 
@@ -42,7 +43,7 @@ NSString * const TIPProblemInfoKeyImageIsAnimated = @"animated";
 
 NSString *TIPVersion()
 {
-    return @"2.5";
+    return @"2.7";
 }
 
 void TIPSwizzle(Class cls, SEL originalSelector, SEL swizzledSelector)
@@ -112,36 +113,13 @@ CGSize TIPScaleToFitKeepingAspectRatio(CGSize sourceSize, CGSize targetSize, CGF
     return size;
 }
 
-static NSString *TIPDataToHexString(NSData *data);
-static NSString *TIPDataToHexString(NSData *data)
-{
-    static const unsigned char hexLookup[] = "0123456789abcdef";
-    const NSUInteger hexLength = data.length * 2;
-    if (!hexLength) {
-        return @"";
-    }
-
-    unichar* hexChars = (unichar*)malloc(sizeof(unichar) * (hexLength));
-    __block unichar *hexCharPtr = hexChars;
-    [data enumerateByteRangesUsingBlock:^(const void *bytes, NSRange byteRange, BOOL *stop) {
-        unsigned char *bytePtr = (unsigned char *)bytes;
-        for (NSUInteger i = 0; i < byteRange.length; ++i) {
-            const unsigned char byte = *bytePtr++;
-            *hexCharPtr++ = hexLookup[(byte >> 4) & 0xF];
-            *hexCharPtr++ = hexLookup[byte & 0xF];
-        }
-    }];
-
-    return [[NSString alloc] initWithCharactersNoCopy:hexChars length:hexLength freeWhenDone:YES];
-}
-
 NSString *TIPHash(NSString *string)
 {
     NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
     unsigned char hash[CC_SHA1_DIGEST_LENGTH];
     (void)CC_SHA1(data.bytes, (CC_LONG)data.length, hash);
     data = [[NSData alloc] initWithBytesNoCopy:hash length:CC_SHA1_DIGEST_LENGTH freeWhenDone:NO];
-    NSString *hashedString = TIPDataToHexString(data);
+    NSString *hashedString = [data tip_hexStringValue];
     TIPAssert(hashedString);
     return hashedString;
 }

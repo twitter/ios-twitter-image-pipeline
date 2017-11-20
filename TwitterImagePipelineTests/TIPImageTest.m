@@ -13,6 +13,7 @@
 #import "TIPImageContainer.h"
 #import "TIPImageUtils.h"
 #import "TIPTests.h"
+#import "TIPXMP4Codec.h"
 #import "TIPXWebPCodec.h"
 #import "UIImage+TIPAdditions.h"
 
@@ -39,6 +40,16 @@ TIPXWebPCodec *webpCodec = [[TIPXWebPCodec alloc] init]; \
 tip_defer(^{ \
     [[TIPImageCodecCatalogue sharedInstance] removeCodecForImageType:TIPXImageTypeWebP]; \
 });
+
+#define PLUG_IN_MP4() \
+TIPXMP4Codec *mp4Codec = [[TIPXMP4Codec alloc] init]; \
+[[TIPImageCodecCatalogue sharedInstance] setCodec:mp4Codec forImageType:TIPXImageTypeMP4]; \
+tip_defer(^{ \
+    [[TIPImageCodecCatalogue sharedInstance] removeCodecForImageType:TIPXImageTypeMP4]; \
+});
+
+
+static const NSOperatingSystemVersion kIOS11 = { 11, 0, 0 };
 
 @implementation TestParamSet
 
@@ -251,7 +262,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         XCTAssertEqual(!!animated, (detectedAnimatedFrameCount > 1));
     }
 
-    TIPImageContainer *container = [TIPImageContainer imageContainerWithData:data codecCatalogue:nil];
+    TIPImageContainer *container = [TIPImageContainer imageContainerWithData:data decoderConfigMap:nil codecCatalogue:nil];
     UIImage *image = container.image;
     XCTAssertNotNil(image, @"extension = '%@'", extension);
     NSTimeInterval decompressTime = [self decompressImage:image];
@@ -620,7 +631,13 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testXLoadICNS
 {
-    [self runLoadTestForUnreadableFormat:@"icns"];
+    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(isOperatingSystemAtLeastVersion:)] && [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:kIOS11]) {
+        [self runMeasurement:@"load" format:@"*icns" block:^{
+            [self runLoadTestForReadOnlyFormat:@"icns" imageType:TIPImageTypeICNS];
+        }];
+    } else {
+        [self runLoadTestForUnreadableFormat:@"icns"];
+    }
 }
 
 - (void)testSpeedICNS
@@ -728,6 +745,41 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     }];
 }
 
+
+- (void)testSaveAnimatedMP4
+{
+    // noop
+}
+
+- (void)testXLoadAnimatedMP4
+{
+    PLUG_IN_MP4();
+
+    // need to "seed" the test file since we don't have the encoder
+
+    NSString *srcFile = [TIPTestsResourceBundle() pathForResource:@"200w" ofType:@"mp4"];
+    NSString *tmpDir = NSTemporaryDirectory();
+    NSString *tmpFile = [tmpDir stringByAppendingPathComponent:@"test.100.mp4"];
+
+    NSFileManager *fm = [NSFileManager defaultManager];
+    [fm createDirectoryAtPath:tmpDir withIntermediateDirectories:YES attributes:nil error:NULL];
+    [fm copyItemAtPath:srcFile toPath:tmpFile error:NULL];
+    tip_defer(^{
+        [fm removeItemAtPath:tmpFile error:NULL];
+    });
+
+    // run the actual test
+
+    TIPImageContainer *container = [TIPImageContainer imageContainerWithFilePath:tmpFile decoderConfigMap:nil codecCatalogue:nil memoryMap:YES];
+    XCTAssertNotNil(container.image);
+    XCTAssertEqual((NSUInteger)35, container.frameCount);
+}
+
+- (void)testSpeedAnimatedMP4
+{
+    // noop
+}
+
 #pragma mark Robustness Tests
 
 - (void)testDataDribbleJPEG
@@ -741,7 +793,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
     XCTAssertGreaterThan(data.length, (NSUInteger)0);
 
-    id<TIPImageDecoderContext> decoderContext = [jpegDecoder tip_initiateDecodingWithExpectedDataLength:data.length buffer:nil];
+    id<TIPImageDecoderContext> decoderContext = [jpegDecoder tip_initiateDecoding:nil expectedDataLength:data.length buffer:nil];
     TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
     NSUInteger counts[4] = { 0 };
     const Byte * dataBytePtr = data.bytes;
@@ -878,7 +930,13 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypePICT));
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeQTIF));
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeRAW));
-    XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS));
+
+    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(isOperatingSystemAtLeastVersion:)] && [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:kIOS11]) {
+        XCTAssertTrue(TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS));
+    } else {
+        XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS));
+    }
+
 
     // write
 

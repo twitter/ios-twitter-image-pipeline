@@ -22,11 +22,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol TIPImageFetchTransformer <NSObject>
 
+@required
+
 /**
  Transform the provided _image_
 
  @param image the `UIImage` to transform
- @param progress the progress state of the image.  `1.f` == full image, `-1.f` == preview image, otherwise == progressive scan
+ @param progress the progress state of the image. `1.f` is final, lt `0.f` is preview, others are progressive scans
  @param targetDimensions hint `CGSize` for the target.  `CGSizeZero` for no hint.
  @param targetContentMode hint `UIViewContentMode` for the target.
  @param op the `TIPImageFetchOperation` being targeted for transform.
@@ -36,6 +38,15 @@ NS_ASSUME_NONNULL_BEGIN
  @note Transformed images are NOT cached.  The cache will persist the raw source image.
  */
 - (nullable UIImage *)tip_transformImage:(UIImage *)image withProgress:(float)progress hintTargetDimensions:(CGSize)targetDimensions hintTargetContentMode:(UIViewContentMode)targetContentMode forImageFetchOperation:(TIPImageFetchOperation *)op;
+
+@optional
+
+/**
+ The unique identifier for this transformer.
+ @warning If you do not specify an identifier, `TIPImageFetchRequest` instances with this transformer
+ will not be able to take advantage of the synchronous rendered cache.
+ */
+- (NSString *)tip_transformerIdentifier;
 
 @end
 

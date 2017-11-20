@@ -19,6 +19,25 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+static const NSUInteger kMaxEntriesPerRenderedCollection = 3;
+
+NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nullable string2)
+{
+    if (string1 == string2) {
+        return YES;
+    }
+    if (!string1 || !string2) {
+        return NO;
+    }
+    return [string1 isEqualToString:string2];
+}
+
+@interface TIPRenderedCacheItem : NSObject
+@property (nonatomic, readonly, copy, nullable) NSString *transformerIdentifier;
+@property (nonatomic, readonly) TIPImageCacheEntry *entry;
+- (instancetype)initWithEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier;
+@end
+
 @interface TIPImageRenderedEntriesCollection : NSObject <TIPLRUEntry>
 
 @property (nonatomic, readonly, copy) NSString *identifier;
@@ -28,9 +47,9 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)new NS_UNAVAILABLE;
 
 - (NSUInteger)collectionCost;
-- (void)addImageEntry:(TIPImageCacheEntry *)entry;
-- (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)size contentMode:(UIViewContentMode)mode;
-- (NSArray *)allEntries;
+- (void)addImageEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier;
+- (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)size contentMode:(UIViewContentMode)mode transformerIdentifier:(nullable NSString *)transformerIdentifier;
+- (NSArray<TIPImageCacheEntry *> *)allEntries;
 
 #pragma mark TIPLRUEntry
 
@@ -122,19 +141,19 @@ NS_ASSUME_NONNULL_BEGIN
     }
 }
 
-- (nullable TIPImageCacheEntry *)imageEntryWithIdentifier:(NSString *)identifier targetDimensions:(CGSize)size targetContentMode:(UIViewContentMode)mode
+- (nullable TIPImageCacheEntry *)imageEntryWithIdentifier:(NSString *)identifier transformerIdentifier:(nullable NSString *)transformerIdentifier targetDimensions:(CGSize)size targetContentMode:(UIViewContentMode)mode
 {
     TIPAssert(identifier != nil);
     if (identifier != nil && [NSThread isMainThread]) {
         @autoreleasepool {
             TIPImageRenderedEntriesCollection *collection = [_manifest entryWithIdentifier:identifier];
-            return [collection imageEntryMatchingDimensions:size contentMode:mode];
+            return [collection imageEntryMatchingDimensions:size contentMode:mode transformerIdentifier:transformerIdentifier];
         }
     }
     return nil;
 }
 
-- (void)storeImageEntry:(TIPImageCacheEntry *)entry
+- (void)storeImageEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier
 {
     TIPAssert(entry != nil);
     if (!entry.completeImage || !entry.completeImageContext) {
@@ -154,7 +173,7 @@ NS_ASSUME_NONNULL_BEGIN
 
     if (![NSThread isMainThread]) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self storeImageEntry:entry];
+            [self storeImageEntry:entry transformerIdentifier:transformerIdentifier];
         });
         return;
     }
@@ -176,7 +195,7 @@ NS_ASSUME_NONNULL_BEGIN
             collection = [[TIPImageRenderedEntriesCollection alloc] initWithIdentifier:identifier];
         }
 
-        [collection addImageEntry:entry];
+        [collection addImageEntry:entry transformerIdentifier:transformerIdentifier];
         const NSUInteger newCost = collection.collectionCost;
 
         if (!newCost) {
@@ -252,29 +271,32 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation TIPImageRenderedEntriesCollection
 {
-    NSMutableArray *_entries;
+    NSMutableArray<TIPRenderedCacheItem *> *_items;
 }
 
 - (instancetype)initWithIdentifier:(NSString *)identifier
 {
     if (self = [super init]) {
         _identifier = [identifier copy];
-        _entries = [NSMutableArray arrayWithCapacity:4];
+        _items = [NSMutableArray arrayWithCapacity:kMaxEntriesPerRenderedCollection + 1];
+        // ^ we +1 the capacity because we will overfill the array first before trimming it back down to the cap
     }
     return self;
 }
 
-- (void)addImageEntry:(TIPImageCacheEntry *)entry
+- (void)addImageEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier
 {
     const CGSize dimensions = entry.completeImage.dimensions;
     if (dimensions.width < (CGFloat)1.0 || dimensions.height < (CGFloat)1.0) {
         return;
     }
 
-    for (TIPImageCacheEntry *other in _entries) {
-        const CGSize otherDimensions = other.completeImage.dimensions;
+    for (TIPRenderedCacheItem *item in _items) {
+        const CGSize otherDimensions = item.entry.completeImage.dimensions;
         if (CGSizeEqualToSize(otherDimensions, dimensions)) {
-            return;
+            if (TIPStringsAreEqual(item.transformerIdentifier, transformerIdentifier)) {
+                return;
+            }
         }
     }
 
@@ -287,13 +309,14 @@ NS_ASSUME_NONNULL_BEGIN
         TIPLogError(@"Cached zero cost image to rendered cache %@", info);
     }
 
-    [_entries insertObject:entry atIndex:0];
-    if (_entries.count > 3) {
-        [_entries removeLastObject];
+    [self _tip_insertEntry:entry transformerIdentifier:transformerIdentifier];
+    if (_items.count > kMaxEntriesPerRenderedCollection) {
+        [_items removeLastObject];
     }
+    TIPAssert(_items.count <= kMaxEntriesPerRenderedCollection);
 }
 
-- (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)dimensions contentMode:(UIViewContentMode)mode
+- (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)dimensions contentMode:(UIViewContentMode)mode transformerIdentifier:(nullable NSString *)transformerIdentifier
 {
     if (!TIPSizeGreaterThanZero(dimensions) || mode >= UIViewContentModeRedraw) {
         return nil;
@@ -303,19 +326,24 @@ NS_ASSUME_NONNULL_BEGIN
     NSUInteger i = 0;
     TIPImageCacheEntry *returnValue = nil;
 
-    for (TIPImageCacheEntry *entry in _entries) {
+    for (TIPRenderedCacheItem *item in _items) {
+        TIPImageCacheEntry *entry = item.entry;
         if ([entry.completeImage.image tip_matchesTargetDimensions:dimensions contentMode:mode]) {
-            index = i;
-            returnValue = entry;
-            break;
+            if (TIPStringsAreEqual(item.transformerIdentifier, transformerIdentifier)) {
+                index = i;
+                returnValue = entry;
+                break;
+            }
         }
         i++;
     }
 
     if (NSNotFound != index && returnValue) {
         if (index != 0) {
-            [_entries removeObjectAtIndex:index];
-            [_entries insertObject:returnValue atIndex:0];
+            // HIT, move entry to front
+            TIPRenderedCacheItem *item = _items[index];
+            [_items removeObjectAtIndex:index];
+            [_items insertObject:item atIndex:0];
         }
         return returnValue;
     }
@@ -323,16 +351,20 @@ NS_ASSUME_NONNULL_BEGIN
     return nil;
 }
 
-- (NSArray *)allEntries
+- (NSArray<TIPImageCacheEntry *> *)allEntries
 {
-    return [_entries copy];
+    NSMutableArray<TIPImageCacheEntry *> *allEntries = [NSMutableArray arrayWithCapacity:_items.count];
+    for (TIPRenderedCacheItem *item in _items) {
+        [allEntries addObject:item.entry];
+    }
+    return [allEntries copy];
 }
 
 - (NSUInteger)collectionCost
 {
     NSUInteger cost = 0;
-    for (TIPImageCacheEntry *entry in _entries) {
-        cost += entry.completeImage.sizeInMemory;
+    for (TIPRenderedCacheItem *item in _items) {
+        cost += item.entry.completeImage.sizeInMemory;
     }
     return cost;
 }
@@ -345,6 +377,27 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)shouldAccessMoveLRUEntryToHead
 {
     return YES;
+}
+
+#pragma mark Private
+
+- (void)_tip_insertEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier
+{
+    TIPRenderedCacheItem *item = [[TIPRenderedCacheItem alloc] initWithEntry:entry transformerIdentifier:transformerIdentifier];
+    [_items insertObject:item atIndex:0];
+}
+
+@end
+
+@implementation TIPRenderedCacheItem
+
+- (instancetype)initWithEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier
+{
+    if (self = [super init]) {
+        _entry = entry;
+        _transformerIdentifier = [transformerIdentifier copy];
+    }
+    return self;
 }
 
 @end

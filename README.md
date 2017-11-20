@@ -169,9 +169,10 @@ image pipeline works.
     - UIImage convenience methods
     - Animated image support (GIFs, by default)
 - UIKit integration
-    - Default UIImageView subclass for convenience
+    - Dedicated helper object decoupling logic from views w/ `TIPImageViewFetchHelper`
     - Fetch helper offers useful fetch behavior encapsulation
     - Debug overlay feature to see debug details of the image view
+    - `UIImageView` category for convenient pairing with a `TIPImageViewFetchHelper`
 - Configurable
     - caches sizes (both in bytes and image count)
     - max cache entry size
@@ -262,8 +263,8 @@ populate with images.
 
             TIPImageFetchOperation *op = [pipeline operationWithRequest:request context:@(imageIndex) delegate:self];
 
-             // fetch can complete sync or async, so we need to hold the reference BEFORE
-             // triggering the fetch (in case it completes sync and will clear the ref)
+            // fetch can complete sync or async, so we need to hold the reference BEFORE
+            // triggering the fetch (in case it completes sync and will clear the ref)
             [_imageFetchOperations addObject:op];
             [[TIPImagePipeline my_imagePipeline] fetchImageWithOperation:op];
         }

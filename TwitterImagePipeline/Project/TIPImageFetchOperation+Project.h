@@ -18,12 +18,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, readonly, nullable, copy) NSString *imageIdentifier;
 @property (nonatomic, readonly, nullable) NSURL *imageURL;
+@property (nonatomic, readonly, nullable, copy) NSString *transformerIdentifier;
 
 - (instancetype)initWithImagePipeline:(TIPImagePipeline *)pipeline request:(id<TIPImageFetchRequest>)request delegate:(id<TIPImageFetchDelegate>)delegate;
 
 - (void)earlyCompleteOperationWithImageEntry:(TIPImageCacheEntry *)entry;
 - (void)willEnqueue;
 - (BOOL)supportsLoadingFromSource:(TIPImageLoadSource)source;
+- (BOOL)supportsLoadingFromRenderedCache;
 
 @end
 
