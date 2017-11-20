@@ -107,7 +107,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (TIPImageCodecProperties)propertiesForCodecWithImageType:(nullable NSString *)type;
 
 /** Convenience method to load an image via catalogue of codecs  */
-- (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data imageType:(out NSString * __nullable * __nullable)imageType;
+- (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap imageType:(out NSString * __nullable * __nullable)imageType;
 
 /** Convenience method to save an image to a file (_quality_ is between `0` and `1`) */
 - (BOOL)encodeImage:(TIPImageContainer *)image toFilePath:(NSString *)filePath withImageType:(NSString *)imageType quality:(float)quality options:(TIPImageEncodingOptions)options atomic:(BOOL)atomic error:(out NSError * __nullable * __nullable)error;

@@ -18,9 +18,11 @@
 #import "TIPImageCache.h"
 #import "TIPImageDiskCache.h"
 #import "TIPImageFetchDownloadInternal.h"
+#import "TIPImageFetchOperation.h"
 #import "TIPImageMemoryCache.h"
 #import "TIPImagePipeline+Project.h"
 #import "TIPImageRenderedCache.h"
+#import "TIPImageStoreAndMoveOperations.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -131,16 +133,13 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 
         _sharedImagePipelineQueue = [[NSOperationQueue alloc] init];
         _sharedImagePipelineQueue.name = @"tip.global.image.pipeline.operation.queue";
-        _sharedImagePipelineQueue.maxConcurrentOperationCount = 6;
 
-        // Give the app 10 seconds to "warm up" before opening up the number of
-        // concurrent TIP operations that can run.
-        // It is feasible to have the operation queue overloaded if the user
-        // quickly scrolls through images before the relevant disk cache manifests
-        // have loaded.
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.0 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
-            self->_sharedImagePipelineQueue.maxConcurrentOperationCount = NSOperationQueueDefaultMaxConcurrentOperationCount;
-        });
+        // Don't let TIP get overwhelmed with fetch requests
+#if __LP64__
+        _sharedImagePipelineQueue.maxConcurrentOperationCount = 6;
+#else
+        _sharedImagePipelineQueue.maxConcurrentOperationCount = 4;
+#endif
 
         _globalObservers = [NSHashTable<id<TIPImagePipelineObserver>> weakObjectsHashTable];
         self.imageFetchDownloadProvider = nil;
@@ -676,6 +675,27 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
 @end
 
 @implementation TIPGlobalConfiguration (Inspect)
+
+- (void)getAllFetchOperations:(out NSArray<TIPImageFetchOperation *> * __nullable * __nullable)fetchOpsOut allStoreOperations:(out NSArray<TIPImageStoreOperation *> * __nullable * __nullable)storeOpsOut
+{
+    NSMutableArray<TIPImageFetchOperation *> *fetchOps = [[NSMutableArray alloc] init];
+    NSMutableArray<TIPImageStoreOperation *> *storeOps = [[NSMutableArray alloc] init];
+
+    for (NSOperation *op in _sharedImagePipelineQueue.operations) {
+        if ([op isKindOfClass:[TIPImageFetchOperation class]]) {
+            [fetchOps addObject:(id)op];
+        } else if ([op isKindOfClass:[TIPImageStoreOperation class]]) {
+            [storeOps addObject:(id)op];
+        }
+    }
+
+    if (fetchOpsOut) {
+        *fetchOpsOut = [fetchOps copy];
+    }
+    if (storeOpsOut) {
+        *storeOpsOut = [storeOps copy];
+    }
+}
 
 - (void)inspect:(TIPGlobalConfigurationInspectionCallback)callback
 {

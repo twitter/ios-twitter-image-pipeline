@@ -11,15 +11,21 @@ import UIKit
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver, TIPLogger, TIPImageAdditionalCache, TwitterAPIDelegate {
 
-    @objc public var window: UIWindow?
-    @objc public var tabBarController: UITabBarController?
-    @objc public var imagePipeline: TIPImagePipeline?
+    // MARK: UIApplicationDelegate variables
 
-    @objc public var searchCount: UInt = 100
-    @objc public var searchWebP: Bool = false
-    @objc public var usePlaceholder: Bool = false
+    var window: UIWindow?
 
-    @objc public var debugInfoVisible: Bool {
+    // MARK: internal variables
+
+    var imagePipeline: TIPImagePipeline?
+
+    // MARK: variables needed by @objc
+
+    @objc var searchCount: UInt = 100
+    @objc var searchWebP: Bool = false
+    @objc var usePlaceholder: Bool = false
+
+    @objc private var debugInfoVisible: Bool {
         get {
             return TIPImageViewFetchHelper.isDebugInfoVisible
         }
@@ -28,8 +34,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         }
     }
 
+    // MARK: private variables
+
+    private var tabBarController: UITabBarController?
+
     private var opCount: Int = 0
     private var placeholder: UIImage?
+
+    // MARK: UIApplicationDelegate functions
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool
     {
@@ -48,14 +60,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         TwitterAPI.sharedInstance().delegate = self
 
 
-        let lightBlueColor = UIColor.init(colorLiteralRed: 150.0/255.0, green: 215.0/255.0, blue: 1.0, alpha: 0.0)
+        let lightBlueColor = UIColor(red: 150.0/255.0, green: 215.0/255.0, blue: 1.0, alpha: 0.0)
 
         UISearchBar.appearance().barTintColor = lightBlueColor
         UISearchBar.appearance().tintColor = UIColor.white
         UITextField.appearance(whenContainedInInstancesOf: [UISearchBar.self]).tintColor = lightBlueColor
         UINavigationBar.appearance().barTintColor = lightBlueColor
         UINavigationBar.appearance().tintColor = UIColor.white
-        UINavigationBar.appearance().titleTextAttributes = [NSForegroundColorAttributeName: UIColor.white]
+        UINavigationBar.appearance().titleTextAttributes = [.foregroundColor: UIColor.white]
         UITabBar.appearance().barTintColor = lightBlueColor
         UITabBar.appearance().tintColor = UIColor.white
         UISlider.appearance().minimumTrackTintColor = lightBlueColor
@@ -81,9 +93,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         return true;
     }
 
-    // MARK: public
+    // MARK: private functions
 
-    public func incrementNetworkOperations() -> Void
+    private func incrementNetworkOperations() -> Void
     {
         if (Thread.isMainThread) {
             self.incOps()
@@ -94,7 +106,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         }
     }
 
-    public func decrementNetworkOperations() -> Void
+    private func decrementNetworkOperations() -> Void
     {
         if (Thread.isMainThread) {
             self.decOps()
@@ -123,31 +135,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
 
     // MARK: API Delegate
 
-    @objc func apiWorkStarted(_ api: TwitterAPI)
+    func apiWorkStarted(_ api: TwitterAPI)
     {
         self.incrementNetworkOperations()
     }
 
-    @objc func apiWorkFinished(_ api: TwitterAPI)
+    func apiWorkFinished(_ api: TwitterAPI)
     {
         self.decrementNetworkOperations()
     }
 
     // MARK: Observer
 
-    @objc func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didStartDownloadingImageAt URL: URL)
+    func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didStartDownloadingImageAt URL: URL)
     {
         self.incrementNetworkOperations()
     }
 
-    @objc func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didFinishDownloadingImageAt URL: URL, imageType type: String, sizeInBytes byteSize: UInt, dimensions: CGSize, wasResumed: Bool)
+    func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didFinishDownloadingImageAt URL: URL, imageType type: String, sizeInBytes byteSize: UInt, dimensions: CGSize, wasResumed: Bool)
     {
         self.decrementNetworkOperations()
     }
 
     // MARK: Logger
 
-    @objc func tip_log(with level: TIPLogLevel, file: String, function: String, line: Int32, message: String)
+    func tip_log(with level: TIPLogLevel, file: String, function: String, line: Int32, message: String)
     {
         let levelString: String
         switch (level) {
@@ -178,7 +190,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
 
     // MARK: Additional Cache
 
-    @objc func tip_retrieveImage(for URL: URL, completion: @escaping TIPImageAdditionalCacheFetchCompletion)
+    func tip_retrieveImage(for URL: URL, completion: @escaping TIPImageAdditionalCacheFetchCompletion)
     {
         var image: UIImage?
         let lastPathComponent: String? = URL.lastPathComponent

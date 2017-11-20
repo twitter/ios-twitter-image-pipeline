@@ -63,6 +63,11 @@ FOUNDATION_EXTERN NSString * const TIPImageFetchDownloadConstructorExceptionName
  Called by __TIP__ to cancel the download.
  @param cancelDescription a contextual description for why the download was cancelled
  Implementer should cancel the underlying network load when this method is called.
+ @warning Whether the underlying network load has started or not, the implementer MUST eventually
+ call `[TIPImageFetchDownloadClient imageFetchDownload:didCompleteWithError:]` on `context.client`
+ from the `context.downloadQueue` queue. An error reflecting cancellation must be provided. Failure
+ to complete the download will yield a "hung" download which can lead to both a memory leak and a
+ clogged pool for __TIP__ operations.
  */
 - (void)cancelWithDescription:(NSString *)cancelDescription;
 

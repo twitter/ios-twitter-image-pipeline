@@ -32,6 +32,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     id<TIPImageCodec> _codec;
     id<TIPImageDecoder> _decoder;
     id<TIPImageDecoderContext> _decoderContext;
+    NSDictionary<NSString *, id> *_decoderConfigMap;
     dispatch_queue_t _renderQueue;
 }
 
@@ -115,6 +116,13 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     return progress;
 }
 
+- (void)updateDecoderConfigMap:(nullable NSDictionary<NSString *, id> *)configMap
+{
+    dispatch_async(_renderQueue, ^{
+        self->_decoderConfigMap = [configMap copy];
+    });
+}
+
 - (TIPImageDecoderAppendResult)appendData:(nullable NSData *)data final:(BOOL)final
 {
     __block TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
@@ -144,7 +152,8 @@ static const float kUnfinishedImageProgressCap = 0.999f;
                 buffer = [NSMutableData dataWithCapacity:_expectedContentLength];
                 [buffer appendData:data];
             }
-            _decoderContext = [_decoder tip_initiateDecodingWithExpectedDataLength:_expectedContentLength buffer:buffer];
+            id config = _decoderConfigMap[_type];
+            _decoderContext = [_decoder tip_initiateDecoding:config expectedDataLength:_expectedContentLength buffer:buffer];
             _codecDetector = nil;
             return YES;
         }

@@ -153,32 +153,34 @@ NS_ASSUME_NONNULL_BEGIN
     return [(TIPImageContainer *)[[self class] alloc] initWithAnimatedImage:image loopCount:loopCount frameDurations:durations];
 }
 
-+ (nullable instancetype)imageContainerWithData:(NSData *)data codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
++ (nullable instancetype)imageContainerWithData:(NSData *)data decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
 {
     if (!catalogue) {
         catalogue = [TIPImageCodecCatalogue sharedInstance];
     }
 
-    return [catalogue decodeImageWithData:data imageType:NULL];
+    return [catalogue decodeImageWithData:data decoderConfigMap:decoderConfigMap imageType:NULL];
 }
 
-+ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
++ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue memoryMap:(BOOL)map
 {
-    return [self imageContainerWithFileURL:[NSURL fileURLWithPath:filePath isDirectory:NO] codecCatalogue:catalogue];
+    return [self imageContainerWithFileURL:[NSURL fileURLWithPath:filePath isDirectory:NO] decoderConfigMap:decoderConfigMap codecCatalogue:catalogue memoryMap:map];
 }
 
-+ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
++ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue memoryMap:(BOOL)map
 {
     if (!fileURL.isFileURL) {
         return nil;
     }
 
-    // explicitely avoid loading with memory mapped file by loading via
-    // NSData because UIImage is very fragile.
-    // modification/move/deletion and even high velocity reading of
-    // the underlying file (at that path) can yield a crash
-    NSData *data = [NSData dataWithContentsOfURL:fileURL];
-    return (data) ? [self imageContainerWithData:data codecCatalogue:catalogue] : nil;
+    NSData *data = nil;
+    if (map) {
+        data = [NSData dataWithContentsOfURL:fileURL options:NSDataReadingMappedIfSafe error:NULL];
+    } else {
+        data = [NSData dataWithContentsOfURL:fileURL];
+    }
+
+    return (data) ? [self imageContainerWithData:data decoderConfigMap:decoderConfigMap codecCatalogue:catalogue] : nil;
 }
 
 - (NSUInteger)sizeInMemory

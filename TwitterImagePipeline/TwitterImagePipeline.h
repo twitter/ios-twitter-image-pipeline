@@ -27,7 +27,6 @@
 #import <TwitterImagePipeline/TIPImageStoreRequest.h>
 #import <TwitterImagePipeline/TIPImageTypes.h>
 #import <TwitterImagePipeline/TIPImageUtils.h>
-#import <TwitterImagePipeline/TIPImageView.h>
 #import <TwitterImagePipeline/TIPImageViewFetchHelper.h>
 #import <TwitterImagePipeline/TIPLogger.h>
 #import <TwitterImagePipeline/TIPProgressive.h>
@@ -36,3 +35,4 @@
 #pragma mark TIP Categories
 
 #import <TwitterImagePipeline/UIImage+TIPAdditions.h>
+#import <TwitterImagePipeline/UIImageView+TIPImageViewFetchHelper.h>

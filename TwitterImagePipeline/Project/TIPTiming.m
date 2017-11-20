@@ -12,8 +12,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-static mach_timebase_info_data_t _TIPMachTimebaseInfo();
-static mach_timebase_info_data_t _TIPMachTimebaseInfo()
+static mach_timebase_info_data_t _TIPMachTimebaseInfo(void);
+static mach_timebase_info_data_t _TIPMachTimebaseInfo(void)
 {
     static mach_timebase_info_data_t sMachInfo;
     static dispatch_once_t sMachInfoOnceToken = 0;

@@ -122,29 +122,36 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Convenience constructor.
  @param data the `NSData` to load as a `UIImage` and encpasulate
+ @param decoderConfigMap an optional dictionary of opaque config objects for the decoder to use (config will be matched by the decoder's image type string), passing `nil` is always fine
  @param catalogue the catalogue of codecs to load with, pass `nil` to use
  `[TIPImageCodecCatalogue sharedInstance]`
  @return image container encapsulating the desired image, or `nil` if the image could not be loaded
  */
-+ (nullable instancetype)imageContainerWithData:(NSData *)data codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue;
++ (nullable instancetype)imageContainerWithData:(NSData *)data decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue;
 
 /**
  Convenience constructor.
  @param filePath the file path to load as a `UIImage` and encpasulate
+ @param decoderConfigMap an optional dictionary of opaque config objects for the decoder to use (config will be matched by the decoder's image type string), passing `nil` is always fine
  @param catalogue the catalogue of codecs to load with, pass `nil` to use
  `[TIPImageCodecCatalogue sharedInstance]`
+ @param map `YES` to load the image data via memory map, `NO` (default) to load the image data into memory
  @return image container encapsulating the desired image, or `nil` if the image could not be loaded
+ @warning Loading with memory mapped file is very fragile. Modification/move/deletion and even high velocity reading of the underlying file (at that path) can yield a crash or corruption. Take care to only provide `YES` for _map_ if you are very confident in the approach.
  */
-+ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue;
++ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue memoryMap:(BOOL)map;
 
 /**
  Convenience constructor.
  @param fileURL the file path `NSURL` to load as a `UIImage` and encpasulate
+ @param decoderConfigMap an optional dictionary of opaque config objects for the decoder to use (config will be matched by the decoder's image type string), passing `nil` is always fine
  @param catalogue the catalogue of codecs to load with, pass `nil` to use
  `[TIPImageCodecCatalogue sharedInstance]`
+ @param map `YES` to load the image data via memory map, `NO` (default) to load the image data into memory
  @return image container encapsulating the desired image, or `nil` if the image could not be loaded
+ @warning Loading with memory mapped file is very fragile. Modification/move/deletion and even high velocity reading of the underlying file (at that path) can yield a crash or corruption. Take care to only provide `YES` for _map_ if you are very confident in the approach.
  */
-+ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue;
++ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue memoryMap:(BOOL)map;
 
 #pragma mark Inferred Properties
 

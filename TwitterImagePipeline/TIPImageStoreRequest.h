@@ -154,6 +154,11 @@ typedef NS_OPTIONS(NSInteger, TIPImageStoreOptions)
  */
 @property (nullable, nonatomic, readonly) id<TIPImageStoreRequestHydrater> hydrater;
 
+/**
+ A decoder config map for cases when we need to decode the image for memory cache storage
+ */
+@property (nullable, nonatomic, readonly, copy) NSDictionary<NSString *, id> *decoderConfigMap;
+
 @end
 
 /** `TIPImageStoreRequest` specifically for `UIImage` based store requests */

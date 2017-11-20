@@ -49,8 +49,9 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
 @implementation TIPImageFetchDownloadInternal
 {
     NSOperationQueuePriority _priority;
-    BOOL _started;
     NSURLSession *_session;
+    BOOL _started;
+    BOOL _cancelled;
 }
 
 @synthesize context = _context;
@@ -79,7 +80,7 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
 
 - (void)start
 {
-    if (_started) {
+    if (_started || _cancelled) {
         return;
     }
 
@@ -102,7 +103,18 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
 
 - (void)cancelWithDescription:(NSString *)cancelDescription
 {
-    [_task cancel];
+    if (_cancelled) {
+        return;
+    }
+
+    _cancelled = YES;
+    if (_task) {
+        [_task cancel];
+    } else if (_context) {
+        dispatch_async(self.contextQueue, ^{
+            [self.context.client imageFetchDownload:self didCompleteWithError:[NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil]];
+        });
+    }
 }
 
 #pragma mark Properties

@@ -16,4 +16,3 @@
  */
 @interface TIPSafeOperation : NSOperation
 @end
-

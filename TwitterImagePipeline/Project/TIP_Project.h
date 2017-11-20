@@ -17,13 +17,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-#pragma mark - Constants
-
-FOUNDATION_EXTERN const NSTimeInterval TIPTimeToLiveDefault; // 30 days
-
 #pragma mark - Version
 
-FOUNDATION_EXTERN NSString *TIPVersion();
+FOUNDATION_EXTERN NSString *TIPVersion(void);
 
 #pragma mark - Helpers
 
@@ -56,7 +52,7 @@ do { \
 
 #pragma mark - Debugging Tools
 
-FOUNDATION_EXTERN BOOL TIPShouldAssertDuringPipelineRegistation();
+FOUNDATION_EXTERN BOOL TIPShouldAssertDuringPipelineRegistation(void);
 FOUNDATION_EXTERN void TIPSetShouldAssertDuringPipelineRegistation(BOOL shouldAssertDuringPipelineRegistration);
 
 #pragma mark - BG Task

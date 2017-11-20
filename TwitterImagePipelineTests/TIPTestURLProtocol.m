@@ -69,6 +69,15 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
     });
 }
 
++ (BOOL)isEndpointRegistered:(NSURL *)endpoint
+{
+    __block BOOL isRegistered = NO;
+    dispatch_sync(sOriginQueue, ^{
+        isRegistered = (sOriginToResponseDictionary[_UnderlyingURLString(endpoint)] != nil);
+    });
+    return isRegistered;
+}
+
 + (void)initialize
 {
     static dispatch_once_t onceToken;

@@ -105,6 +105,15 @@ typedef NS_ENUM(NSInteger, TIPImageFetchOperationState){
 @property (nonatomic, readonly, nullable) TIPImageFetchMetrics *metrics;
 
 /**
+ The amount of time this operation has spent in its queue idle (waiting to start).
+ */
+@property (atomic, readonly) NSTimeInterval timeSpentIdleInQueue;
+/**
+ The amount of time this operation has spent executing.
+ */
+@property (atomic, readonly) NSTimeInterval timeSpentExecuting;
+
+/**
  The priority of the operation, which can be modified at any time.
  Default == `NSOperationQueuePriorityNormal`.
  */

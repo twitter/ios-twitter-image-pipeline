@@ -1,5 +1,5 @@
 module TwitterImagePipeline {
-    umbrella header "TwitterImagePipeline.h"
+    umbrella "."
 
     export *
     module * {

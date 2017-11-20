@@ -307,8 +307,13 @@ static TIPImagePipeline *sPipeline = nil;
         XCTAssertEqual(context.progressiveProgressCount, (NSUInteger)0, @"imageType == %@", type);
     }
     if (animatedOn && TIPImageLoadSourceNetwork == source && [[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsAnimation:type] && context.expectedFrameCount > 1) {
-        XCTAssertGreaterThan(context.firstAnimatedFrameProgress, (float)0.0f);
-        XCTAssertLessThan(context.firstAnimatedFrameProgress, (float)1.0f);
+        // only iOS 11 supports progressive animation loading due to a crashing bug in iOS 10
+        if (@available(iOS 11.0, *)) {
+            XCTAssertGreaterThan(context.firstAnimatedFrameProgress, (float)0.0f);
+            XCTAssertLessThan(context.firstAnimatedFrameProgress, (float)1.0f);
+        } else {
+            XCTAssertEqualWithAccuracy(context.firstAnimatedFrameProgress, (float)0.0f, (float)0.001f);
+        }
     }
     if (animatedOn) {
         if (context.finalImageContainer) {
@@ -482,7 +487,11 @@ static TIPImagePipeline *sPipeline = nil;
 - (void)testFetchingJPEG2000
 {
     TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG2000, YES, NO, NO, 256 * 1024 * 8 };
-    [self _runFetching:imageStruct];
+    if (@available(iOS 11.1, *)) {
+        NSLog(@"iOS 11.1 regressed JPEG2000 so that the image cannot be parsed until fully downloading thus breaking most expectations TIP unit tests have.  Radars have been filed but please file another radar against Apple if you care about JPEG2000 support.");
+    } else {
+        [self _runFetching:imageStruct];
+    }
 }
 
 - (void)testFetchingPJPEG2000

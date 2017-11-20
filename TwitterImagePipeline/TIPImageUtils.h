@@ -50,6 +50,18 @@ NS_INLINE CGSize TIPDimensionsFromSizeScaled(CGSize size, CGFloat scale)
     return size;
 }
 
+//! Convert dimensions (in pixels) to size (in points)
+NS_INLINE CGSize TIPDimensionsToSizeScaled(CGSize dimensions, CGFloat scale)
+{
+    if (scale <= 0.0) {
+        scale = [UIScreen mainScreen].scale;
+    }
+
+    dimensions.width /= scale;
+    dimensions.height /= scale;
+    return dimensions;
+}
+
 //! Get dimensions (in pixels) from `UIView`
 NS_INLINE CGSize TIPDimensionsFromView(UIView * __nullable view)
 {
@@ -83,9 +95,23 @@ NS_INLINE CGSize TIPSizeScaledFromDimensions(CGSize dimensions, CGFloat scale)
 }
 
 //! Get size (in points based on screen scale) from dimensions (in pixels)
-NS_INLINE CGSize TIPPointSizeFromDimensions(CGSize dimensions)
+NS_INLINE CGSize TIPDimensionsToPointSize(CGSize dimensions)
 {
-    return TIPSizeScaledFromDimensions(dimensions, [UIScreen mainScreen].scale);
+    return TIPDimensionsToSizeScaled(dimensions, 0);
+}
+
+//! Does the `UIViewContentMode` scale?
+NS_INLINE BOOL TIPContentModeDoesScale(UIViewContentMode contentMode)
+{
+    switch (contentMode)
+    {
+        case UIViewContentModeScaleToFill:
+        case UIViewContentModeScaleAspectFit:
+        case UIViewContentModeScaleAspectFill:
+            return YES;
+        default:
+            return NO;
+    }
 }
 
 //! Estimate byte size of a decoded `UIImage` with the given settings

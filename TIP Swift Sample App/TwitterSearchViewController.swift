@@ -22,7 +22,7 @@ class TweetWithMediaTableViewCell: UITableViewCell, TIPImageViewFetchHelperDataS
         }
     }
 
-    private var tweetImageView: TIPImageView?
+    private var tweetImageView: UIImageView?
     private var tweetFetchHelper: TIPImageViewFetchHelper?
 
     class func reuseIdentifier() -> String
@@ -34,13 +34,14 @@ class TweetWithMediaTableViewCell: UITableViewCell, TIPImageViewFetchHelperDataS
     {
         super.init(style: .subtitle, reuseIdentifier: TweetWithMediaTableViewCell.reuseIdentifier())
 
-        // TIPImageView logic is decoupled from the View via a "Helper" object
+        // logic is decoupled from the View via a "Helper" object
 
         // Create our helper
         self.tweetFetchHelper = TIPImageViewFetchHelper.init(delegate: self, dataSource: self)
 
         // Create our image view
-        self.tweetImageView = TIPImageView.init(fetchHelper: self.tweetFetchHelper!)
+        self.tweetImageView = UIImageView.init()
+        self.tweetImageView!.tip_fetchHelper = self.tweetFetchHelper!
         self.tweetImageView!.contentMode = .scaleAspectFill
         self.tweetImageView!.clipsToBounds = true
         self.tweetImageView!.backgroundColor = UIColor.lightGray
@@ -50,9 +51,10 @@ class TweetWithMediaTableViewCell: UITableViewCell, TIPImageViewFetchHelperDataS
         self.contentView.addSubview(self.tweetImageView!)
     }
 
+    @available(*, unavailable)
     required init?(coder aDecoder: NSCoder)
     {
-        fatalError("init(coder:) has not been implemented")
+        fatalError("\(#function) has not been implemented")
     }
 
     override func prepareForReuse()
@@ -83,12 +85,12 @@ class TweetWithMediaTableViewCell: UITableViewCell, TIPImageViewFetchHelperDataS
 
     // MARK: data source
 
-    @objc func tip_imagePipeline(for helper: TIPImageViewFetchHelper) -> TIPImagePipeline?
+    func tip_imagePipeline(for helper: TIPImageViewFetchHelper) -> TIPImagePipeline?
     {
         return APP_DELEGATE().imagePipeline
     }
 
-    @objc func tip_imageFetchRequest(for helper: TIPImageViewFetchHelper) -> TIPImageFetchRequest?
+    func tip_imageFetchRequest(for helper: TIPImageViewFetchHelper) -> TIPImageFetchRequest?
     {
         guard let tweetImage = self.tweet?.images.first else {
             return nil
@@ -101,12 +103,12 @@ class TweetWithMediaTableViewCell: UITableViewCell, TIPImageViewFetchHelperDataS
 
     // MARK: delegate
 
-    @objc func tip_fetchHelper(_ helper: TIPImageViewFetchHelper, shouldUpdateImageWithPreviewImageResult previewImageResult: TIPImageFetchResult) -> Bool
+    func tip_fetchHelper(_ helper: TIPImageViewFetchHelper, shouldUpdateImageWithPreviewImageResult previewImageResult: TIPImageFetchResult) -> Bool
     {
         return true
     }
 
-    @objc func tip_fetchHelper(_ helper: TIPImageViewFetchHelper, shouldContinueLoadingAfterFetchingPreviewImageResult previewImageResult: TIPImageFetchResult) -> Bool
+    func tip_fetchHelper(_ helper: TIPImageViewFetchHelper, shouldContinueLoadingAfterFetchingPreviewImageResult previewImageResult: TIPImageFetchResult) -> Bool
     {
         if previewImageResult.imageIsTreatedAsPlaceholder {
             return true
@@ -133,7 +135,7 @@ class TweetWithMediaTableViewCell: UITableViewCell, TIPImageViewFetchHelperDataS
         return true
     }
 
-    @objc func tip_fetchHelper(_ helper: TIPImageViewFetchHelper, shouldLoadProgressivelyWithIdentifier identifier: String, url URL: URL, imageType: String, originalDimensions: CGSize) -> Bool
+    func tip_fetchHelper(_ helper: TIPImageViewFetchHelper, shouldLoadProgressivelyWithIdentifier identifier: String, url URL: URL, imageType: String, originalDimensions: CGSize) -> Bool
     {
         return true
     }
@@ -158,9 +160,10 @@ class TwitterSearchViewController: UIViewController, UISearchResultsUpdating, UI
         self.navigationItem.title = "Twitter Search"
     }
 
+    @available(*, unavailable)
     required init?(coder aDecoder: NSCoder)
     {
-        fatalError("init(coder:) has not been implemented")
+        fatalError("\(#function) has not been implemented")
     }
 
     override func viewDidLoad()
@@ -184,7 +187,7 @@ class TwitterSearchViewController: UIViewController, UISearchResultsUpdating, UI
 
     // MARK: table view
 
-    @objc func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int
     {
         if let count = self.tweets?.count {
             return count
@@ -192,7 +195,7 @@ class TwitterSearchViewController: UIViewController, UISearchResultsUpdating, UI
         return 0
     }
 
-    @objc func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
     {
         tableView.deselectRow(at: indexPath, animated: true)
         if let imageInfo: TweetImageInfo = self.tweets?[indexPath.row].images.first {
@@ -201,7 +204,7 @@ class TwitterSearchViewController: UIViewController, UISearchResultsUpdating, UI
         }
     }
 
-    @objc func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
     {
         let hasImages: Bool
         let tweet = self.tweets?[indexPath.row]
@@ -229,7 +232,7 @@ class TwitterSearchViewController: UIViewController, UISearchResultsUpdating, UI
         return cell!
     }
 
-    @objc func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat
     {
         if let tweet = self.tweets?[indexPath.row] {
             if tweet.images.count > 0 {
@@ -253,11 +256,11 @@ class TwitterSearchViewController: UIViewController, UISearchResultsUpdating, UI
 
     // MARK: Search Controller
 
-    @objc func updateSearchResults(for searchController: UISearchController)
+    func updateSearchResults(for searchController: UISearchController)
     {
     }
 
-    @objc func searchBarSearchButtonClicked(_ searchBar: UISearchBar)
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar)
     {
         let search = searchBar.text
         self.term = search
@@ -273,7 +276,7 @@ class TwitterSearchViewController: UIViewController, UISearchResultsUpdating, UI
         })
     }
 
-    @objc func willPresentSearchController(_ searchController: UISearchController)
+    func willPresentSearchController(_ searchController: UISearchController)
     {
         self.searchController!.searchBar.text = self.term
     }

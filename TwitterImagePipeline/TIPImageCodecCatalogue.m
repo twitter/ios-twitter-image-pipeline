@@ -89,7 +89,7 @@ NS_ASSUME_NONNULL_BEGIN
     [self removeCodecForImageType:imageType removedCodec:NULL];
 }
 
-- (void)removeCodecForImageType:(NSString *)imageType removedCodec:(id<TIPImageCodec>  *)codec
+- (void)removeCodecForImageType:(NSString *)imageType removedCodec:(id<TIPImageCodec> __autoreleasing *)codec
 {
     if (codec) {
         dispatch_barrier_sync(_codecQueue, ^{
@@ -189,14 +189,18 @@ NS_ASSUME_NONNULL_BEGIN
     return properties;
 }
 
-- (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data imageType:(out NSString * __autoreleasing __nullable * __nullable)imageType
+- (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap imageType:(out NSString * __autoreleasing __nullable * __nullable)imageType
 {
     __block TIPImageContainer *container = nil;
     NSDictionary<NSString *, id<TIPImageCodec>> *codecs = self.allCodecs;
     NSString *guessImageType = TIPDetectImageTypeViaMagicNumbers(data);
+    if (!guessImageType) {
+        guessImageType = TIPDetectImageType(data, NULL, NULL, YES);
+    }
     id<TIPImageCodec> guessedCodec = (guessImageType) ? codecs[guessImageType] : nil;
     if (guessedCodec) {
-        container = TIPDecodeImageFromData(guessedCodec, data, guessImageType);
+        id config = decoderConfigMap[guessImageType];
+        container = TIPDecodeImageFromData(guessedCodec, config, data, guessImageType);
         if (container) {
             if (imageType) {
                 *imageType = guessImageType;
@@ -207,7 +211,8 @@ NS_ASSUME_NONNULL_BEGIN
 
     [codecs enumerateKeysAndObjectsUsingBlock:^(NSString *codecImageType, id<TIPImageCodec> codec, BOOL *stop) {
         if (codec != guessedCodec) {
-            container = TIPDecodeImageFromData(codec, data, guessImageType);
+            id config = decoderConfigMap[codecImageType];
+            container = TIPDecodeImageFromData(codec, config, data, guessImageType);
             if (container) {
                 *stop = YES;
                 if (imageType) {
