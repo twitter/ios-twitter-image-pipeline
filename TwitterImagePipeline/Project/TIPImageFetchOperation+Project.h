@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithImagePipeline:(TIPImagePipeline *)pipeline request:(id<TIPImageFetchRequest>)request delegate:(id<TIPImageFetchDelegate>)delegate;
 
-- (void)earlyCompleteOperationWithImageEntry:(TIPImageCacheEntry *)entry;
+- (void)completeOperationEarlyWithImageEntry:(TIPImageCacheEntry *)entry transformed:(BOOL)transformed sourceImageDimensions:(CGSize)sourceDims;
 - (void)willEnqueue;
 - (BOOL)supportsLoadingFromSource:(TIPImageLoadSource)source;
 - (BOOL)supportsLoadingFromRenderedCache;

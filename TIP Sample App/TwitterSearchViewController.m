@@ -218,7 +218,7 @@
         return nil;
     }
 
-    TweetImageFetchRequest *request = [[TweetImageFetchRequest alloc] initWithTweetImage:tweetImage targetView:helper.fetchImageView];
+    TweetImageFetchRequest *request = [[TweetImageFetchRequest alloc] initWithTweetImage:tweetImage targetView:helper.fetchView];
     request.forcePlaceholder = APP_DELEGATE.usePlaceholder;
     return request;
 }
@@ -243,7 +243,7 @@
     }
 
     const CGSize originalDimensions = previewImageResult.imageOriginalDimensions;
-    const CGSize viewDimensions = TIPDimensionsFromView(helper.fetchImageView);
+    const CGSize viewDimensions = TIPDimensionsFromView(helper.fetchView);
     if (originalDimensions.height >= viewDimensions.height && originalDimensions.width >= viewDimensions.width) {
         return NO;
     }

@@ -161,6 +161,19 @@ typedef NS_OPTIONS(NSInteger, TIPImageStoreOptions)
 
 @end
 
+///! Convenience function to get the imageIdentifier from a `TIPImageStoreRequest`
+NS_INLINE NSString *TIPImageStoreRequestGetImageIdentifier(id<TIPImageStoreRequest> request)
+{
+    NSString *imageIdentifier = nil;
+    if ([request respondsToSelector:@selector(imageIdentifier)]) {
+        imageIdentifier = request.imageIdentifier;
+    }
+    if (!imageIdentifier) {
+        imageIdentifier = request.imageURL.absoluteString;
+    }
+    return imageIdentifier;
+}
+
 /** `TIPImageStoreRequest` specifically for `UIImage` based store requests */
 @protocol TIPImageObjectStoreRequest <TIPImageStoreRequest>
 

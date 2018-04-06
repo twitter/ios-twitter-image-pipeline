@@ -7,7 +7,7 @@
 //
 
 #import "TIPImageViewFetchHelper.h"
-#import "UIImageView+TIPImageViewFetchHelper.h"
+#import "UIView+TIPImageFetchable.h"
 
 @import XCTest;
 

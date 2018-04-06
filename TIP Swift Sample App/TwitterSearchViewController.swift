@@ -96,7 +96,7 @@ class TweetWithMediaTableViewCell: UITableViewCell, TIPImageViewFetchHelperDataS
             return nil
         }
 
-        let request = TweetImageFetchRequest.init(tweetImage: tweetImage, targetView: helper.fetchImageView)
+        let request = TweetImageFetchRequest.init(tweetImage: tweetImage, targetView: helper.fetchView)
         request.forcePlaceholder = APP_DELEGATE().usePlaceholder
         return request
     }
@@ -121,7 +121,7 @@ class TweetWithMediaTableViewCell: UITableViewCell, TIPImageViewFetchHelperDataS
             }
         }
 
-        guard let fetchImageView = helper.fetchImageView else {
+        guard let fetchImageView = helper.fetchView else {
             // don't have a view to compare with, stop
             return false
         }
@@ -268,12 +268,12 @@ class TwitterSearchViewController: UIViewController, UISearchResultsUpdating, UI
         self.searchController!.searchBar.isUserInteractionEnabled = false
         searchBar.text = self.term
 
-        TwitterAPI.sharedInstance().search(forTerm: (nil != self.term) ? self.term! : "",  count: APP_DELEGATE().searchCount, complete: {
-            tweets, error in
+        TwitterAPI.sharedInstance().search(forTerm: (nil != self.term) ? self.term! : "",  count: APP_DELEGATE().searchCount) { tweets, _ in
+
             self.tweets = tweets
             self.searchController?.searchBar.isUserInteractionEnabled = true
             self.tableView?.reloadData()
-        })
+        }
     }
 
     func willPresentSearchController(_ searchController: UISearchController)

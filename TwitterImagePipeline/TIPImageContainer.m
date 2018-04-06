@@ -193,6 +193,11 @@ NS_ASSUME_NONNULL_BEGIN
     return [self.image tip_dimensions];
 }
 
+- (CGSize)pointSize
+{
+    return [self.image tip_pointSize];
+}
+
 - (BOOL)saveToFilePath:(NSString *)path type:(nullable NSString *)type codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue options:(TIPImageEncodingOptions)options quality:(float)quality atomic:(BOOL)atomic error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     if (!catalogue) {

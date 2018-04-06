@@ -277,6 +277,7 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
         context.contentLength = context.partialImage.expectedContentLength;
     } else {
         // Don't bother downloading any further if our status code is not going to have image bytes
+        context.responseStatusCodeIsFailure = YES;
         [download cancelWithDescription:[NSString stringWithFormat:@"TIP: Encountered HTTP Status Code (%ti)", context.response.statusCode]];
     }
 
@@ -300,6 +301,11 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 
     if (!context.didReceiveResponse) {
         TIPImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadNeverReceivedResponse, download);
+        return;
+    }
+
+    if (context.responseStatusCodeIsFailure) {
+        // will be cancelled async, need to return early
         return;
     }
 

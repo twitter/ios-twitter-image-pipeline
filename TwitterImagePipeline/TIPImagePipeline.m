@@ -221,14 +221,17 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
     }
 
     // Perform synchronous access?
-    if ([NSThread isMainThread] && [op supportsLoadingFromRenderedCache] && op.imageIdentifier != nil) {
+    NSString *imageId = op.imageIdentifier;
+    NSString *transformerId = op.transformerIdentifier;
+    CGSize sourceImageDimensions = CGSizeZero;
+    if ([NSThread isMainThread] && [op supportsLoadingFromRenderedCache] && (imageId != nil)) {
         // Sync Access, for optimization
-        entry = [_renderedCache imageEntryWithIdentifier:op.imageIdentifier transformerIdentifier:op.transformerIdentifier targetDimensions:targetDimensions targetContentMode:targetContentMode];
+        entry = [_renderedCache imageEntryWithIdentifier:imageId transformerIdentifier:transformerId targetDimensions:targetDimensions targetContentMode:targetContentMode sourceImageDimensions:&sourceImageDimensions];
     }
 
     if (entry.completeImage) {
         // Sync Completion
-        [op earlyCompleteOperationWithImageEntry:entry];
+        [op completeOperationEarlyWithImageEntry:entry transformed:(transformerId != nil) sourceImageDimensions:sourceImageDimensions];
     } else {
         // Async Operation
         [self _tip_enqueueOperation:op];
@@ -279,6 +282,12 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
     [_renderedCache clearImagesWithIdentifier:imageIdentifier];
     [_memoryCache clearImageWithIdentifier:imageIdentifier];
     [_diskCache clearImageWithIdentifier:imageIdentifier];
+}
+
+- (void)clearRenderedMemoryCacheImageWithIdentifier:(NSString *)imageIdentifier
+{
+    TIPAssert(imageIdentifier != nil);
+    [_renderedCache clearImagesWithIdentifier:imageIdentifier];
 }
 
 - (void)clearMemoryCaches
@@ -372,8 +381,10 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
 {
     if ([TIPGlobalConfiguration sharedInstance].clearMemoryCachesOnApplicationBackgroundEnabled) {
 
-        [_memoryCache clearAllImages:TIPStartBackgroundTask([NSString stringWithFormat:@"[%@ %@]", NSStringFromClass([self class]), NSStringFromSelector(_cmd)])];
+        dispatch_block_t endBackgroundTaskBlock = TIPStartBackgroundTask([NSString stringWithFormat:@"[%@ %@]", NSStringFromClass([self class]), NSStringFromSelector(_cmd)]);
+        [_memoryCache clearAllImages:endBackgroundTaskBlock];
         // Rendered caches will be cleared/pruned by TIPGlobalConfiguration
+
     }
 }
 

@@ -23,8 +23,8 @@ typedef void(^TIPImageFetchHydrationCompletionBlock)(NSURLRequest * __nullable h
 typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest *requestToHydrate, id<TIPImageFetchOperationUnderlyingContext> context, TIPImageFetchHydrationCompletionBlock complete);
 
 /** Options for a `TIPImageFetchRequest` */
- typedef NS_OPTIONS(NSInteger, TIPImageFetchOptions)
- {
+typedef NS_OPTIONS(NSInteger, TIPImageFetchOptions)
+{
     /** No options - default behavior */
     TIPImageFetchNoOptions = 0,
     /** Don't reset the expiry when accessed */
@@ -158,6 +158,19 @@ typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest *requestToHydrate, id<TI
 @property (nonatomic) UIViewContentMode targetContentMode;
 
 @end
+
+///! Convenience function to get the imageIdentifier from a `TIPImageFetchRequest`
+NS_INLINE NSString *TIPImageFetchRequestGetImageIdentifier(id<TIPImageFetchRequest> request)
+{
+    NSString *imageIdentifier = nil;
+    if ([request respondsToSelector:@selector(imageIdentifier)]) {
+        imageIdentifier = request.imageIdentifier;
+    }
+    if (!imageIdentifier) {
+        imageIdentifier = request.imageURL.absoluteString;
+    }
+    return imageIdentifier;
+}
 
 @class TIPMutableGenericImageFetchRequest;
 

@@ -144,6 +144,8 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
         _globalObservers = [NSHashTable<id<TIPImagePipelineObserver>> weakObjectsHashTable];
         self.imageFetchDownloadProvider = nil;
 
+        (void)TIPIsExtension(); // cache if we're an extension
+
         if ([UITraitCollection class]) {
             [UITraitCollection tip_fixTraitCollectionContructorIfNeeded];
         }
@@ -336,11 +338,27 @@ NS_INLINE SInt64 TIPMaxBytesForAllDiskCachesDefaultValue()
     }
 }
 
-- (void)clearAllMemoryCaches;
+- (void)clearAllMemoryCaches
 {
     NSArray *pipelines = [TIPImagePipeline allRegisteredImagePipelines].allValues;
     for (TIPImagePipeline *pipeline in pipelines) {
         [pipeline clearMemoryCaches];
+    }
+}
+
+- (void)clearAllRenderedMemoryCaches
+{
+    NSArray *pipelines = [TIPImagePipeline allRegisteredImagePipelines].allValues;
+    for (TIPImagePipeline *pipeline in pipelines) {
+        [pipeline.renderedCache clearAllImages:NULL];
+    }
+}
+
+- (void)clearAllRenderedMemoryCacheImagesWithIdentifier:(NSString *)identifier
+{
+    NSArray *pipelines = [TIPImagePipeline allRegisteredImagePipelines].allValues;
+    for (TIPImagePipeline *pipeline in pipelines) {
+        [pipeline clearRenderedMemoryCacheImageWithIdentifier:identifier];
     }
 }
 

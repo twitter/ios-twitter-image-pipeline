@@ -119,6 +119,12 @@ static const NSUInteger kDefaultBitrateIndex = 5;
     frame.origin.y = CGRectGetMaxY(_selectImageTypeButton.frame) + 5;
     _selectSpeedButton.frame = frame;
 
+    frame = _selectSpeedButton.frame;
+    frame.origin.y += frame.size.height;
+    frame.size = _blurSwitch.bounds.size;
+    frame.origin.x = self.view.bounds.size.width - (frame.size.width + 5);
+    _blurSwitch.frame = frame;
+
     frame = _startButton.frame;
     frame.origin.y = CGRectGetMaxY(_selectSpeedButton.frame) + 5;
     _startButton.frame = frame;

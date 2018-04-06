@@ -180,26 +180,26 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)previewWasHit:(NSTimeInterval)renderLatency
 {
-    [self _tip_hit:TIPImageFetchLoadResultHitPreview latency:renderLatency];
+    [self _tip_hit:TIPImageFetchLoadResultHitPreview latency:renderLatency synchronously:NO];
 }
 
 - (void)progressiveFrameWasHit:(NSTimeInterval)renderLatency
 {
-    [self _tip_hit:TIPImageFetchLoadResultHitProgressFrame latency:renderLatency];
+    [self _tip_hit:TIPImageFetchLoadResultHitProgressFrame latency:renderLatency synchronously:NO];
 }
 
-- (void)finalWasHit:(NSTimeInterval)renderLatency
+- (void)finalWasHit:(NSTimeInterval)renderLatency synchronously:(BOOL)sync
 {
-    [self _tip_hit:TIPImageFetchLoadResultHitFinal latency:renderLatency];
+    [self _tip_hit:TIPImageFetchLoadResultHitFinal latency:renderLatency synchronously:sync];
 }
 
-- (void)_tip_hit:(TIPImageFetchLoadResult)result latency:(NSTimeInterval)latency
+- (void)_tip_hit:(TIPImageFetchLoadResult)result latency:(NSTimeInterval)latency synchronously:(BOOL)sync
 {
     if (_flags.isTrackingCurrentSource) {
         if (!_machFirstImageLoadTime) {
             _machFirstImageLoadTime = mach_absolute_time();
         }
-        [_infos[_flags.currentSource - 1] hit:result renderLatency:latency];
+        [_infos[_flags.currentSource - 1] hit:result renderLatency:latency synchronously:sync];
     }
 }
 
@@ -303,7 +303,7 @@ NS_ASSUME_NONNULL_BEGIN
     _machEndTime = mach_absolute_time();
 }
 
-- (void)hit:(TIPImageFetchLoadResult)result renderLatency:(NSTimeInterval)renderLatency
+- (void)hit:(TIPImageFetchLoadResult)result renderLatency:(NSTimeInterval)renderLatency synchronously:(BOOL)sync
 {
     if (_flags.didEnd || _flags.wasCancelled) {
         return;
@@ -322,6 +322,11 @@ NS_ASSUME_NONNULL_BEGIN
 
         if (TIPImageFetchLoadResultHitProgressFrame == result) {
             _firstProgressiveFrameNetworkLoadDuration = TIPComputeDuration(_machStartTime, mach_absolute_time());
+        }
+
+        _wasLoadedSynchronously = sync;
+        if (sync) {
+            TIPAssert(TIPImageFetchLoadResultHitFinal == result && TIPImageLoadSourceMemoryCache == _source);
         }
 
         _result = result;

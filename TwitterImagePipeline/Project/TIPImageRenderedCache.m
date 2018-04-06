@@ -34,8 +34,9 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
 
 @interface TIPRenderedCacheItem : NSObject
 @property (nonatomic, readonly, copy, nullable) NSString *transformerIdentifier;
+@property (nonatomic, readonly) CGSize sourceImageDimensions;
 @property (nonatomic, readonly) TIPImageCacheEntry *entry;
-- (instancetype)initWithEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier;
+- (instancetype)initWithEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier sourceImageDimensions:(CGSize)sourceDims;
 @end
 
 @interface TIPImageRenderedEntriesCollection : NSObject <TIPLRUEntry>
@@ -47,8 +48,8 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
 + (instancetype)new NS_UNAVAILABLE;
 
 - (NSUInteger)collectionCost;
-- (void)addImageEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier;
-- (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)size contentMode:(UIViewContentMode)mode transformerIdentifier:(nullable NSString *)transformerIdentifier;
+- (void)addImageEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier sourceImageDimensions:(CGSize)sourceDims;
+- (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)size contentMode:(UIViewContentMode)mode transformerIdentifier:(nullable NSString *)transformerIdentifier sourceImageDimensions:(out CGSize * __nullable)sourceDimsOut;
 - (NSArray<TIPImageCacheEntry *> *)allEntries;
 
 #pragma mark TIPLRUEntry
@@ -141,19 +142,24 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
     }
 }
 
-- (nullable TIPImageCacheEntry *)imageEntryWithIdentifier:(NSString *)identifier transformerIdentifier:(nullable NSString *)transformerIdentifier targetDimensions:(CGSize)size targetContentMode:(UIViewContentMode)mode
+- (nullable TIPImageCacheEntry *)imageEntryWithIdentifier:(NSString *)identifier transformerIdentifier:(nullable NSString *)transformerIdentifier targetDimensions:(CGSize)size targetContentMode:(UIViewContentMode)mode sourceImageDimensions:(out CGSize * __nullable)sourceDimsOut
 {
+    TIPAssert([NSThread isMainThread]);
     TIPAssert(identifier != nil);
     if (identifier != nil && [NSThread isMainThread]) {
         @autoreleasepool {
             TIPImageRenderedEntriesCollection *collection = [_manifest entryWithIdentifier:identifier];
-            return [collection imageEntryMatchingDimensions:size contentMode:mode transformerIdentifier:transformerIdentifier];
+            return [collection imageEntryMatchingDimensions:size contentMode:mode transformerIdentifier:transformerIdentifier sourceImageDimensions:sourceDimsOut];
         }
+    }
+
+    if (sourceDimsOut) {
+        *sourceDimsOut = CGSizeZero;
     }
     return nil;
 }
 
-- (void)storeImageEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier
+- (void)storeImageEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier sourceImageDimensions:(CGSize)sourceDims
 {
     TIPAssert(entry != nil);
     if (!entry.completeImage || !entry.completeImageContext) {
@@ -173,7 +179,7 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
 
     if (![NSThread isMainThread]) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self storeImageEntry:entry transformerIdentifier:transformerIdentifier];
+            [self storeImageEntry:entry transformerIdentifier:transformerIdentifier sourceImageDimensions:sourceDims];
         });
         return;
     }
@@ -195,7 +201,7 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
             collection = [[TIPImageRenderedEntriesCollection alloc] initWithIdentifier:identifier];
         }
 
-        [collection addImageEntry:entry transformerIdentifier:transformerIdentifier];
+        [collection addImageEntry:entry transformerIdentifier:transformerIdentifier sourceImageDimensions:sourceDims];
         const NSUInteger newCost = collection.collectionCost;
 
         if (!newCost) {
@@ -284,18 +290,26 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
     return self;
 }
 
-- (void)addImageEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier
+- (void)addImageEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier sourceImageDimensions:(CGSize)sourceDims
 {
     const CGSize dimensions = entry.completeImage.dimensions;
     if (dimensions.width < (CGFloat)1.0 || dimensions.height < (CGFloat)1.0) {
         return;
     }
 
-    for (TIPRenderedCacheItem *item in _items) {
+    for (NSInteger i = 0; i < (NSInteger)_items.count; i++) {
+        TIPRenderedCacheItem *item = _items[(NSUInteger)i];
         const CGSize otherDimensions = item.entry.completeImage.dimensions;
         if (CGSizeEqualToSize(otherDimensions, dimensions)) {
             if (TIPStringsAreEqual(item.transformerIdentifier, transformerIdentifier)) {
-                return;
+                if (item.sourceImageDimensions.height >= sourceDims.height && item.sourceImageDimensions.width >= sourceDims.width) {
+                    return; // keep existing entry
+                } else {
+                    // improved source image dims
+                    // removal old item since it's lower fidelity
+                    [_items removeObjectAtIndex:(NSUInteger)i];
+                    i--;
+                }
             }
         }
     }
@@ -309,14 +323,14 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
         TIPLogError(@"Cached zero cost image to rendered cache %@", info);
     }
 
-    [self _tip_insertEntry:entry transformerIdentifier:transformerIdentifier];
+    [self _tip_insertEntry:entry transformerIdentifier:transformerIdentifier sourceImageDimensions:sourceDims];
     if (_items.count > kMaxEntriesPerRenderedCollection) {
         [_items removeLastObject];
     }
     TIPAssert(_items.count <= kMaxEntriesPerRenderedCollection);
 }
 
-- (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)dimensions contentMode:(UIViewContentMode)mode transformerIdentifier:(nullable NSString *)transformerIdentifier
+- (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)dimensions contentMode:(UIViewContentMode)mode transformerIdentifier:(nullable NSString *)transformerIdentifier sourceImageDimensions:(out CGSize * __nullable)sourceDimsOut
 {
     if (!TIPSizeGreaterThanZero(dimensions) || mode >= UIViewContentModeRedraw) {
         return nil;
@@ -325,6 +339,7 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
     NSUInteger index = NSNotFound;
     NSUInteger i = 0;
     TIPImageCacheEntry *returnValue = nil;
+    CGSize returnDims = CGSizeZero;
 
     for (TIPRenderedCacheItem *item in _items) {
         TIPImageCacheEntry *entry = item.entry;
@@ -332,10 +347,15 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
             if (TIPStringsAreEqual(item.transformerIdentifier, transformerIdentifier)) {
                 index = i;
                 returnValue = entry;
+                returnDims = item.sourceImageDimensions;
                 break;
             }
         }
         i++;
+    }
+
+    if (sourceDimsOut) {
+        *sourceDimsOut = returnDims;
     }
 
     if (NSNotFound != index && returnValue) {
@@ -381,9 +401,9 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
 
 #pragma mark Private
 
-- (void)_tip_insertEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier
+- (void)_tip_insertEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier sourceImageDimensions:(CGSize)sourceDims
 {
-    TIPRenderedCacheItem *item = [[TIPRenderedCacheItem alloc] initWithEntry:entry transformerIdentifier:transformerIdentifier];
+    TIPRenderedCacheItem *item = [[TIPRenderedCacheItem alloc] initWithEntry:entry transformerIdentifier:transformerIdentifier sourceImageDimensions:sourceDims];
     [_items insertObject:item atIndex:0];
 }
 
@@ -391,11 +411,12 @@ NS_INLINE BOOL TIPStringsAreEqual(NSString * __nullable string1, NSString * __nu
 
 @implementation TIPRenderedCacheItem
 
-- (instancetype)initWithEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier
+- (instancetype)initWithEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier sourceImageDimensions:(CGSize)sourceDims
 {
     if (self = [super init]) {
         _entry = entry;
         _transformerIdentifier = [transformerIdentifier copy];
+        _sourceImageDimensions = sourceDims;
     }
     return self;
 }

@@ -11,7 +11,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import "TIPLogger.h"
+#import <TwitterImagePipeline/TIPLogger.h>
+
 
 NS_ASSUME_NONNULL_BEGIN
 

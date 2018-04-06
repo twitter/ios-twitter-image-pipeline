@@ -31,6 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) BOOL didRequestHydration;
 @property (nonatomic) BOOL didStart;
 @property (nonatomic) BOOL didReceiveResponse;
+@property (nonatomic) BOOL responseStatusCodeIsFailure;
 @property (nonatomic) BOOL didReceiveData;
 @property (nonatomic) BOOL didComplete;
 

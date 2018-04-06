@@ -73,6 +73,8 @@ typedef NS_ENUM(NSInteger, TIPImageFetchLoadResult){
 
 /** The duration for this source to miss, hit or get interrupted */
 @property (nonatomic, readonly) NSTimeInterval loadDuration;
+/** The fetch was synchronous (`TIPImageLoadSourceMemoryCache` == `source` only) */
+@property (nonatomic, readonly) BOOL wasLoadedSynchronously;
 
 /** `NS_UNAVAILABLE` */
 - (instancetype)init NS_UNAVAILABLE;

@@ -172,6 +172,9 @@ NS_ASSUME_NONNULL_BEGIN
             return;
         }
 
+        // Pull out the identifier
+        NSString *identifier = TIPImageStoreRequestGetImageIdentifier(_request);
+
         // Create context
         TIPCompleteImageEntryContext *context = [self _tip_entryContext:imageURL imageContainer:imageContainer];
 
@@ -206,10 +209,6 @@ NS_ASSUME_NONNULL_BEGIN
         }
 
         // Finish hydrating entries
-        NSString *identifier = [_request respondsToSelector:@selector(imageIdentifier)] ? [[_request imageIdentifier] copy] : nil;
-        if (!identifier) {
-            identifier = [imageURL absoluteString];
-        }
         if (memoryEntry) {
             memoryEntry.completeImageContext = [context copy];
             memoryEntry.identifier = identifier;

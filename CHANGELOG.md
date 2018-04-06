@@ -2,13 +2,32 @@
 
 ## Info
 
-**Document version:** 2.7.2
+**Document version:** 2.9.0
 
-**Last updated:** 10/24/2017
+**Last updated:** 02/01/2018
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.9.0
+
+- Add P3 color gamut support
+  - Image scaling preserves P3 (on device's with P3 screens) now
+  - Add functions to check if a screen supports P3
+  - Add category property to UIImage to check if image has P3 colorspace
+
+### 2.8.1
+
+- Persist source image dimensions for Rendered Cache
+  - this provides more context about the source image, such as knowing if the displayed image was scaled up or scaled down
+  - also added new "RMem" value when showing info with debug info feature on `TIPImageViewFetchHelper`
+  - improve `TIPImageViewFetchHelper` when reloading an image after a new "matching" image was cached (such as a larger resolution)
+
+### 2.8.0
+
+- Move `TIPImageViewFetchHelper` from using `UIImageView` instances directly to using `UIView` with `TIPImageFetchable` protocol
+  - makes it possible for  `UIView` subclasses to support the fetch helper, like `UIButton` or a custom view
 
 ### 2.7.2
 
