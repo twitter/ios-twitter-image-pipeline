@@ -5,7 +5,7 @@ set -eu
 function ci_lib() {
     NAME=$1
     xcodebuild -project TwitterImagePipeline.xcodeproj \
-               -scheme "TwitterImagePipeline" \
+               -scheme "TwitterImagePipeline.framework" \
                -destination "platform=iOS Simulator,name=${NAME}" \
                -sdk iphonesimulator \
                build test
