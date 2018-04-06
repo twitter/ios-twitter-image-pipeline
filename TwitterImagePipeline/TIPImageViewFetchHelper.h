@@ -8,10 +8,11 @@
 
 #import <TwitterImagePipeline/TIPImageFetchDelegate.h>
 #import <TwitterImagePipeline/TIPImageUtils.h>
-#import <UIKit/UIImageView.h>
+#import <UIKit/UIView.h>
 
 @class TIPImageFetchMetrics;
 @class TIPImagePipeline;
+@protocol TIPImageFetchable;
 @protocol TIPImageFetchRequest;
 @protocol TIPImageViewFetchHelperDelegate;
 @protocol TIPImageViewFetchHelperDataSource;
@@ -30,7 +31,7 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 };
 
 /**
- Helper object for loading a fetch request on behalf of a target `UIImageView`.
+ Helper object for loading a fetch request on behalf of a target `UIView` adopting `TIPImageFetchable`.
  Offers lots of dynamic features via subclassing and/or use of the `delegate` and/or `dataSource`.
  `TIPImageViewFetchHelper` has built in support for an information overlay too that is helpful
  for debugging (see `TIPImageViewHelper(Debugging)`)
@@ -41,8 +42,8 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 
 /** behavior on "disappear", default == `CancelImageFetch` */
 @property (nonatomic) TIPImageViewDisappearanceBehavior fetchDisappearanceBehavior;
-/** associated `UIImageView` */
-@property (nonatomic, nullable, weak) UIImageView *fetchImageView;
+/** associated `UIView` that conforms to `TIPImageFetchable` */
+@property (nonatomic, nullable, weak) UIView<TIPImageFetchable> *fetchView;
 /** request to fetch */
 @property (nonatomic, readonly, nullable) id<TIPImageFetchRequest> fetchRequest;
 
@@ -129,10 +130,10 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 /** call when view did move to window (or `nil`) */
 - (void)triggerViewDidMoveToWindow NS_REQUIRES_SUPER;
 
-#pragma mark Transition a UIImageView between fetch helpers
+#pragma mark Transition a UIView between fetch helpers
 
 /** call to transition view from one fetch helper to a new fetch helper */
-+ (void)transitionView:(UIImageView *)imageView fromFetchHelper:(nullable TIPImageViewFetchHelper *)fromHelper toFetchHelper:(nullable TIPImageViewFetchHelper *)toHelper;
++ (void)transitionView:(UIView<TIPImageFetchable> *)fetchableView fromFetchHelper:(nullable TIPImageViewFetchHelper *)fromHelper toFetchHelper:(nullable TIPImageViewFetchHelper *)toHelper;
 
 @end
 

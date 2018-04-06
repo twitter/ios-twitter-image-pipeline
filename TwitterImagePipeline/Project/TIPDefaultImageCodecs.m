@@ -91,10 +91,18 @@ NS_ASSUME_NONNULL_BEGIN
         NSString *UTType = TIPImageTypeToUTType(imageType);
         decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
         encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:UTType];
-    } else if ([imageType isEqualToString:TIPImageTypeICO] || ([imageType isEqualToString:TIPImageTypeRAW] && &kUTTypeRawImage)) {
-        // These cannot be encoded, only decoded
-        NSString *UTType = TIPImageTypeToUTType(imageType);
-        decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
+    } else {
+        BOOL imageTypeIsRawImage = [imageType isEqualToString:TIPImageTypeICO];
+#if __IPHONE_8_0 <= __IPHONE_OS_VERSION_MIN_REQUIRED
+        imageTypeIsRawImage = imageTypeIsRawImage || [imageType isEqualToString:TIPImageTypeRAW];
+#else
+        imageTypeIsRawImage = imageTypeIsRawImage || ([imageType isEqualToString:TIPImageTypeRAW] && &kUTTypeRawImage);
+#endif
+        if (imageTypeIsRawImage) {
+            // These cannot be encoded, only decoded
+            NSString *UTType = TIPImageTypeToUTType(imageType);
+            decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
+        }
     }
 
     return (decoder) ? [[TIPBasicCGImageSourceCodec alloc] initWithDecoder:decoder encoder:encoder animated:animated] : nil;
@@ -188,7 +196,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)tip_supportsProgressiveDecoding
 {
+#if __IPHONE_8_0 > __IPHONE_OS_VERSION_MIN_REQUIRED
     return (&kCGImageDestinationEmbedThumbnail != NULL); // iOS 8+ only;
+#else
+    return YES;
+#endif
 }
 
 @end

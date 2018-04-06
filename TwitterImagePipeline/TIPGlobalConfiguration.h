@@ -151,6 +151,15 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
  */
 - (void)clearAllMemoryCaches;
 
+/**
+ Clear the rendered cache of all registered `TIPImagePipeline` instances. Synchronously if called
+ from the main thread, asynchronously otherwise.
+ */
+- (void)clearAllRenderedMemoryCaches;
+
+/** Quickly purge a specific rendered image */
+- (void)clearAllRenderedMemoryCacheImagesWithIdentifier:(NSString *)identifier;
+
 #pragma mark Downloads
 
 /**

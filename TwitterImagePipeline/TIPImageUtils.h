@@ -82,22 +82,38 @@ NS_INLINE CGSize TIPDimensionsFromImage(UIImage * __nullable image)
     return TIPDimensionsFromSizeScaled(image.size, image.scale);
 }
 
-//! Get size from dimensions (pixels)
-NS_INLINE CGSize TIPSizeScaledFromDimensions(CGSize dimensions, CGFloat scale)
-{
-    if (scale <= 0.0) {
-        scale = [UIScreen mainScreen].scale;
-    }
-
-    dimensions.width /= scale;
-    dimensions.height /= scale;
-    return dimensions;
-}
-
 //! Get size (in points based on screen scale) from dimensions (in pixels)
 NS_INLINE CGSize TIPDimensionsToPointSize(CGSize dimensions)
 {
     return TIPDimensionsToSizeScaled(dimensions, 0);
+}
+
+//! Get dimensions (in pixels) from size (in points based on screen scale)
+NS_INLINE CGSize TIPDimensionsFromPointSize(CGSize size)
+{
+    return TIPDimensionsFromSizeScaled(size, 0);
+}
+
+//! Get a new size from an existing one by adjusting the scale
+NS_INLINE CGSize TIPSizeByAdjustingScale(CGSize size, CGFloat oldScale, CGFloat newScale)
+{
+    if (oldScale == 0.0f) {
+        oldScale = [UIScreen mainScreen].scale;
+    }
+    if (newScale == 0.0f) {
+        newScale = [UIScreen mainScreen].scale;
+    }
+
+    if (oldScale == newScale) {
+        return size;
+    }
+
+    size.width *= oldScale;
+    size.height *= oldScale;
+    size.width /= newScale;
+    size.height /= newScale;
+
+    return size;
 }
 
 //! Does the `UIViewContentMode` scale?
@@ -135,6 +151,12 @@ FOUNDATION_EXTERN BOOL TIPSizeMatchesTargetSizing(CGSize size,
 FOUNDATION_EXTERN BOOL TIPCGImageHasAlpha(CGImageRef imageRef, BOOL inspectPixels);
 //! Best effort alpha check on a `CIImage`
 FOUNDATION_EXTERN BOOL TIPCIImageHasAlpha(CIImage *image, BOOL inspectPixels);
+
+//! Does the given screen support wide gamut color (aka P3)?
+FOUNDATION_EXTERN BOOL TIPScreenSupportsWideColorGamut(UIScreen *screen);
+//! Does the main screen support wide gamut color (aka P3)?
+FOUNDATION_EXTERN BOOL TIPMainScreenSupportsWideColorGamut(void) __attribute__((const));
+
 /**
  Scale a size to target sizing info
  @note only _targetContentMode_ values that have `UIViewContentModeScale*` will be scaled (others are just positional and do not scale)

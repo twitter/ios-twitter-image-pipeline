@@ -16,6 +16,7 @@
 #include <sys/sysctl.h>
 #endif
 
+
 NS_ASSUME_NONNULL_BEGIN
 
 BOOL gTwitterImagePipelineAssertEnabled = YES;
@@ -29,7 +30,9 @@ BOOL TIPIsExtension()
     static BOOL sIsExtension;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        NSDictionary *extensionDictionary = [[NSBundle mainBundle] infoDictionary][@"NSExtension"];
+        NSBundle *mainBundle = [NSBundle mainBundle];
+        NSDictionary *infoDictionary = mainBundle.infoDictionary;
+        NSDictionary *extensionDictionary = infoDictionary[@"NSExtension"];
         sIsExtension = [extensionDictionary isKindOfClass:[NSDictionary class]];
     });
     return sIsExtension;

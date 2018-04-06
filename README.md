@@ -210,8 +210,8 @@ image pipeline works.
   - powerful class that can encapsulate the majority of use cases for loading an image and displaying it in a `UIImageView`
   - 99% of image loading and displaying use cases can be solved by using this class, configuring it and providing a delegate and/or data source
   - having the logic in this class avoid coupling _controller_ code with _view_ code in the _MVC_ practice
-- `UIImageView(TIPImageViewFetchHelper)`
-  - convenience category on `UIImageView` for associating a `TIPImageViewFetchHelper`
+- `UIView(TIPImageFetchable)` and `UIImageView(TIPImageFetchable)`
+  - convenience categories on `UIImageView` and `UIView` for associating a `TIPImageViewFetchHelper`
 
 ## Usage
 

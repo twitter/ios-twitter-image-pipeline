@@ -260,9 +260,16 @@ FOUNDATION_EXTERN NSString * const TIPImagePipelineImageTreatAsPlaceholderNofiti
 /**
  Asynchronously clears all cached image representations matching the given _imageIdentifier_.
 
- @param imageIdentifier The imageIdentifier match against when clearing cached images
+ @param imageIdentifier The imageIdentifier to match against when clearing cached images
  */
 - (void)clearImageWithIdentifier:(NSString *)imageIdentifier;
+
+/**
+ Clear the rendered memory cache image representation matching the given _imageIdentifier_.
+
+ @param imageIdentifier The imageIdentifier to match against when clearing a rendered cache image entry
+ */
+- (void)clearRenderedMemoryCacheImageWithIdentifier:(NSString *)imageIdentifier;
 
 /**
  Asynchronously clears the memory caches.

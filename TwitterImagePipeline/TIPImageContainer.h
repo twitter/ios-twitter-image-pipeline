@@ -159,6 +159,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) NSUInteger sizeInMemory;
 /** the dimensions, in pixels (not points), of the encapsulated image */
 @property (nonatomic, readonly) CGSize dimensions;
+/** the size, in points (not pixels), of the encapsulated image */
+@property (nonatomic, readonly) CGSize pointSize;
 
 #pragma mark Methods
 

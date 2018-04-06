@@ -252,6 +252,38 @@ BOOL TIPCIImageHasAlpha(CIImage *image, BOOL inspectPixels)
     return YES;
 }
 
+BOOL TIPMainScreenSupportsWideColorGamut()
+{
+    static BOOL sScreenIsWideGamut = NO;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sScreenIsWideGamut = TIPScreenSupportsWideColorGamut([UIScreen mainScreen]);
+    });
+
+    return sScreenIsWideGamut;
+}
+
+BOOL TIPScreenSupportsWideColorGamut(UIScreen *screen)
+{
+    if (![screen respondsToSelector:@selector(traitCollection)]) {
+        return NO;
+    }
+
+    UITraitCollection *traits = [screen traitCollection];
+    if (![traits respondsToSelector:@selector(displayGamut)]) {
+        return NO;
+    }
+
+    switch ([traits displayGamut]) {
+        case UIDisplayGamutP3:
+            return YES;
+        default:
+            break;
+    }
+
+    return NO;
+}
+
 void TIPExecuteCGContextBlock(dispatch_block_t block)
 {
     /*

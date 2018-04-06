@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)previewWasHit:(NSTimeInterval)renderLatency;
 - (void)progressiveFrameWasHit:(NSTimeInterval)renderLatency;
-- (void)finalWasHit:(NSTimeInterval)renderLatency;
+- (void)finalWasHit:(NSTimeInterval)renderLatency synchronously:(BOOL)sync;
 
 @end
 
@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)end;
 - (void)cancel;
-- (void)hit:(TIPImageFetchLoadResult)result renderLatency:(NSTimeInterval)renderLatency;
+- (void)hit:(TIPImageFetchLoadResult)result renderLatency:(NSTimeInterval)renderLatency synchronously:(BOOL)sync;
 - (void)addNetworkMetrics:(nullable id)metrics forRequest:(NSURLRequest *)request imageType:(nullable NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions;
 - (void)flipLoadSourceFromNetworkToNetworkResumed;
 

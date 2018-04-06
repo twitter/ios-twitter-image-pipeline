@@ -58,7 +58,7 @@ static const size_t kSignatureDataRequiredToCheck = sizeof(kComplexSignature1) +
 
 #pragma mark - Declarations
 
-static CGImageRef TIPX_CGImageFromCMSampleBuffer(CMSampleBufferRef sample);
+static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample) CF_RETURNS_RETAINED;
 
 @interface TIPXMP4DecoderConfigInternal : NSObject <TIPXMP4DecoderConfig>
 - (instancetype)initWithMaxDecodableFramesCount:(NSUInteger)max;
@@ -281,7 +281,7 @@ static CGImageRef TIPX_CGImageFromCMSampleBuffer(CMSampleBufferRef sample);
                 continue;
             }
 
-            CGImageRef imageRef = TIPX_CGImageFromCMSampleBuffer(sample);
+            CGImageRef imageRef = TIPX_CGImageCreateFromCMSampleBuffer(sample);
             TIPXDeferRelease(imageRef);
 
             if (imageRef) {
@@ -432,7 +432,7 @@ static CGImageRef TIPX_CGImageFromCMSampleBuffer(CMSampleBufferRef sample);
 
 @end
 
-static CGImageRef TIPX_CGImageFromCMSampleBuffer(CMSampleBufferRef sampleBuffer)
+static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sampleBuffer)
 {
     CVImageBufferRef imageBuffer = sampleBuffer ? CMSampleBufferGetImageBuffer(sampleBuffer) : NULL;
     if (!imageBuffer) {

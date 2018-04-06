@@ -43,7 +43,7 @@ NSString * const TIPProblemInfoKeyImageIsAnimated = @"animated";
 
 NSString *TIPVersion()
 {
-    return @"2.7";
+    return @"2.9";
 }
 
 void TIPSwizzle(Class cls, SEL originalSelector, SEL swizzledSelector)

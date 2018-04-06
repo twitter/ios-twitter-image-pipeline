@@ -1,6 +1,6 @@
 //
 //  TIPImageTest.m
-//  TFNUtilities
+//  TwitterImagePipeline
 //
 //  Created on 2/19/15.
 //  Copyright (c) 2015 Twitter, Inc. All rights reserved.

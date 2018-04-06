@@ -30,6 +30,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (CGSize)tip_dimensions;
 
 /**
+ The size of the image in points (based on main screen scale).
+ Effectively the size of the image with the image's scale adjusted to match the `[UIScreen mainScreen].scale`
+ */
+- (CGSize)tip_pointSize;
+
+/**
  A best effort method to inspect the image to see if it has alpha.
  Inspecting the pixels is required if you want to go beyond just looking at the byte layout since it
  is possible to have an image with an alpha channel but all the pixels are opaque.
@@ -39,6 +45,11 @@ NS_ASSUME_NONNULL_BEGIN
  the first image will be examined
  */
 - (BOOL)tip_hasAlpha:(BOOL)inspectPixels;
+
+/**
+ A best effort method to detect if the target `UIImage` supports wide color gamut (P3 colorspace)
+ */
+- (BOOL)tip_usesWideGamutColorSpace;
 
 /**
  Given an image _type_ (or `nil`) determine the number of images this image has.
@@ -106,15 +117,25 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable UIImage *)tip_grayscaleImage;
 
-
 /**
  Return a copy of the target `UIImage` but transformed so that it is blurred.
- @note This is a modified version of Apple's 2013 WWDC sample code for UIImage(ImageEffects).
- See https://developer.apple.com/library/content/samplecode/UIImageEffects/Listings/UIImageEffects_UIImageEffects_m.html
+
  @param blurRadius The radius of the blur in pixels
  @return a blurred image or `nil` if there was an issue
  */
 - (nullable UIImage *)tip_blurredImageWithRadius:(CGFloat)blurRadius;
+
+/**
+ Apply effects (via CPU) to image in efficient manner.
+ @note This is a modified version of Apple's 2013 WWDC sample code for UIImage(ImageEffects).
+ See https://developer.apple.com/library/content/samplecode/UIImageEffects/Listings/UIImageEffects_UIImageEffects_m.html
+ @param blurRadius The radius of the blur in pixels, or `0.0` to not blur
+ @param tintColor The tint to apply to the image or `nil` to not tint
+ @param saturationDeltaFactor The factor to multiply the saturation levels by, or `1.0` to not change saturation
+ @param maskImage The image to mask the output image with, or `nil` to have no mask
+ @return an image with each opted in effect applied
+ */
+- (nullable UIImage *)tip_imageWithBlurWithRadius:(CGFloat)blurRadius tintColor:(nullable UIColor *)tintColor saturationDeltaFactor:(CGFloat)saturationDeltaFactor maskImage:(nullable UIImage *)maskImage;
 
 #pragma mark Decode Methods
 
@@ -230,6 +251,18 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
                    animationLoopCount:(NSUInteger)animationLoopCount
               animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
                                 error:(out NSError * __nullable * __nullable)error;
+@end
+
+@interface UIImage (TIPDeprecations)
+
+/**
+ Deprecate _size_ property.
+ @warning It is very easy to forget to consider the `scale` of `UIImage`,
+ and so avoiding `size` is usefull to avoid bugs.
+ Use `tip_dimensions` (for pixels) and `tip_pointSize` (for points) instead.
+ */
+@property (nonatomic, readonly) CGSize size __attribute__((deprecated("use tip_dimensions (for pixels) or tip_pointSize (for points) instead!")));
+
 @end
 
 NS_ASSUME_NONNULL_END

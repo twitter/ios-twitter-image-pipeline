@@ -1,5 +1,5 @@
 //
-//  UIImageView+TIPImageViewFetchHelper.m
+//  UIView+TIPImageFetchable.m
 //  TwitterImagePipeline
 //
 //  Created on 3/19/15.
@@ -9,7 +9,7 @@
 #import <objc/runtime.h>
 #import "TIP_Project.h"
 #import "TIPImageViewFetchHelper.h"
-#import "UIImageView+TIPImageViewFetchHelper.h"
+#import "UIView+TIPImageFetchable.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -22,16 +22,22 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark -
 
-static const char sTIPImageViewObserverKey[] = "TIPImageViewObserverKey";
+static const char sTIPImageFetchableViewObserverKey[] = "TIPImageFetchableViewObserverKey";
 
-@implementation UIImageView (TIPImageViewFetchHelper)
+@implementation UIView (TIPImageFetchable)
 
 - (void)setTip_fetchHelper:(nullable TIPImageViewFetchHelper *)fetchHelper
 {
+    TIPAssert([self respondsToSelector:@selector(setTip_fetchedImage:)]);
+    TIPAssert([self respondsToSelector:@selector(tip_fetchedImage)]);
+    if (![self respondsToSelector:@selector(setTip_fetchedImage:)] || ![self respondsToSelector:@selector(tip_fetchedImage)]) {
+        return;
+    }
+
     TIPImageViewObserver *observer = self.tip_imageViewObserver;
     TIPImageViewFetchHelper *oldFetchHelper = observer.fetchHelper;
     observer.fetchHelper = fetchHelper;
-    [TIPImageViewFetchHelper transitionView:self fromFetchHelper:oldFetchHelper toFetchHelper:fetchHelper];
+    [TIPImageViewFetchHelper transitionView:(UIView<TIPImageFetchable> *)self fromFetchHelper:oldFetchHelper toFetchHelper:fetchHelper];
 }
 
 - (nullable TIPImageViewFetchHelper *)tip_fetchHelper
@@ -41,21 +47,37 @@ static const char sTIPImageViewObserverKey[] = "TIPImageViewObserverKey";
 
 - (TIPImageViewObserver *)tip_imageViewObserver
 {
-    TIPImageViewObserver *observer = objc_getAssociatedObject(self, sTIPImageViewObserverKey);
+    TIPImageViewObserver *observer = objc_getAssociatedObject(self, sTIPImageFetchableViewObserverKey);
     if (!observer) {
         observer = [[TIPImageViewObserver alloc] initWithFrame:self.bounds];
         observer.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         [self addSubview:observer];
-        objc_setAssociatedObject(self, sTIPImageViewObserverKey, observer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(self, sTIPImageFetchableViewObserverKey, observer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
     return observer;
 }
 
 - (void)_tip_clearImageViewObserver:(nonnull TIPImageViewObserver *)observer
 {
-    if (observer == objc_getAssociatedObject(self, sTIPImageViewObserverKey)) {
-        objc_setAssociatedObject(self, sTIPImageViewObserverKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    if (observer == objc_getAssociatedObject(self, sTIPImageFetchableViewObserverKey)) {
+        objc_setAssociatedObject(self, sTIPImageFetchableViewObserverKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
+}
+
+@end
+
+#pragma mark -
+
+@implementation UIImageView (TIPImageFetchable)
+
+- (nullable UIImage *)tip_fetchedImage
+{
+    return self.image;
+}
+
+- (void)setTip_fetchedImage:(nullable UIImage *)image
+{
+    self.image = image;
 }
 
 @end

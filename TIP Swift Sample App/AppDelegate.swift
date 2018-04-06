@@ -95,7 +95,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
 
     // MARK: private functions
 
-    private func incrementNetworkOperations() -> Void
+    private func incrementNetworkOperations()
     {
         if (Thread.isMainThread) {
             self.incOps()
@@ -106,7 +106,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         }
     }
 
-    private func decrementNetworkOperations() -> Void
+    private func decrementNetworkOperations()
     {
         if (Thread.isMainThread) {
             self.decOps()
@@ -117,7 +117,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         }
     }
 
-    private func incOps() -> Void
+    private func incOps()
     {
         self.opCount += 1
         if (self.opCount > 0) {
@@ -125,7 +125,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         }
     }
 
-    private func decOps() -> Void
+    private func decOps()
     {
         self.opCount -= 1
         if (self.opCount <= 0) {
@@ -163,26 +163,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
     {
         let levelString: String
         switch (level) {
-            case .emergency:
-                fallthrough
-            case .alert:
-                fallthrough
-            case .critical:
-                fallthrough
-            case .error:
-                levelString = "ERR"
-                break
-            case .warning:
-                levelString = "WRN"
-                break
-            case .notice:
-                fallthrough
-            case .information:
-                levelString = "INF"
-                break
-            case .debug:
-                levelString = "DBG"
-                break
+        case .emergency,
+             .alert,
+             .critical,
+             .error:
+            levelString = "ERR"
+        case .warning:
+            levelString = "WRN"
+        case .notice,
+             .information:
+            levelString = "INF"
+        case .debug:
+            levelString = "DBG"
         }
 
         print("[\(levelString): \(message)")
