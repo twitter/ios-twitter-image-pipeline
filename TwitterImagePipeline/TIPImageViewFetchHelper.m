@@ -726,7 +726,6 @@ NS_INLINE BOOL TIPIsViewVisible(UIView * __nullable view)
         TIPAssertMessage((0b11111110 & placeholder) == 0b0, @"Cannot set a 1-bit flag with a BOOL that isn't 1 bit");
     }
 
-    self.fetchView.tip_fetchedImage = image;
     self.fetchSource = source;
     _fetchedImageURL = URL;
     _flags.isLoadedImageFinal = final;
@@ -747,6 +746,7 @@ NS_INLINE BOOL TIPIsViewVisible(UIView * __nullable view)
         self.fetchProgress = progress;
         [self _tip_didUpdateProgress:progress];
     }
+    self.fetchView.tip_fetchedImage = image;
     if (image) {
         [self _tip_didUpdateDisplayedImage:image fromSourceDimensions:sourceDimensions isFinal:final || scaled];
     }
