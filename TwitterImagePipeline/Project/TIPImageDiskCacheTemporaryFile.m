@@ -18,7 +18,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, copy) NSString *finalPath;
 @property (nonatomic, nullable, weak) TIPImageDiskCache *diskCache;
 
-- (instancetype)initWithIdentifier:(NSString *)identifier temporaryPath:(NSString *)tempPath finalPath:(NSString *)finalPath diskCache:(nullable TIPImageDiskCache *)diskCache;
+- (instancetype)initWithIdentifier:(NSString *)identifier
+                     temporaryPath:(NSString *)tempPath
+                         finalPath:(NSString *)finalPath
+                         diskCache:(nullable TIPImageDiskCache *)diskCache;
 
 - (void)cleanupOpenFile;
 
@@ -35,7 +38,10 @@ NS_ASSUME_NONNULL_BEGIN
     abort();
 }
 
-- (instancetype)initWithIdentifier:(NSString *)identifier temporaryPath:(NSString *)tempPath finalPath:(NSString *)finalPath diskCache:(nullable TIPImageDiskCache *)diskCache
+- (instancetype)initWithIdentifier:(NSString *)identifier
+                     temporaryPath:(NSString *)tempPath
+                         finalPath:(NSString *)finalPath
+                         diskCache:(nullable TIPImageDiskCache *)diskCache
 {
     TIPAssert(identifier != nil);
     TIPAssert(tempPath != nil);

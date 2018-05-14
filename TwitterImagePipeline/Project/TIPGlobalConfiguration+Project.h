@@ -64,12 +64,19 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)enqueueImagePipelineOperation:(NSOperation *)op;
 
-- (void)postProblem:(NSString *)problemName userInfo:(NSDictionary<NSString *, id> *)userInfo;
-- (void)accessedCGContext:(BOOL)seriallyAccessed duration:(NSTimeInterval)duration;
+- (void)postProblem:(NSString *)problemName
+           userInfo:(NSDictionary<NSString *, id> *)userInfo;
+- (void)accessedCGContext:(BOOL)seriallyAccessed
+                 duration:(NSTimeInterval)duration
+             isMainThread:(BOOL)mainThread;
 
  // must call from correct queue (queueForMemoryCaches for memory caches, queueForDiskCaches for disk caches and main queue for rendered caches)
-- (void)pruneAllCachesOfType:(TIPImageCacheType)type withPriorityCache:(nullable id<TIPImageCache>)priorityCache;
-- (void)pruneAllCachesOfType:(TIPImageCacheType)type withPriorityCache:(nullable id<TIPImageCache>)priorityCache toGlobalMaxBytes:(SInt64)globalMaxBytes toGlobalMaxCount:(SInt16)globalMaxCount;
+- (void)pruneAllCachesOfType:(TIPImageCacheType)type
+           withPriorityCache:(nullable id<TIPImageCache>)priorityCache;
+- (void)pruneAllCachesOfType:(TIPImageCacheType)type
+           withPriorityCache:(nullable id<TIPImageCache>)priorityCache
+            toGlobalMaxBytes:(SInt64)globalMaxBytes
+            toGlobalMaxCount:(SInt16)globalMaxCount;
 
 - (id<TIPImageFetchDownload>)createImageFetchDownloadWithContext:(id<TIPImageFetchDownloadContext>)context;
 

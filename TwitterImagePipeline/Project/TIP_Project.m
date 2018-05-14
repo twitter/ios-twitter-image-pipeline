@@ -153,7 +153,8 @@ dispatch_block_t __nullable TIPStartBackgroundTask(NSString * __nullable name)
                 taskId = UIBackgroundTaskInvalid;
             }
         };
-        taskId = [[UIApplicationClass sharedApplication] beginBackgroundTaskWithName:name expirationHandler:clearTaskBlock];
+        taskId = [[UIApplicationClass sharedApplication] beginBackgroundTaskWithName:name
+                                                                   expirationHandler:clearTaskBlock];
     }
     return clearTaskBlock;
 }

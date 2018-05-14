@@ -136,7 +136,9 @@ typedef void(^TIPImageFetchDownloadRequestHydrationCompleteBlock)(NSError * __nu
  `imageFetchDownload:didCompleteWithError:` needs to be called at some point (passing along the
  _error_)
  */
-- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download hydrateRequest:(NSURLRequest *)request completion:(TIPImageFetchDownloadRequestHydrationCompleteBlock)complete;
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
+            hydrateRequest:(NSURLRequest *)request
+                completion:(TIPImageFetchDownloadRequestHydrationCompleteBlock)complete;
 
 /**
  Call this method from your `TIPImageFetchDownload` once the `NSHTTPResponse` has been received from
@@ -144,14 +146,16 @@ typedef void(^TIPImageFetchDownloadRequestHydrationCompleteBlock)(NSError * __nu
  @param download The download that received the _response_
  @param response The `NSHTTPResponse` of the hydrated request
  */
-- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download didReceiveURLResponse:(NSHTTPURLResponse *)response;
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
+     didReceiveURLResponse:(NSHTTPURLResponse *)response;
 
 /**
  Call this method from your `TIPImageFetchDownload` whenever `NSData` is received for the download.
  @param download The download that received more `NSData`
  @param data The additional `NSData` that was received
  */
-- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download didReceiveData:(NSData *)data;
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
+            didReceiveData:(NSData *)data;
 
 /**
  Call this method from your `TIPImageFetchDownload` when the download has completed.
@@ -160,7 +164,8 @@ typedef void(^TIPImageFetchDownloadRequestHydrationCompleteBlock)(NSError * __nu
  @param download The download that completed
  @param error an `NSError` if there was a failure, `nil` if the download succeeded
  */
-- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download didCompleteWithError:(nullable NSError *)error;
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
+      didCompleteWithError:(nullable NSError *)error;
 
 @end
 
@@ -247,7 +252,11 @@ typedef void(^TIPImageFetchDownloadRequestHydrationCompleteBlock)(NSError * __nu
  testing simulated slow networks if the implementation of `TIPImageFetchDownloadWithStubbingSupport`
  can support it.  `0` == unlimited.
  */
-- (void)addDownloadStubForRequestURL:(NSURL *)requestURL responseData:(nullable NSData *)responseData responseMIMEType:(nullable NSString *)MIMEType shouldSupportResuming:(BOOL)shouldSupportResume suggestedBitrate:(uint64_t)suggestedBitrate;
+- (void)addDownloadStubForRequestURL:(NSURL *)requestURL
+                        responseData:(nullable NSData *)responseData
+                    responseMIMEType:(nullable NSString *)MIMEType
+               shouldSupportResuming:(BOOL)shouldSupportResume
+                    suggestedBitrate:(uint64_t)suggestedBitrate;
 
 /**
  Remove a stub
@@ -275,7 +284,9 @@ typedef void(^TIPImageFetchDownloadRequestHydrationCompleteBlock)(NSError * __nu
  @param MIMEType the MIME type for the response, can be `nil`
  @return an `NSHTTPURLResponse` that is populated with values representative of an image download
  */
-+ (instancetype)tip_responseWithRequestURL:(NSURL *)requestURL dataLength:(NSUInteger)dataLength responseMIMEType:(nullable NSString *)MIMEType;
++ (instancetype)tip_responseWithRequestURL:(NSURL *)requestURL
+                                dataLength:(NSUInteger)dataLength
+                          responseMIMEType:(nullable NSString *)MIMEType;
 @end
 
 NS_ASSUME_NONNULL_END

@@ -13,6 +13,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// Primary class gets the SELF_ARG convenience
+#define SELF_ARG PRIVATE_SELF(TIPImageFetchMetrics)
+
 @interface TIPImageFetchMetricInfo ()
 @property (nonatomic, readonly, nullable) id networkMetrics;
 @property (nonatomic, readonly, nullable) NSURLRequest *networkRequest;
@@ -121,7 +124,10 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     if (!_flags.isTrackingCurrentSource) {
-        @throw [NSException exceptionWithName:NSObjectNotAvailableException reason:[NSString stringWithFormat:@"%@ cannot %@ when %@ has not been called yet!", NSStringFromClass([self class]), NSStringFromSelector(_cmd), NSStringFromSelector(@selector(startWithSource:))] userInfo:nil];
+        NSString *reason = [NSString stringWithFormat:@"%@ cannot %@ when %@ has not been called yet!", NSStringFromClass([self class]), NSStringFromSelector(_cmd), NSStringFromSelector(@selector(startWithSource:))];
+        @throw [NSException exceptionWithName:NSObjectNotAvailableException
+                                       reason:reason
+                                     userInfo:nil];
     }
 
     _machEndTime = mach_absolute_time();
@@ -164,7 +170,11 @@ NS_ASSUME_NONNULL_BEGIN
     _infos[TIPImageLoadSourceNetworkResumed - 1] = currentInfo;
 }
 
-- (void)addNetworkMetrics:(nullable id)metrics forRequest:(NSURLRequest *)request imageType:(nullable NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions
+- (void)addNetworkMetrics:(nullable id)metrics
+               forRequest:(NSURLRequest *)request
+                imageType:(nullable NSString *)imageType
+         imageSizeInBytes:(NSUInteger)sizeInBytes
+          imageDimensions:(CGSize)dimensions
 {
     if (_flags.wasCancelled) {
         return;
@@ -172,34 +182,59 @@ NS_ASSUME_NONNULL_BEGIN
 
     const BOOL isNetworkSource = _flags.currentSource == TIPImageLoadSourceNetwork || _flags.currentSource == TIPImageLoadSourceNetworkResumed;
     if (!_flags.isTrackingCurrentSource || !isNetworkSource) {
-        @throw [NSException exceptionWithName:NSObjectNotAvailableException reason:[NSString stringWithFormat:@"%@ cannot %@ when not tracking network source!", NSStringFromClass([self class]), NSStringFromSelector(_cmd)] userInfo:nil];
+        NSString *reason = [NSString stringWithFormat:@"%@ cannot %@ when not tracking network source!", NSStringFromClass([self class]), NSStringFromSelector(_cmd)];
+        @throw [NSException exceptionWithName:NSObjectNotAvailableException
+                                       reason:reason
+                                     userInfo:nil];
     }
 
-    [_infos[_flags.currentSource - 1] addNetworkMetrics:metrics forRequest:request imageType:imageType imageSizeInBytes:sizeInBytes imageDimensions:dimensions];
+    [_infos[_flags.currentSource - 1] addNetworkMetrics:metrics
+                                             forRequest:request
+                                              imageType:imageType
+                                       imageSizeInBytes:sizeInBytes
+                                        imageDimensions:dimensions];
 }
 
 - (void)previewWasHit:(NSTimeInterval)renderLatency
 {
-    [self _tip_hit:TIPImageFetchLoadResultHitPreview latency:renderLatency synchronously:NO];
+    _hit(self,
+         TIPImageFetchLoadResultHitPreview,
+         renderLatency,
+         NO /*synchronously*/);
 }
 
 - (void)progressiveFrameWasHit:(NSTimeInterval)renderLatency
 {
-    [self _tip_hit:TIPImageFetchLoadResultHitProgressFrame latency:renderLatency synchronously:NO];
+    _hit(self,
+         TIPImageFetchLoadResultHitProgressFrame,
+         renderLatency,
+         NO /*synchronously*/);
 }
 
 - (void)finalWasHit:(NSTimeInterval)renderLatency synchronously:(BOOL)sync
 {
-    [self _tip_hit:TIPImageFetchLoadResultHitFinal latency:renderLatency synchronously:sync];
+    _hit(self,
+         TIPImageFetchLoadResultHitFinal,
+         renderLatency,
+         sync);
 }
 
-- (void)_tip_hit:(TIPImageFetchLoadResult)result latency:(NSTimeInterval)latency synchronously:(BOOL)sync
+static void _hit(SELF_ARG,
+                 TIPImageFetchLoadResult result,
+                 NSTimeInterval latency,
+                 BOOL synchronously)
 {
-    if (_flags.isTrackingCurrentSource) {
-        if (!_machFirstImageLoadTime) {
-            _machFirstImageLoadTime = mach_absolute_time();
+    if (!self) {
+        return;
+    }
+
+    if (self->_flags.isTrackingCurrentSource) {
+        if (!self->_machFirstImageLoadTime) {
+            self->_machFirstImageLoadTime = mach_absolute_time();
         }
-        [_infos[_flags.currentSource - 1] hit:result renderLatency:latency synchronously:sync];
+        [self->_infos[self->_flags.currentSource - 1] hit:result
+                                            renderLatency:latency
+                                            synchronously:synchronously];
     }
 }
 
@@ -248,10 +283,14 @@ NS_ASSUME_NONNULL_BEGIN
     abort();
 }
 
-- (instancetype)initWithSource:(TIPImageLoadSource)source startTime:(uint64_t)startMachTime
+- (instancetype)initWithSource:(TIPImageLoadSource)source
+                     startTime:(uint64_t)startMachTime
 {
     if (TIPImageLoadSourceUnknown == source) {
-        @throw [NSException exceptionWithName:NSInvalidArgumentException reason:[NSString stringWithFormat:@"%@ cannot init with an Unknown TIPImageLoadSource!", NSStringFromClass([self class])] userInfo:nil];
+        NSString *reason = [NSString stringWithFormat:@"%@ cannot init with an Unknown TIPImageLoadSource!", NSStringFromClass([self class])];
+        @throw [NSException exceptionWithName:NSInvalidArgumentException
+                                       reason:reason
+                                     userInfo:nil];
     }
 
     if (self = [super init]) {
@@ -283,7 +322,10 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     if (_flags.didEnd) {
-        @throw [NSException exceptionWithName:NSObjectNotAvailableException reason:[NSString stringWithFormat:@"%@ cannot %@ after it has already ended!", NSStringFromClass([self class]), NSStringFromSelector(_cmd)] userInfo:nil];
+        NSString *reason = [NSString stringWithFormat:@"%@ cannot %@ after it has already ended!", NSStringFromClass([self class]), NSStringFromSelector(_cmd)];
+        @throw [NSException exceptionWithName:NSObjectNotAvailableException
+                                       reason:reason
+                                     userInfo:nil];
     }
 
     _flags.didEnd = 1;
@@ -303,7 +345,9 @@ NS_ASSUME_NONNULL_BEGIN
     _machEndTime = mach_absolute_time();
 }
 
-- (void)hit:(TIPImageFetchLoadResult)result renderLatency:(NSTimeInterval)renderLatency synchronously:(BOOL)sync
+- (void)hit:(TIPImageFetchLoadResult)result
+        renderLatency:(NSTimeInterval)renderLatency
+        synchronously:(BOOL)sync
 {
     if (_flags.didEnd || _flags.wasCancelled) {
         return;
@@ -341,7 +385,11 @@ NS_ASSUME_NONNULL_BEGIN
     }
 }
 
-- (void)addNetworkMetrics:(nullable id)metrics forRequest:(NSURLRequest *)request imageType:(nullable NSString *)imageType imageSizeInBytes:(NSUInteger)sizeInBytes imageDimensions:(CGSize)dimensions
+- (void)addNetworkMetrics:(nullable id)metrics
+               forRequest:(NSURLRequest *)request
+                imageType:(nullable NSString *)imageType
+         imageSizeInBytes:(NSUInteger)sizeInBytes
+          imageDimensions:(CGSize)dimensions
 {
     if (_flags.wasCancelled) {
         return;

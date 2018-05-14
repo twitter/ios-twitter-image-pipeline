@@ -18,13 +18,26 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// Primary class gets the SELF_ARG convenience
+#define SELF_ARG PRIVATE_SELF(TIPImageMemoryCache)
+
 @interface TIPImageMemoryCache () <TIPLRUCacheDelegate>
 @property (atomic) SInt64 atomicTotalCost;
-- (BOOL)_tip_memoryCache_updatePartialImage:(TIPImageMemoryCacheEntry *)entry partialImage:(TIPPartialImage *)partialImage context:(TIPPartialImageEntryContext *)context;
-- (BOOL)_tip_memoryCache_updateCompleteImage:(TIPImageMemoryCacheEntry *)entry completeImage:(TIPImageContainer *)image context:(TIPCompleteImageEntryContext *)context;
-- (void)_tip_memoryCache_didEvictEntry:(TIPImageMemoryCacheEntry *)entry;
-- (void)_tip_memoryCache_inspect:(TIPInspectableCacheCallback)callback;
-- (void)_tip_memoryCache_addByteCount:(UInt64)bytesAdded removeByteCount:(UInt64)bytesRemoved;
+static BOOL _memoryCache_updatePartialImage(SELF_ARG,
+                                            TIPImageMemoryCacheEntry *entry,
+                                            TIPPartialImage *partialImage,
+                                            TIPPartialImageEntryContext *context);
+static BOOL _memoryCache_updateCompleteImage(SELF_ARG,
+                                             TIPImageMemoryCacheEntry *entry,
+                                             TIPImageContainer *completeImageContainer,
+                                             TIPCompleteImageEntryContext *context);
+static void _memoryCache_didEvictEntry(SELF_ARG,
+                                       TIPImageMemoryCacheEntry *entry);
+static void _memoryCache_inspect(SELF_ARG,
+                                 TIPInspectableCacheCallback callback);
+static void _memoryCache_updateByteCounts(SELF_ARG,
+                                          UInt64 bytesAdded,
+                                          UInt64 bytesRemoved);
 @end
 
 @implementation TIPImageMemoryCache
@@ -50,14 +63,19 @@ NS_ASSUME_NONNULL_BEGIN
     if (self = [super init]) {
         _globalConfig = [TIPGlobalConfiguration sharedInstance];
         _manifest = [[TIPLRUCache alloc] initWithEntries:nil delegate:self];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_tip_memoryCache_didReceiveMemoryWarning:) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(_tip_memoryCache_didReceiveMemoryWarning:)
+                                                     name:UIApplicationDidReceiveMemoryWarningNotification
+                                                   object:nil];
     }
     return self;
 }
 
 - (void)dealloc
 {
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:UIApplicationDidReceiveMemoryWarningNotification
+                                                  object:nil];
 
     // Remove the cache's total bytes from our global count of total bytes
     const SInt64 totalSize = self.atomicTotalCost;
@@ -111,7 +129,7 @@ NS_ASSUME_NONNULL_BEGIN
                 [self->_manifest removeEntry:entry];
                 entry = nil;
             } else {
-                [self _tip_memoryCache_addByteCount:newCost removeByteCount:oldCost];
+                _memoryCache_updateByteCounts(self, newCost /*bytesAdded*/, oldCost /*bytesRemoved*/);
                 TIPAssert(newCost <= oldCost); // removing the cache image and/or partial image only ever removes bytes
             }
 
@@ -150,9 +168,15 @@ NS_ASSUME_NONNULL_BEGIN
 
         if (currentEntry && !force) {
             if (entry.completeImage) {
-                updatedCompleteImage = [self _tip_memoryCache_updateCompleteImage:currentEntry completeImage:entry.completeImage context:entry.completeImageContext];
+                updatedCompleteImage = _memoryCache_updateCompleteImage(self,
+                                                                        currentEntry,
+                                                                        entry.completeImage,
+                                                                        entry.completeImageContext);
             } else if (entry.partialImage) {
-                updatedPartialImage = [self _tip_memoryCache_updatePartialImage:currentEntry partialImage:entry.partialImage context:entry.partialImageContext];
+                updatedPartialImage = _memoryCache_updatePartialImage(self,
+                                                                      currentEntry,
+                                                                      entry.partialImage,
+                                                                      entry.partialImageContext);
             }
         } else {
             if (currentEntry) {
@@ -191,7 +215,7 @@ NS_ASSUME_NONNULL_BEGIN
 
                 if (cost > 0 || !didClear) {
                     globalConfig.internalTotalCountForAllMemoryCaches += 1;
-                    [self _tip_memoryCache_addByteCount:cost removeByteCount:0];
+                    _memoryCache_updateByteCounts(self, cost /*bytesAdded*/, 0 /*bytesRemoved*/);
 
                     if (gTwitterImagePipelineAssertEnabled && 0 == cost) {
                         NSDictionary *info = @{
@@ -211,7 +235,8 @@ NS_ASSUME_NONNULL_BEGIN
         }
 
         if (updatedCompleteImage || updatedPartialImage) {
-            [[TIPGlobalConfiguration sharedInstance] pruneAllCachesOfType:self.cacheType withPriorityCache:self];
+            [[TIPGlobalConfiguration sharedInstance] pruneAllCachesOfType:self.cacheType
+                                                        withPriorityCache:self];
         }
     });
 }
@@ -247,7 +272,7 @@ NS_ASSUME_NONNULL_BEGIN
         const SInt16 totalCount = (SInt16)self->_manifest.numberOfEntries;
         [self->_manifest clearAllEntries];
         [TIPGlobalConfiguration sharedInstance].internalTotalCountForAllMemoryCaches -= totalCount;
-        [self _tip_memoryCache_addByteCount:0 removeByteCount:(UInt64)self.atomicTotalCost];
+        _memoryCache_updateByteCounts(self, 0 /*bytesAdded*/, (UInt64)self.atomicTotalCost /*bytesRemoved*/);
         TIPLogInformation(@"Cleared all images in %@", self);
         if (completion) {
             completion();
@@ -257,14 +282,27 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark Private
 
-- (void)_tip_memoryCache_addByteCount:(UInt64)bytesAdded removeByteCount:(UInt64)bytesRemoved
+static void _memoryCache_updateByteCounts(SELF_ARG,
+                                          UInt64 bytesAdded,
+                                          UInt64 bytesRemoved)
 {
+    if (!self) {
+        return;
+    }
+
     TIP_UPDATE_BYTES(self.atomicTotalCost, bytesAdded, bytesRemoved, @"Memory Cache Size");
     TIP_UPDATE_BYTES([TIPGlobalConfiguration sharedInstance].internalTotalBytesForAllMemoryCaches, bytesAdded, bytesRemoved, @"All Memory Caches Size");
 }
 
-- (BOOL)_tip_memoryCache_updatePartialImage:(TIPImageMemoryCacheEntry *)entry partialImage:(TIPPartialImage *)partialImage context:(TIPPartialImageEntryContext *)context
+static BOOL _memoryCache_updatePartialImage(SELF_ARG,
+                                            TIPImageMemoryCacheEntry *entry,
+                                            TIPPartialImage *partialImage,
+                                            TIPPartialImageEntryContext *context)
 {
+    if (!self) {
+        return NO;
+    }
+
     if (!partialImage || !context) {
         return NO;
     }
@@ -292,15 +330,22 @@ NS_ASSUME_NONNULL_BEGIN
     entry.partialImage = partialImage;
 
     const NSUInteger newCost = entry.memoryCost;
-    [self _tip_memoryCache_addByteCount:newCost removeByteCount:oldCost];
+    _memoryCache_updateByteCounts(self, newCost /*bytesAdded*/, oldCost /*bytesRemoved*/);
 
     TIPAssert(entry.partialImage != nil);
     return YES;
 }
 
-- (BOOL)_tip_memoryCache_updateCompleteImage:(TIPImageMemoryCacheEntry *)entry completeImage:(TIPImageContainer *)image context:(TIPCompleteImageEntryContext *)context
+static BOOL _memoryCache_updateCompleteImage(SELF_ARG,
+                                             TIPImageMemoryCacheEntry *entry,
+                                             TIPImageContainer *completeImageContainer,
+                                             TIPCompleteImageEntryContext *context)
 {
-    if (!image || !context) {
+    if (!self) {
+        return NO;
+    }
+
+    if (!completeImageContainer || !context) {
         return NO;
     }
 
@@ -336,7 +381,7 @@ NS_ASSUME_NONNULL_BEGIN
     const NSUInteger oldCost = entry.memoryCost;
 
     entry.completeImageContext = context;
-    entry.completeImage = image;
+    entry.completeImage = completeImageContainer;
 
     if (skipAhead || entry.partialImageContext) {
         oldDimensions = entry.partialImageContext.dimensions;
@@ -348,14 +393,19 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     const NSUInteger newCost = entry.memoryCost;
-    [self _tip_memoryCache_addByteCount:newCost removeByteCount:oldCost];
+    _memoryCache_updateByteCounts(self, newCost /*bytesAdded*/, oldCost /*bytesRemoved*/);
 
     TIPAssert(entry.completeImage != nil);
     return YES;
 }
 
-- (void)_tip_memoryCache_didEvictEntry:(TIPImageMemoryCacheEntry *)entry
+static void _memoryCache_didEvictEntry(SELF_ARG,
+                                       TIPImageMemoryCacheEntry *entry)
 {
+    if (!self) {
+        return;
+    }
+
     TIPLogDebug(@"%@ Evicted '%@', complete:'%@', partial:'%@'", NSStringFromClass([self class]), entry.identifier, entry.completeImageContext.URL, entry.partialImageContext.URL);
 }
 
@@ -364,8 +414,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)tip_cache:(TIPLRUCache *)manifest didEvictEntry:(TIPImageMemoryCacheEntry *)entry
 {
     [TIPGlobalConfiguration sharedInstance].internalTotalCountForAllMemoryCaches -= 1;
-    [self _tip_memoryCache_addByteCount:0 removeByteCount:entry.memoryCost];
-    [self _tip_memoryCache_didEvictEntry:entry];
+    _memoryCache_updateByteCounts(self, 0 /*bytesAdded*/, entry.memoryCost /*bytesRemoved*/);
+    _memoryCache_didEvictEntry(self, entry);
 }
 
 #pragma mark Inspect
@@ -373,24 +423,30 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)inspect:(TIPInspectableCacheCallback)callback
 {
     tip_dispatch_async_autoreleasing(_globalConfig.queueForMemoryCaches, ^{
-        [self _tip_memoryCache_inspect:callback];
+        _memoryCache_inspect(self, callback);
     });
 }
 
-- (void)_tip_memoryCache_inspect:(TIPInspectableCacheCallback)callback
+static void _memoryCache_inspect(SELF_ARG,
+                                 TIPInspectableCacheCallback callback)
 {
+    if (!self) {
+        return;
+    }
+
     NSMutableArray *completedEntries = [[NSMutableArray alloc] init];
     NSMutableArray *partialEntries = [[NSMutableArray alloc] init];
 
-    for (TIPImageMemoryCacheEntry *cacheEntry in _manifest) {
+    for (TIPImageMemoryCacheEntry *cacheEntry in self->_manifest) {
         TIPImagePipelineInspectionResultEntry *entry;
-
-        entry = [TIPImagePipelineInspectionResultEntry entryWithCacheEntry:cacheEntry class:[TIPImagePipelineInspectionResultCompleteMemoryEntry class]];
+        entry = [TIPImagePipelineInspectionResultEntry entryWithCacheEntry:cacheEntry
+                                                                     class:[TIPImagePipelineInspectionResultCompleteMemoryEntry class]];
         if (entry) {
             [completedEntries addObject:entry];
         }
 
-        entry = [TIPImagePipelineInspectionResultEntry entryWithCacheEntry:cacheEntry class:[TIPImagePipelineInspectionResultPartialMemoryEntry class]];
+        entry = [TIPImagePipelineInspectionResultEntry entryWithCacheEntry:cacheEntry
+                                                                     class:[TIPImagePipelineInspectionResultPartialMemoryEntry class]];
         if (entry) {
             [partialEntries addObject:entry];
         }

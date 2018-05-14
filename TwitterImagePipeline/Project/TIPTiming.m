@@ -97,3 +97,4 @@ NSTimeInterval TIPComputeDuration(uint64_t startTime, uint64_t endTime)
 }
 
 NS_ASSUME_NONNULL_END
+

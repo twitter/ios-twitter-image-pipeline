@@ -17,6 +17,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// Primary class gets the SELF_ARG convenience
+#define SELF_ARG PRIVATE_SELF(TIPImageDownloader)
+
 #ifndef TIP_LOG_DOWNLOAD_PROGRESS
 #define TIP_LOG_DOWNLOAD_PROGRESS 0
 #endif
@@ -32,9 +35,9 @@ do { \
     } \
     const char *__currentLabel = dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL); \
     if (!__currentLabel || 0 != strcmp(__currentLabel, kTIPImageDownloaderQueueName)) { \
-        NSString *__assert_fn__ = [NSString stringWithUTF8String:__PRETTY_FUNCTION__]; \
+        NSString *__assert_fn__ = @(__PRETTY_FUNCTION__); \
         __assert_fn__ = __assert_fn__ ? __assert_fn__ : @"<Unknown Function>"; \
-        NSString *__assert_file__ = [NSString stringWithUTF8String:__FILE__]; \
+        NSString *__assert_file__ = @(__FILE__); \
         __assert_file__ = __assert_file__ ? __assert_file__ : @"<Unknown File>"; \
         [[NSAssertionHandler currentHandler] handleFailureInFunction:__assert_fn__ \
                                                                 file:__assert_file__ \
@@ -43,8 +46,8 @@ do { \
     } \
 } while (0)
 
-static long long TIPExpectedResponseBodySize(NSHTTPURLResponse * __nullable URLResponse);
-static long long TIPExpectedResponseBodySize(NSHTTPURLResponse * __nullable URLResponse)
+static long long _ExpectedResponseBodySize(NSHTTPURLResponse * __nullable URLResponse);
+static long long _ExpectedResponseBodySize(NSHTTPURLResponse * __nullable URLResponse)
 {
     long long contentLength = 0;
     if (URLResponse) {
@@ -56,8 +59,10 @@ static long long TIPExpectedResponseBodySize(NSHTTPURLResponse * __nullable URLR
     return contentLength;
 }
 
-static BOOL TIPImageDownloadIsComplete(NSHTTPURLResponse * __nullable response, NSError * __nullable error);
-static BOOL TIPImageDownloadIsComplete(NSHTTPURLResponse * __nullable response, NSError * __nullable error)
+static BOOL _ImageDownloadIsComplete(NSHTTPURLResponse * __nullable response,
+                                     NSError * __nullable error);
+static BOOL _ImageDownloadIsComplete(NSHTTPURLResponse * __nullable response,
+                                     NSError * __nullable error)
 {
     if (response.statusCode == 200 /* OK */ || response.statusCode == 206 /* Partial Content */) {
         if (!error) {
@@ -67,8 +72,10 @@ static BOOL TIPImageDownloadIsComplete(NSHTTPURLResponse * __nullable response, 
     return NO;
 }
 
-static NSString *TIPImageDownloadLastModifiedString(NSHTTPURLResponse * __nullable response, NSError * __nullable error);
-static NSString *TIPImageDownloadLastModifiedString(NSHTTPURLResponse * __nullable response, NSError * __nullable error)
+static NSString *_ImageDownloadLastModifiedString(NSHTTPURLResponse * __nullable response,
+                                                  NSError * __nullable error);
+static NSString *_ImageDownloadLastModifiedString(NSHTTPURLResponse * __nullable response,
+                                                  NSError * __nullable error)
 {
     if (response.statusCode == 200 /* OK */ || response.statusCode == 206 /* Partial Content */) {
         if (error) {
@@ -85,8 +92,12 @@ static NSString *TIPImageDownloadLastModifiedString(NSHTTPURLResponse * __nullab
     return nil;
 }
 
-static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInternalContext *context, TIPImageFetchErrorCode code, id<TIPImageFetchDownload> __nullable download);
-static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInternalContext *context, TIPImageFetchErrorCode code, id<TIPImageFetchDownload> __nullable download)
+static void _ImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInternalContext *context,
+                                                           TIPImageFetchErrorCode code,
+                                                           id<TIPImageFetchDownload> __nullable download);
+static void _ImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInternalContext *context,
+                                                           TIPImageFetchErrorCode code,
+                                                           id<TIPImageFetchDownload> __nullable download)
 {
     TIPAssertDownloaderQueue();
 
@@ -115,19 +126,54 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
             break;
     }
 
-    context.progressStateError = [NSError errorWithDomain:TIPImageFetchErrorDomain code:code userInfo:nil];
+    context.progressStateError = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                                     code:code
+                                                 userInfo:nil];
     [download cancelWithDescription:[NSString stringWithFormat:@"TIP: %@ %@", download, cancelDescription]];
+}
+
+static BOOL _CanCoalesceDelegate(NSObject<TIPImageDownloadDelegate> *delegate,
+                                 TIPImageDownloadInternalContext *context);
+static BOOL _CanCoalesceDelegate(NSObject<TIPImageDownloadDelegate> *delegate,
+                                 TIPImageDownloadInternalContext *context)
+{
+    TIPAssertDownloaderQueue();
+
+    id<TIPImageDownloadRequest> request = delegate.imageDownloadRequest;
+    id<TIPImageDownloadDelegate> otherDelegate = context.firstDelegate;
+    id<TIPImageDownloadRequest> otherRequest = otherDelegate.imageDownloadRequest;
+
+    if (![otherRequest.imageDownloadURL isEqual:request.imageDownloadURL]) {
+        return NO;
+    }
+
+    if (![otherRequest.imageDownloadIdentifier isEqual:request.imageDownloadIdentifier]) {
+        return NO;
+    }
+
+    if (otherRequest.imageDownloadHydrationBlock != request.imageDownloadHydrationBlock) {
+        return NO;
+    }
+
+    if (delegate.imagePipeline != otherDelegate.imagePipeline) {
+        return NO;
+    }
+
+    return YES;
 }
 
 @interface TIPImageDownloader () <TIPImageFetchDownloadClient>
 
-+ (BOOL)_tip_canCoalesceDelegate:(NSObject<TIPImageDownloadDelegate> *)delegate withDownloadContext:(TIPImageDownloadInternalContext *)context;
-
-- (void)_tip_background_dequeuePendingDownloads;
-- (id<TIPImageFetchDownload>)_tip_background_downloadWithDelegate:(NSObject<TIPImageDownloadDelegate> *)delegate;
-- (void)_tip_background_clearDownload:(id<TIPImageFetchDownload>)download;
-- (void)_tip_background_updatePriorityOfDownload:(id<TIPImageFetchDownload>)download;
-- (void)_tip_background_removeDelegate:(NSObject<TIPImageDownloadDelegate> *)delegate forDownload:(id<TIPImageFetchDownload>)download;
+static void _background_dequeuePendingDownloads(SELF_ARG);
+static id<TIPImageFetchDownload> _background_getOrCreateDownload(SELF_ARG,
+                                                                 NSObject<TIPImageDownloadDelegate> *delegate);
+static void _background_clearDownload(SELF_ARG,
+                                      id<TIPImageFetchDownload> download);
+static void _background_updatePriorityOfDownload(SELF_ARG,
+                                                 id<TIPImageFetchDownload> download);
+static void _background_removeDelegate(SELF_ARG,
+                                       NSObject<TIPImageDownloadDelegate> *delegate,
+                                       id<TIPImageFetchDownload> download);
 
 @end
 
@@ -160,50 +206,24 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     return self;
 }
 
-+ (BOOL)_tip_canCoalesceDelegate:(NSObject<TIPImageDownloadDelegate> *)delegate withDownloadContext:(TIPImageDownloadInternalContext *)context
-{
-    TIPAssertDownloaderQueue();
-
-    id<TIPImageDownloadRequest> request = delegate.imageDownloadRequest;
-    id<TIPImageDownloadDelegate> otherDelegate = context.firstDelegate;
-    id<TIPImageDownloadRequest> otherRequest = otherDelegate.imageDownloadRequest;
-
-    if (![otherRequest.imageDownloadURL isEqual:request.imageDownloadURL]) {
-        return NO;
-    }
-
-    if (![otherRequest.imageDownloadIdentifier isEqual:request.imageDownloadIdentifier]) {
-        return NO;
-    }
-
-    if (otherRequest.imageDownloadHydrationBlock != request.imageDownloadHydrationBlock) {
-        return NO;
-    }
-
-    if (delegate.imagePipeline != otherDelegate.imagePipeline) {
-        return NO;
-    }
-
-    return YES;
-}
-
 - (id<TIPImageDownloadContext>)fetchImageWithDownloadDelegate:(id<TIPImageDownloadDelegate>)delegate
 {
     __block id<TIPImageFetchDownload> download = nil;
     dispatch_sync(_downloaderQueue, ^{
-        download = [self _tip_background_downloadWithDelegate:delegate];
+        download = _background_getOrCreateDownload(self, delegate);
     });
     return (id<TIPImageDownloadContext>)download;
 }
 
-- (void)removeDelegate:(id<TIPImageDownloadDelegate>)delegate forContext:(id<TIPImageDownloadContext>)context
+- (void)removeDelegate:(id<TIPImageDownloadDelegate>)delegate
+            forContext:(id<TIPImageDownloadContext>)context
 {
     if (!context) {
         return;
     }
 
     dispatch_async(_downloaderQueue, ^{
-        [self _tip_background_removeDelegate:delegate forDownload:(id<TIPImageFetchDownload>)context];
+        _background_removeDelegate(self, delegate, (id<TIPImageFetchDownload>)context);
     });
 }
 
@@ -214,7 +234,7 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     }
 
     dispatch_async(_downloaderQueue, ^{
-        [self _tip_background_updatePriorityOfDownload:(id<TIPImageFetchDownload>)context];
+        _background_updatePriorityOfDownload(self, (id<TIPImageFetchDownload>)context);
     });
 }
 
@@ -226,7 +246,7 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
     if (context.didStart) {
-        TIPImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadEncounteredToStartMoreThanOnce, download);
+        _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadEncounteredToStartMoreThanOnce, download);
         return;
     }
     context.didStart = YES;
@@ -235,27 +255,29 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     TIPLogDebug(@"(%@)[%p] - starting", context.originalRequest.URL, download);
 #endif
 
-    [context executePerDelegateSuspendingQueue:_downloaderQueue block:^(id<TIPImageDownloadDelegate> delegate) {
+    [context executePerDelegateSuspendingQueue:_downloaderQueue
+                                         block:^(id<TIPImageDownloadDelegate> delegate) {
         [delegate imageDownloadDidStart:(id)download];
     }];
 }
 
-- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download didReceiveURLResponse:(NSHTTPURLResponse *)response
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
+     didReceiveURLResponse:(NSHTTPURLResponse *)response
 {
     TIPAssertDownloaderQueue();
 
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
     if (context.didReceiveResponse) {
-        TIPImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadReceivedResponseMoreThanOnce, download);
+        _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadReceivedResponseMoreThanOnce, download);
         return;
     }
     context.didReceiveResponse = YES;
 
     context.response = response;
-    context.contentLength = (NSUInteger)MAX(0LL, TIPExpectedResponseBodySize(response));
+    context.contentLength = (NSUInteger)MAX(0LL, _ExpectedResponseBodySize(response));
 
     if (!context.didRequestHydration) {
-        TIPImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadNeverAttemptedToHydrateRequest, download);
+        _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadNeverAttemptedToHydrateRequest, download);
         return;
     }
     TIPAssert(context.hydratedRequest);
@@ -266,7 +288,8 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
         context.partialImage = nil;
         context.temporaryFile = nil;
         context.lastModified = nil;
-        [context executePerDelegateSuspendingQueue:_downloaderQueue block:^(id<TIPImageDownloadDelegate> delegate) {
+        [context executePerDelegateSuspendingQueue:_downloaderQueue
+                                             block:^(id<TIPImageDownloadDelegate> delegate) {
             [delegate imageDownload:(id)download didResetFromPartialImage:partialImage];
         }];
     } else if (206 /* Partial Content */ == context.response.statusCode) {
@@ -300,7 +323,9 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 #endif
 
     if (!context.didReceiveResponse) {
-        TIPImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadNeverReceivedResponse, download);
+        _ImageDownloadSetProgressStateFailureAndCancel(context,
+                                                         TIPImageFetchErrorCodeDownloadNeverReceivedResponse,
+                                                         download);
         return;
     }
 
@@ -331,29 +356,37 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 
     if (context.delegateCount > 0) {
         TIPPartialImage *partialImage = context.partialImage;
-        [context executePerDelegateSuspendingQueue:_downloaderQueue block:^(id<TIPImageDownloadDelegate> delegate) {
-            [delegate imageDownload:(id)download didAppendBytes:byteCount toPartialImage:partialImage result:result];
+        [context executePerDelegateSuspendingQueue:_downloaderQueue
+                                             block:^(id<TIPImageDownloadDelegate> delegate) {
+            [delegate imageDownload:(id)download
+                     didAppendBytes:byteCount
+                     toPartialImage:partialImage
+                             result:result];
         }];
     } else {
         // Running as a "detached" download, time to clean it up
-        [self _tip_background_clearDownload:download];
+        _background_clearDownload(self, download);
         [download cancelWithDescription:TIPImageDownloaderCancelSource];
     }
 }
 
-- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download hydrateRequest:(NSURLRequest *)request completion:(TIPImageFetchDownloadRequestHydrationCompleteBlock)complete
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
+            hydrateRequest:(NSURLRequest *)request
+                completion:(TIPImageFetchDownloadRequestHydrationCompleteBlock)complete
 {
     TIPAssertDownloaderQueue();
 
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
     if (context.didRequestHydration) {
-        TIPImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadAttemptedToHydrateRequestMoreThanOnce, download);
+        _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadAttemptedToHydrateRequestMoreThanOnce, download);
         return;
     }
     context.didRequestHydration = YES;
 
     if (!context.didStart) {
-        TIPImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadNeverStarted, download);
+        _ImageDownloadSetProgressStateFailureAndCancel(context,
+                                                         TIPImageFetchErrorCodeDownloadNeverStarted,
+                                                         download);
         return;
     }
 
@@ -387,13 +420,19 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 
         TIPAssert([request.URL isEqual:hydratedRequest.URL]);
         if (![request.URL isEqual:hydratedRequest.URL]) {
-            complete([NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeIllegalModificationByHydrationBlock userInfo:@{ @"originalURL" : request.URL, @"modifiedURL" : hydratedRequest.URL }]);
+            complete([NSError errorWithDomain:TIPImageFetchErrorDomain
+                                         code:TIPImageFetchErrorCodeIllegalModificationByHydrationBlock
+                                     userInfo:@{ @"originalURL" : request.URL,
+                                                 @"modifiedURL" : hydratedRequest.URL }]);
             return;
         }
 
         TIPAssert([request.HTTPMethod isEqualToString:hydratedRequest.HTTPMethod]);
         if (![request.HTTPMethod isEqualToString:hydratedRequest.HTTPMethod]) {
-            complete([NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeIllegalModificationByHydrationBlock userInfo:@{ @"originalHTTPMethod" : request.HTTPMethod ?: [NSNull null], @"modifiedHTTPMethod" : hydratedRequest.HTTPMethod ?: [NSNull null] }]);
+            complete([NSError errorWithDomain:TIPImageFetchErrorDomain
+                                         code:TIPImageFetchErrorCodeIllegalModificationByHydrationBlock
+                                     userInfo:@{ @"originalHTTPMethod" : request.HTTPMethod ?: [NSNull null],
+                                                 @"modifiedHTTPMethod" : hydratedRequest.HTTPMethod ?: [NSNull null] }]);
             return;
         }
 
@@ -416,7 +455,8 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     }
 }
 
-- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download didCompleteWithError:(nullable NSError *)error
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
+      didCompleteWithError:(nullable NSError *)error
 {
     TIPAssertDownloaderQueue();
 
@@ -427,7 +467,7 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     }
     context.didComplete = YES;
 
-    [self _tip_background_clearDownload:download];
+    _background_clearDownload(self, download);
     context.download = nil;
     [download discardContext];
 
@@ -436,17 +476,19 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 #endif
 
     if (!error && !context.progressStateError && !context.didReceiveData) {
-        TIPImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadNeverReceivedResponse, nil /* don't cancel */);
+        _ImageDownloadSetProgressStateFailureAndCancel(context,
+                                                         TIPImageFetchErrorCodeDownloadNeverReceivedResponse,
+                                                         nil /* don't cancel */);
     }
     if (!error) {
         error = context.progressStateError;
     }
 
-    const BOOL isComplete = TIPImageDownloadIsComplete(context.response, error);
+    const BOOL isComplete = _ImageDownloadIsComplete(context.response, error);
     [context.partialImage appendData:nil final:isComplete];
     const BOOL didReadHeaders = (context.partialImage.state > TIPPartialImageStateLoadingHeaders);
     const BOOL complete = isComplete && didReadHeaders;
-    context.lastModified = TIPImageDownloadLastModifiedString(context.response, error);
+    context.lastModified = _ImageDownloadLastModifiedString(context.response, error);
     NSUInteger totalBytes = context.partialImage.byteCount;
     NSString *imageType = context.partialImage.type;
     id<TIPImageDownloadDelegate> firstDelegate = context.firstDelegate;
@@ -503,7 +545,25 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
                 imageContext.dimensions = image.dimensions;
             }
 
-            TIPAssert(!firstDelegate || [context.temporaryFile.imageIdentifier isEqualToString:firstDelegateRequest.imageDownloadIdentifier]);
+            if (gTwitterImagePipelineAssertEnabled) {
+                // Complex assertion, break it down
+
+                if (!firstDelegate) {
+                    // OK
+                } else {
+                    NSString *contextTempIdentifier = context.temporaryFile.imageIdentifier;
+                    NSString *delegateDownloadIdentifier = firstDelegateRequest.imageDownloadIdentifier;
+                    if (!contextTempIdentifier || !delegateDownloadIdentifier) {
+                        // Not OK!  Need to have identifiers!
+                        TIPAssertNever();
+                    } else if (![contextTempIdentifier isEqualToString:delegateDownloadIdentifier]) {
+                        // Not OK!  Identifiers need to match!
+                        TIPAssertNever();
+                    } else {
+                        // OK
+                    }
+                }
+            }
             [context.temporaryFile finalizeWithContext:imageContext];
         }
 
@@ -520,7 +580,9 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 
     if (!error && !image) {
         if (200 != ((context.response.statusCode / 100) * 100)) {
-            error = [NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeHTTPTransactionError userInfo:@{ TIPErrorUserInfoHTTPStatusCodeKey : @(context.response.statusCode) }];
+            error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                        code:TIPImageFetchErrorCodeHTTPTransactionError
+                                    userInfo:@{ TIPErrorUserInfoHTTPStatusCodeKey : @(context.response.statusCode) }];
         } else if (isComplete) {
 
             NSMutableDictionary *userInfo = [[NSMutableDictionary alloc] init];
@@ -547,12 +609,17 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
                 userInfo[@"metrics"] = value;
             }
 
-            error = [NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeCouldNotDecodeImage userInfo:userInfo];
-            [[TIPGlobalConfiguration sharedInstance] postProblem:TIPProblemImageDownloadedCouldNotBeDecoded userInfo:userInfo];
+            error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                        code:TIPImageFetchErrorCodeCouldNotDecodeImage
+                                    userInfo:userInfo];
+            [[TIPGlobalConfiguration sharedInstance] postProblem:TIPProblemImageDownloadedCouldNotBeDecoded
+                                                        userInfo:userInfo];
 
         } else { // !response.isComplete
             TIPAssertNever();
-            error = [NSError errorWithDomain:NSPOSIXErrorDomain code:EBADEXEC userInfo:nil];
+            error = [NSError errorWithDomain:NSPOSIXErrorDomain
+                                        code:EBADEXEC
+                                    userInfo:nil];
         }
     }
 
@@ -565,28 +632,45 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     [context executePerDelegateSuspendingQueue:NULL block:^(id<TIPImageDownloadDelegate> delegateInner) {
         // only the first delegate is granted the honor of caching the partial image
         const BOOL isFirstDelegate = (delegateInner == firstDelegate);
-        [delegateInner imageDownload:(id)download didCompleteWithPartialImage:((isFirstDelegate) ? partialImage : nil) lastModified:((isFirstDelegate) ? lastModified : nil) byteSize:((isFirstDelegate) ? totalBytes : 0) imageType:((isFirstDelegate) ? imageType : nil) image:image imageRenderLatency:imageRenderLatency statusCode:statusCode error:error];
+        [delegateInner imageDownload:(id)download
+         didCompleteWithPartialImage:((isFirstDelegate) ? partialImage : nil)
+                        lastModified:((isFirstDelegate) ? lastModified : nil)
+                            byteSize:((isFirstDelegate) ? totalBytes : 0)
+                           imageType:((isFirstDelegate) ? imageType : nil)
+                               image:image
+                  imageRenderLatency:imageRenderLatency
+                          statusCode:statusCode
+                               error:error];
     }];
 }
 
 #pragma mark Background
 
-- (void)_tip_background_dequeuePendingDownloads
+static void _background_dequeuePendingDownloads(SELF_ARG)
 {
+    if (!self) {
+        return;
+    }
+
     TIPAssertDownloaderQueue();
 
     // Cast signed max value to unsigned making negative values (infinite) be HUGE (and effectively infinite)
     const NSUInteger count = (NSUInteger)[TIPGlobalConfiguration sharedInstance].maxConcurrentImagePipelineDownloadCount;
-    while (_runningDownloadsCount < count && _pendingDownloads.count > 0) {
-        id<TIPImageFetchDownload> download = _pendingDownloads.firstObject;
-        [_pendingDownloads removeObjectAtIndex:0];
-        _runningDownloadsCount++;
+    while (self->_runningDownloadsCount < count && self->_pendingDownloads.count > 0) {
+        id<TIPImageFetchDownload> download = self->_pendingDownloads.firstObject;
+        [self->_pendingDownloads removeObjectAtIndex:0];
+        self->_runningDownloadsCount++;
         [download start];
     }
 }
 
-- (void)_tip_background_updatePriorityOfDownload:(id<TIPImageFetchDownload>)download
+static void _background_updatePriorityOfDownload(SELF_ARG,
+                                                 id<TIPImageFetchDownload> download)
 {
+    if (!self){
+        return;
+    }
+
     TIPAssertDownloaderQueue();
 
     if ([download respondsToSelector:@selector(setPriority:)]) {
@@ -596,8 +680,14 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
     }
 }
 
-- (void)_tip_background_removeDelegate:(NSObject<TIPImageDownloadDelegate> *)delegate forDownload:(id<TIPImageFetchDownload>)download
+static void _background_removeDelegate(SELF_ARG,
+                                       NSObject<TIPImageDownloadDelegate> *delegate,
+                                       id<TIPImageFetchDownload> download)
 {
+    if (!self) {
+        return;
+    }
+
     TIPAssertDownloaderQueue();
 
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
@@ -615,18 +705,23 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
         return;
     }
 
-    [self _tip_background_clearDownload:download];
+    _background_clearDownload(self, download);
     [download cancelWithDescription:TIPImageDownloaderCancelSource];
     TIPLogInformation(@"Download[%p] has no more delegates and is below the acceptable download speed, cancelling", download);
 }
 
-- (void)_tip_background_clearDownload:(id<TIPImageFetchDownload>)download
+static void _background_clearDownload(SELF_ARG,
+                                      id<TIPImageFetchDownload> download)
 {
+    if (!self) {
+        return;
+    }
+
     TIPAssertDownloaderQueue();
 
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
     NSURL *URL = context.originalRequest.URL;
-    NSMutableArray<id<TIPImageFetchDownload>> *downloads = _constructedDownloads[URL];
+    NSMutableArray<id<TIPImageFetchDownload>> *downloads = self->_constructedDownloads[URL];
     if (downloads) {
         BOOL downloadFound = NO;
         NSUInteger count = downloads.count;
@@ -638,35 +733,41 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
         }
         TIPAssert(downloads.count == count);
         if (!count) {
-            [_constructedDownloads removeObjectForKey:URL];
+            [self->_constructedDownloads removeObjectForKey:URL];
         }
 
         if (downloadFound) {
-            index = [_pendingDownloads indexOfObjectIdenticalTo:download];
+            index = [self->_pendingDownloads indexOfObjectIdenticalTo:download];
             if (index == NSNotFound) {
-                TIPAssert(_runningDownloadsCount > 0);
-                _runningDownloadsCount--;
-                [self _tip_background_dequeuePendingDownloads];
+                TIPAssert(self->_runningDownloadsCount > 0);
+                self->_runningDownloadsCount--;
+                _background_dequeuePendingDownloads(self);
             } else {
-                [_pendingDownloads removeObjectAtIndex:index];
+                [self->_pendingDownloads removeObjectAtIndex:index];
             }
         }
     }
 }
 
-- (id<TIPImageFetchDownload>)_tip_background_downloadWithDelegate:(NSObject<TIPImageDownloadDelegate> *)delegate
+static id<TIPImageFetchDownload> _background_getOrCreateDownload(SELF_ARG,
+                                                                 NSObject<TIPImageDownloadDelegate> *delegate)
 {
+    TIPAssert(self);
+    if (!self) {
+        return nil;
+    }
+
     TIPAssertDownloaderQueue();
 
     id<TIPImageFetchDownload> download = nil;
     NSObject<TIPImageDownloadRequest> *request = delegate.imageDownloadRequest;
     NSURL *URL = request.imageDownloadURL;
-    NSMutableArray<id<TIPImageFetchDownload>> *constructedDownloads = _constructedDownloads[URL];
+    NSMutableArray<id<TIPImageFetchDownload>> *constructedDownloads = self->_constructedDownloads[URL];
 
     // Coalesce if possible
     for (id<TIPImageFetchDownload> existingDownload in constructedDownloads) {
         TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)existingDownload.context;
-        if ([[self class] _tip_canCoalesceDelegate:delegate withDownloadContext:context]) {
+        if (_CanCoalesceDelegate(delegate, context)) {
             TIPLogDebug(@"Coalescing two requests for the same image: ('%@' ==> '%@')", request.imageDownloadIdentifier, request.imageDownloadURL);
 
             download = existingDownload;
@@ -687,11 +788,14 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
                 const BOOL didStart = context.didStart;
                 const BOOL didReceiveFirstByte = context.didReceiveData;
                 NSInteger statusCode = context.response.statusCode;
-                [TIPImageDownloadInternalContext executeDelegate:delegate suspendingQueue:_downloaderQueue block:^(id<TIPImageDownloadDelegate> blockDelegate) {
+                [TIPImageDownloadInternalContext executeDelegate:delegate
+                                                 suspendingQueue:self->_downloaderQueue
+                                                           block:^(id<TIPImageDownloadDelegate> blockDelegate) {
 
                     if (200 /* OK */ == statusCode) {
                         // already started a fresh download, reset
-                        [blockDelegate imageDownload:(id)download didResetFromPartialImage:partialImage];
+                        [blockDelegate imageDownload:(id)download
+                            didResetFromPartialImage:partialImage];
                     }
 
                     if (didStart) {
@@ -700,7 +804,10 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 
                         if (didReceiveFirstByte) {
                             // already started receiving data, catch the delegate up to speed
-                            [blockDelegate imageDownload:(id)download didAppendBytes:partialImage.byteCount toPartialImage:partialImage result:result];
+                            [blockDelegate imageDownload:(id)download
+                                          didAppendBytes:partialImage.byteCount
+                                          toPartialImage:partialImage
+                                                  result:result];
                         }
                     }
 
@@ -723,7 +830,7 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
         URLRequest.allHTTPHeaderFields = request.imageDownloadHeaders;
 
         context.originalRequest = URLRequest;
-        context.downloadQueue = _downloaderQueue;
+        context.downloadQueue = self->_downloaderQueue;
         context.client = self;
 
         download = [[TIPGlobalConfiguration sharedInstance] createImageFetchDownloadWithContext:context];
@@ -731,14 +838,14 @@ static void TIPImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInt
 
         if (!constructedDownloads) {
             constructedDownloads = [[NSMutableArray alloc] init];
-            _constructedDownloads[URL] = constructedDownloads;
+            self->_constructedDownloads[URL] = constructedDownloads;
         }
         [constructedDownloads addObject:download];
-        [_pendingDownloads addObject:download];
-        [self _tip_background_dequeuePendingDownloads];
+        [self->_pendingDownloads addObject:download];
+        _background_dequeuePendingDownloads(self);
     }
 
-    [self _tip_background_updatePriorityOfDownload:download];
+    _background_updatePriorityOfDownload(self, download);
     return download;
 }
 

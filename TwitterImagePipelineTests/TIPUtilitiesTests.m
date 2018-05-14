@@ -13,11 +13,6 @@
 #import "TIPTests.h"
 #import "UIImage+TIPAdditions.h"
 
-@interface UIImage (Testing)
-- (UIImage *)_tip_CoreGraphics_scaleImageToSpecificDimensions:(CGSize)scaledDimensions scale:(CGFloat)scale;
-- (UIImage *)_tip_UIKit_scaleImageToSpecificDimensions:(CGSize)scaledDimensions scale:(CGFloat)scale;
-@end
-
 @interface TIPUtilitiesTests : XCTestCase
 
 @end
@@ -117,17 +112,10 @@
     XCTAssertEqual(leftyImage.tip_dimensions.width, 576);
     XCTAssertEqual(leftyImage.tip_dimensions.height, 1024);
 
-    UIImage *scaledLeftyImage1 = [leftyImage _tip_UIKit_scaleImageToSpecificDimensions:CGSizeMake(288, 512) scale:leftyImage.scale];
-    // UIKit method apply the image orientation to the render
+    UIImage *scaledLeftyImage1 = [leftyImage tip_scaledImageWithTargetDimensions:CGSizeMake(288, 512) contentMode:UIViewContentModeScaleAspectFit];
     XCTAssertEqual(scaledLeftyImage1.imageOrientation, UIImageOrientationUp);
     XCTAssertEqual(scaledLeftyImage1.tip_dimensions.width, 288);
     XCTAssertEqual(scaledLeftyImage1.tip_dimensions.height, 512);
-
-    UIImage *scaledLeftyImage2 = [leftyImage _tip_CoreGraphics_scaleImageToSpecificDimensions:CGSizeMake(288, 512) scale:leftyImage.scale];
-    // Core Graphics method preserves the image orientation property
-    XCTAssertEqual(scaledLeftyImage2.imageOrientation, UIImageOrientationLeft);
-    XCTAssertEqual(scaledLeftyImage2.tip_dimensions.width, 288);
-    XCTAssertEqual(scaledLeftyImage2.tip_dimensions.height, 512);
 }
 
 #if 0

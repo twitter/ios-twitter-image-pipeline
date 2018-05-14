@@ -17,12 +17,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - File Helpers
 
-NSArray<NSString *> * __nullable TIPContentsAtPath(NSString *path, NSError * __nullable * __nullable outError)
+NSArray<NSString *> * __nullable TIPContentsAtPath(NSString *path,
+                                                   NSError * __nullable * __nullable outError)
 {
     DIR *dir = opendir(path.UTF8String);
     if (!dir) {
         if (outError) {
-            *outError = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
+            *outError = [NSError errorWithDomain:NSPOSIXErrorDomain
+                                            code:errno
+                                        userInfo:nil];
         }
         return nil;
     }
@@ -45,19 +48,24 @@ NSArray<NSString *> * __nullable TIPContentsAtPath(NSString *path, NSError * __n
     return entries;
 }
 
-NSUInteger TIPFileSizeAtPath(NSString *path, NSError * __nullable * __nullable outError)
+NSUInteger TIPFileSizeAtPath(NSString *path,
+                             NSError * __nullable * __nullable outError)
 {
     NSUInteger size = 0;
     if (path.length > 0) {
         struct stat fileStatStruct;
         if (0 != stat(path.UTF8String, &fileStatStruct)) {
             if (outError) {
-                *outError = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
+                *outError = [NSError errorWithDomain:NSPOSIXErrorDomain
+                                                code:errno
+                                            userInfo:nil];
             }
         } else {
             if (fileStatStruct.st_size < 0) {
                 if (outError) {
-                    *outError = [NSError errorWithDomain:NSPOSIXErrorDomain code:EBADF userInfo:nil];
+                    *outError = [NSError errorWithDomain:NSPOSIXErrorDomain
+                                                    code:EBADF
+                                                userInfo:nil];
                 }
             } else {
                 size = (NSUInteger)fileStatStruct.st_size;
@@ -75,13 +83,17 @@ NSDate * __nullable TIPLastModifiedDateAtPath(NSString *path)
 NSDate * __nullable TIPLastModifiedDateAtPathURL(NSURL *pathURL)
 {
     NSDate *date = nil;
-    [pathURL getResourceValue:&date forKey:NSURLContentModificationDateKey error:NULL];
+    [pathURL getResourceValue:&date
+                       forKey:NSURLContentModificationDateKey
+                        error:NULL];
     return date;
 }
 
 void TIPSetLastModifiedDateAtPath(NSString * path, NSDate *date)
 {
-    [[NSFileManager defaultManager] setAttributes:@{NSFileModificationDate : date} ofItemAtPath:path error:NULL];
+    [[NSFileManager defaultManager] setAttributes:@{NSFileModificationDate : date}
+                                     ofItemAtPath:path
+                                            error:NULL];
 }
 
 void TIPSetLastModifiedDateAtPathURL(NSURL *pathURL, NSDate *date)
@@ -112,7 +124,9 @@ NSArray<NSString *> * __nullable TIPListXAttributesForFile(NSString *filePath)
     char *end = listBuff + listStringSize;
     for (; cur < end; cur++) {
         if (*cur == '\0') {
-            NSString *attributeName = [[NSString alloc] initWithBytes:head length:(NSUInteger)(cur - head) encoding:NSUTF8StringEncoding];
+            NSString *attributeName = [[NSString alloc] initWithBytes:head
+                                                               length:(NSUInteger)(cur - head)
+                                                             encoding:NSUTF8StringEncoding];
             if (attributeName) {
                 [attributeNames addObject:attributeName];
             }
@@ -222,7 +236,10 @@ NSString * __nullable TIPGetXAttributeStringFromFile(const char *name, const cha
         return nil;
     }
 
-    return [[NSString alloc] initWithBytesNoCopy:buffer length:(NSUInteger)bufferLength encoding:NSUTF8StringEncoding freeWhenDone:YES];
+    return [[NSString alloc] initWithBytesNoCopy:buffer
+                                          length:(NSUInteger)bufferLength
+                                        encoding:NSUTF8StringEncoding
+                                    freeWhenDone:YES];
 }
 
 NSNumber * __nullable TIPGetXAttributeNumberFromFile(const char *name, const char *filePath)

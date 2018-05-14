@@ -34,20 +34,18 @@ FOUNDATION_EXTERN BOOL TIPIsExtension(void);
 FOUNDATION_EXTERN BOOL gTwitterImagePipelineAssertEnabled;
 
 #define TIPAssert(expression) \
-if (gTwitterImagePipelineAssertEnabled) { \
-    const BOOL __expressionValue = !!(expression); \
-    (void)__expressionValue; \
+({ if (gTwitterImagePipelineAssertEnabled) { \
+    const BOOL __expressionValue = !!(expression); (void)__expressionValue; \
     __TIPAssert(__expressionValue); \
     NSCAssert(__expressionValue, @"assertion failed: (" #expression ")"); \
-}
+} })
 
 #define TIPAssertMessage(expression, format, ...) \
-if (gTwitterImagePipelineAssertEnabled) { \
-    const BOOL __expressionValue = !!(expression); \
-    (void)__expressionValue; \
+({ if (gTwitterImagePipelineAssertEnabled) { \
+    const BOOL __expressionValue = !!(expression); (void)__expressionValue; \
     __TIPAssert(__expressionValue); \
     NSCAssert(__expressionValue, @"assertion failed: (" #expression ") message: %@", [NSString stringWithFormat:format, ##__VA_ARGS__]); \
-} while (0)
+} })
 
 #define TIPAssertNever()      TIPAssert(0 && "this line should never get executed" )
 
@@ -189,4 +187,85 @@ NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t queue, dispatch_
     });
 }
 
+#pragma mark - Private Method C Functions Support
+
+/**
+ Macro to help with implementing static C-functions instead of private methods
+
+    static NSString *_extendedDescription(PRIVATE_SELF(type))
+    {
+        if (!self) { // ALWAYS perform the `self` nil-check first
+            return nil;
+        }
+        return [[self description] stringByAppendingFormat:@" %@", self->_extendedInfo];
+    }
+
+ Can be helpful to define a macro at the top of a .m file for the primary class' `PRIVATE_SELF`.
+ Then, that macro can be used in all private function declarations/implementations
+ For example:
+
+    // in TIPImagePipeline.m
+    #define SELF_ARG PRIVATE_SELF(TIPImagePipeline)
+
+    static NSString *_extendedDescription(SELF_ARG)
+    {
+        if (!self) { // ALWAYS perform the `self` nil-check first
+            return nil;
+        }
+        return [[self description] stringByAppendingFormat:@" %@", self->_extendedInfo];
+    }
+
+ Calling:
+
+    // private method
+    NSString *description = [self _tip_extendedDescription];
+
+    // static function
+    NSString *description = _extendedDescription(self);
+
+ Provide context:
+
+    // Don't just pass ambiguous values to arguments, provide context
+
+    UIImage *nilOverlayImage = nil;
+    UIImage *image = _renderImage(self,
+                                  nilOverlayImage,
+                                  self.textOverlayString,
+                                  [UIColor yellow], // tintColor
+                                  UIImageOrientationUp,
+                                  CGSizeZero, // zero size to render without scaling
+                                  0, // options
+                                  NO); // opaque
+
+ Note the context is clear for each:
+
+    1. self is self, of course
+    2. nilOverlayImage: we set up a local variable so we can provide context instead of passing `nil` without context
+    3. self.textOverlayString: variable is descriptive of what it is, enough context on its own
+    4. [UIColor yellow]: it's a color, sure, but what for?  Provide a comment that it is for the `tintColor`
+    5. UIImageOrientationUp: clear that this is the orientation to provide to the render function
+    6. CGSizeZero: it's a size, but what does it mean for a special case value of zero and what's the size for?  Extra context with a descriptive comment.
+    7. 0: provides no insight, commenting that it is for `options` is sufficient at specifying that no options were selected.
+    8. NO: provides no insight, commenting that it is for `opaque` indicates the image render will be non-opaque (and probably have an alpha channel).
+
+ Why `__nullable` instead of `__nonnull`?
+
+ As it stands, we are defining `PRIVATE_SELF` to be `__nullable` and having all implementations encapsulate the `nil` check on `self`.
+ Ideally, we would actually want `self` to be `__nonnull` so that the compiler enforces that the caller must pass a non-null argument.
+ This would be a safer solution, however, clang (nor the static analyzer) catch the case where a `weak` argument is passed to a `nonnull`
+ C function as an argument.  This means having `weakSelf` passed directly to the static C function could end up passing `nil`, and likely
+ lead to a crash when the ivar is accessed, such as `self->_ivar`.
+
+ A radar has been filed against Apple to remedy this in the compiler, but until then, it is safer to enforce the pattern using `__nullable`
+ with a `nil` check.
+
+ https://openradar.appspot.com/40129673
+
+ */
+
+#ifndef PRIVATE_SELF
+#define PRIVATE_SELF(type) type * __nullable const self
+#endif
+
 NS_ASSUME_NONNULL_END
+

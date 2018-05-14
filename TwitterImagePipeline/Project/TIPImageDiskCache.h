@@ -29,30 +29,43 @@ typedef NS_OPTIONS(NSInteger, TIPImageDiskCacheFetchOptions) {
 
 - (instancetype)initWithPath:(NSString *)cachePath;
 
-- (nullable TIPImageDiskCacheEntry *)imageEntryForIdentifier:(NSString *)identifier options:(TIPImageDiskCacheFetchOptions)options decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
-- (void)updateImageEntry:(TIPImageCacheEntry *)entry forciblyReplaceExisting:(BOOL)force;
-- (void)touchImageWithIdentifier:(NSString *)imageIdentifier orSaveImageEntry:(nullable TIPImageDiskCacheEntry *)entry;
+- (nullable TIPImageDiskCacheEntry *)imageEntryForIdentifier:(NSString *)identifier
+                                                     options:(TIPImageDiskCacheFetchOptions)options
+                                            decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
+- (void)updateImageEntry:(TIPImageCacheEntry *)entry
+ forciblyReplaceExisting:(BOOL)force;
+- (void)touchImageWithIdentifier:(NSString *)imageIdentifier
+                orSaveImageEntry:(nullable TIPImageDiskCacheEntry *)entry;
 - (void)clearImageWithIdentifier:(NSString *)identifier;
 - (void)clearAllImages:(void (^ __nullable)(void))completion;
 - (void)prune;
 - (TIPImageDiskCacheTemporaryFile *)openTemporaryFileForImageIdentifier:(NSString *)imageIdentifier;
-- (nullable NSString *)copyImageEntryFileForIdentifier:(NSString *)identifier error:(out NSError * __nullable * __nullable)error;
-- (BOOL)renameImageEntryWithIdentifier:(NSString *)oldIdentifier toIdentifier:(NSString *)newIdentifier error:(NSError * __nullable * __nullable)error;
+- (nullable NSString *)copyImageEntryFileForIdentifier:(NSString *)identifier
+                                                 error:(out NSError * __nullable * __nullable)error;
+- (BOOL)renameImageEntryWithIdentifier:(NSString *)oldIdentifier
+                          toIdentifier:(NSString *)newIdentifier
+                                 error:(NSError * __nullable * __nullable)error;
 
 @end
 
 @interface TIPImageDiskCache (TempFile)
 
-- (void)finalizeTemporaryFile:(TIPImageDiskCacheTemporaryFile *)tempFile withContext:(TIPImageCacheEntryContext *)context;
+- (void)finalizeTemporaryFile:(TIPImageDiskCacheTemporaryFile *)tempFile
+                  withContext:(TIPImageCacheEntryContext *)context;
 - (void)clearTemporaryFilePath:(NSString *)filePath;
 
 @end
 
 @interface TIPImageDiskCache (PrivateExposed)
 - (TIPLRUCache *)diskCache_syncAccessManifest;
-- (nullable NSString *)diskCache_imageEntryFilePathForIdentifier:(NSString *)identifier hitShouldMoveEntryToHead:(BOOL)hitToHead context:(out TIPImageCacheEntryContext * __nullable * __nullable)context;
-- (void)diskCache_updateImageEntry:(TIPImageCacheEntry *)entry forciblyReplaceExisting:(BOOL)force;
-- (nullable TIPImageDiskCacheEntry *)diskCache_imageEntryForIdentifier:(NSString *)identifier options:(TIPImageDiskCacheFetchOptions)options decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
+- (nullable NSString *)diskCache_imageEntryFilePathForIdentifier:(NSString *)identifier
+                                        hitShouldMoveEntryToHead:(BOOL)hitToHead
+                                                         context:(out TIPImageCacheEntryContext * __nullable * __nullable)context;
+- (void)diskCache_updateImageEntry:(TIPImageCacheEntry *)entry
+           forciblyReplaceExisting:(BOOL)force;
+- (nullable TIPImageDiskCacheEntry *)diskCache_imageEntryForIdentifier:(NSString *)identifier
+                                                               options:(TIPImageDiskCacheFetchOptions)options
+                                                      decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
 @end
 
 NS_ASSUME_NONNULL_END

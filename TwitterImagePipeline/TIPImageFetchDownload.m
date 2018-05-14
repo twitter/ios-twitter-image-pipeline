@@ -33,7 +33,7 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
 @property (nonatomic, nullable) id downloadMetrics;
 @property (nonatomic, readonly) dispatch_queue_t contextQueue;
 
-- (void)prepare;
+static void _PrepareGlobalState(void);
 
 @end
 
@@ -142,7 +142,7 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
 
 #pragma mark Private
 
-- (void)prepare
+static void _PrepareGlobalState(void)
 {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -168,7 +168,7 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
 - (NSURLSession *)URLSession
 {
     if ((__bridge void *)sTIPImageFetchDownloadInternalURLSession == nil) {
-        [self prepare];
+        _PrepareGlobalState();
     }
 
     return sTIPImageFetchDownloadInternalURLSession;
@@ -201,7 +201,10 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
 
 #pragma mark Delegate
 
-- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveResponse:(NSURLResponse *)response completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+didReceiveResponse:(NSURLResponse *)response
+ completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler
 {
     TIPImageFetchDownloadInternal *download = [_downloadContexts objectForKey:@(dataTask.taskIdentifier)];
     if (download) {
@@ -212,7 +215,9 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
     completionHandler(NSURLSessionResponseAllow);
 }
 
-- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveData:(NSData *)data
 {
     TIPImageFetchDownloadInternal *download = [_downloadContexts objectForKey:@(dataTask.taskIdentifier)];
     if (download) {
@@ -222,7 +227,9 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
     }
 }
 
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(nullable NSError *)error
+- (void)URLSession:(NSURLSession *)session
+        task:(NSURLSessionTask *)task
+        didCompleteWithError:(nullable NSError *)error
 {
     TIPImageFetchDownloadInternal *download = [_downloadContexts objectForKey:@(task.taskIdentifier)];
     if (download) {
@@ -233,7 +240,9 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
     }
 }
 
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didFinishCollectingMetrics:(NSURLSessionTaskMetrics *)metrics;
+- (void)URLSession:(NSURLSession *)session
+        task:(NSURLSessionTask *)task
+        didFinishCollectingMetrics:(NSURLSessionTaskMetrics *)metrics;
 {
     TIPImageFetchDownloadInternal *download = [_downloadContexts objectForKey:@(task.taskIdentifier)];
     if (download) {
@@ -247,7 +256,9 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
 
 @implementation NSHTTPURLResponse (TIPStubbingSupport)
 
-+ (instancetype)tip_responseWithRequestURL:(NSURL *)requestURL dataLength:(NSUInteger)dataLength responseMIMEType:(nullable NSString *)MIMEType
++ (instancetype)tip_responseWithRequestURL:(NSURL *)requestURL
+                                dataLength:(NSUInteger)dataLength
+                          responseMIMEType:(nullable NSString *)MIMEType
 {
     NSInteger statusCode = 404;
     NSMutableDictionary *headerFields = [[NSMutableDictionary alloc] init];

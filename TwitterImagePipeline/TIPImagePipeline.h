@@ -198,13 +198,17 @@ FOUNDATION_EXTERN NSString * const TIPImagePipelineImageTreatAsPlaceholderNofiti
  @note The _delegate_ is weakly held by the vended `TIPImageFetchOperation` and the operation will
  be cancelled if the _delegate_ `deallocates` before the operation has finished.
  */
-- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request context:(nullable id)context delegate:(nullable id<TIPImageFetchDelegate>)delegate NS_REQUIRES_SUPER;
+- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request
+                                         context:(nullable id)context
+                                        delegate:(nullable id<TIPImageFetchDelegate>)delegate NS_REQUIRES_SUPER;
 /**
  Same as `operationWithRequest:context:delegate:` but without the benefit of all the callbacks of a
  delegate, just a simple callback block.  This method calls into the delegate variation, so
  subclasses should not need to override this method.
  */
-- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request context:(nullable id)context completion:(nullable TIPImagePipelineFetchCompletionBlock)completion;
+- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request
+                                         context:(nullable id)context
+                                      completion:(nullable TIPImagePipelineFetchCompletionBlock)completion;
 
 /**
  Fetch an image by starting the provided operation.  All callbacks to the delegate are made on the
@@ -240,7 +244,8 @@ FOUNDATION_EXTERN NSString * const TIPImagePipelineImageTreatAsPlaceholderNofiti
  The vended `TIPDependencyOperation` supports being made a dependency,
  being waited on for completion, and KVO for finishing and executing transitions.
  */
-- (NSObject<TIPDependencyOperation> *)storeImageWithRequest:(id<TIPImageStoreRequest>)request completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
+- (NSObject<TIPDependencyOperation> *)storeImageWithRequest:(id<TIPImageStoreRequest>)request
+                                                 completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
 
 /**
  Change the `imageIdentifier` of an existing cached image.
@@ -253,7 +258,9 @@ FOUNDATION_EXTERN NSString * const TIPImagePipelineImageTreatAsPlaceholderNofiti
  The vended `TIPDependencyOperation` supports being made a dependency,
  being waited on for completion, and KVO for finishing and executing transitions.
  */
-- (NSObject<TIPDependencyOperation> *)changeIdentifierForImageWithIdentifier:(NSString *)currentIdentifier toIdentifier:(NSString *)newIdentifier completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
+- (NSObject<TIPDependencyOperation> *)changeIdentifierForImageWithIdentifier:(NSString *)currentIdentifier
+                                                                toIdentifier:(NSString *)newIdentifier
+                                                                  completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
 
 #pragma mark Manual Purge
 
@@ -301,7 +308,8 @@ FOUNDATION_EXTERN NSString * const TIPImagePipelineImageTreatAsPlaceholderNofiti
  @param completion the completion block when the copy completes.
  This block will be called back on a background thread.
  */
-- (void)copyDiskCacheFileWithIdentifier:(NSString *)imageIdentifier completion:(nullable TIPImagePipelineCopyFileCompletionBlock)completion;
+- (void)copyDiskCacheFileWithIdentifier:(NSString *)imageIdentifier
+                             completion:(nullable TIPImagePipelineCopyFileCompletionBlock)completion;
 
 #pragma mark Access Known Image Pipeline References
 
@@ -365,7 +373,8 @@ typedef void(^TIPImagePipelineInspectionCallback)(TIPImagePipelineInspectionResu
  @param op The `TIPImageFetchOperation` that started
  @param URL The `NSURL` of the image that started being downloaded
  */
-- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op didStartDownloadingImageAtURL:(NSURL *)URL;
+- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+  didStartDownloadingImageAtURL:(NSURL *)URL;
 
 /**
  Callback when a `TIPImageFetchOperation` has finished downloading an image.
@@ -379,7 +388,12 @@ typedef void(^TIPImagePipelineInspectionCallback)(TIPImagePipelineInspectionResu
  @param dimensions The size in pixels of the image that was downloaded
  @param wasResumed Whether or not the download was a resumed download
  */
-- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op didFinishDownloadingImageAtURL:(NSURL *)URL imageType:(NSString *)type sizeInBytes:(NSUInteger)byteSize dimensions:(CGSize)dimensions wasResumed:(BOOL)wasResumed;
+- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+ didFinishDownloadingImageAtURL:(NSURL *)URL
+                      imageType:(NSString *)type
+                    sizeInBytes:(NSUInteger)byteSize
+                     dimensions:(CGSize)dimensions
+                     wasResumed:(BOOL)wasResumed;
 
 @end
 
@@ -404,7 +418,8 @@ typedef void(^TIPImageAdditionalCacheFetchCompletion)(UIImage * __nullable image
  @param URL        the `NSURL` to retrieve an image with
  @param completion the completion block to execute when the image is either retrieved or not
  */
-- (void)tip_retrieveImageForURL:(NSURL *)URL completion:(TIPImageAdditionalCacheFetchCompletion)completion;
+- (void)tip_retrieveImageForURL:(NSURL *)URL
+                     completion:(TIPImageAdditionalCacheFetchCompletion)completion;
 
 @end
 

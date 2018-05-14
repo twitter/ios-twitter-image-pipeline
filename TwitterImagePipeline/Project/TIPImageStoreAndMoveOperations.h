@@ -21,7 +21,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface TIPImageStoreOperation : TIPDisabledExternalMutabilityOperation
 
-- (instancetype)initWithRequest:(id<TIPImageStoreRequest>)request pipeline:(TIPImagePipeline *)pipeline completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
+- (instancetype)initWithRequest:(id<TIPImageStoreRequest>)request
+                       pipeline:(TIPImagePipeline *)pipeline
+                     completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
 
 - (void)setHydrationDependency:(nonnull TIPImageStoreHydrationOperation *)dependency;
 
@@ -35,7 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, nullable) NSError *error;
 @property (nonatomic, readonly, nullable) id<TIPImageStoreRequest> hydratedRequest;
 
-- (instancetype)initWithRequest:(id<TIPImageStoreRequest>)request pipeline:(TIPImagePipeline *)pipeline hydrater:(id<TIPImageStoreRequestHydrater>)hydrater;
+- (instancetype)initWithRequest:(id<TIPImageStoreRequest>)request
+                       pipeline:(TIPImagePipeline *)pipeline
+                       hydrater:(id<TIPImageStoreRequestHydrater>)hydrater;
 
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
@@ -48,7 +52,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, copy) NSString *updatedIdentifier;
 @property (nonatomic, readonly) TIPImagePipeline *pipeline;
 
-- (instancetype)initWithPipeline:(TIPImagePipeline *)pipeline originalIdentifier:(NSString *)oldIdentifier updatedIdentifier:(NSString *)newIdentifier completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
+- (instancetype)initWithPipeline:(TIPImagePipeline *)pipeline
+              originalIdentifier:(NSString *)oldIdentifier
+               updatedIdentifier:(NSString *)newIdentifier
+                      completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
 
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;

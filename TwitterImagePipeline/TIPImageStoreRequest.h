@@ -210,7 +210,8 @@ NS_INLINE NSString *TIPImageStoreRequestGetImageIdentifier(id<TIPImageStoreReque
 @end
 
 //! Completion callback to call when the _request_ being stored has hydrated
-typedef void(^TIPImageStoreHydraterCompletionBlock)(id<TIPImageStoreRequest> __nullable request, NSError *__nullable error);
+typedef void(^TIPImageStoreHydraterCompletionBlock)(id<TIPImageStoreRequest> __nullable request,
+                                                    NSError *__nullable error);
 
 /**
  A protocol for extending the work that a store operation can perform on a `TIPImageStoreRequest`.
@@ -233,7 +234,9 @@ typedef void(^TIPImageStoreHydraterCompletionBlock)(id<TIPImageStoreRequest> __n
  @param pipeline The `TIPImagePipeline` executing the storage
  @param completion The completionBlock that must be called whenever hydration has completed.
  */
-- (void)tip_hydrateImageStoreRequest:(id<TIPImageStoreRequest>)request imagePipeline:(TIPImagePipeline *)pipeline completion:(TIPImageStoreHydraterCompletionBlock)completion;
+- (void)tip_hydrateImageStoreRequest:(id<TIPImageStoreRequest>)request
+                       imagePipeline:(TIPImagePipeline *)pipeline
+                          completion:(TIPImageStoreHydraterCompletionBlock)completion;
 
 @end
 

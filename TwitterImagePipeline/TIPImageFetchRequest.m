@@ -50,7 +50,10 @@ NS_ASSUME_NONNULL_BEGIN
     return self;
 }
 
-- (instancetype)initWithImageURL:(NSURL *)imageURL identifier:(nullable NSString *)imageIdentifier targetDimensions:(CGSize)dims targetContentMode:(UIViewContentMode)mode
+- (instancetype)initWithImageURL:(NSURL *)imageURL
+                      identifier:(nullable NSString *)imageIdentifier
+                targetDimensions:(CGSize)dims
+               targetContentMode:(UIViewContentMode)mode
 {
     if (self = [self initWithImageURL:imageURL]) {
         _imageIdentifier = [imageIdentifier copy];

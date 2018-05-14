@@ -2,7 +2,7 @@
 //  TIPImageFetchable.h
 //  TwitterImagePipeline
 //
-//  Created by Nolan O'Brien on 11/27/17.
+//  Created on 11/27/17.
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 

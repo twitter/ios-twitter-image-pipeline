@@ -34,9 +34,19 @@ NS_ASSUME_NONNULL_BEGIN
     BOOL _progressive;
 }
 
-- (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer supportsProgressiveLoading:(BOOL)supportsProgressive;
-- (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer potentiallyAnimated:(BOOL)animated;
-- (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithUTType:(NSString *)UTType
+            expectedDataLength:(NSUInteger)expectedDataLength
+                        buffer:(NSMutableData *)buffer
+    supportsProgressiveLoading:(BOOL)supportsProgressive;
+
+- (instancetype)initWithUTType:(NSString *)UTType
+            expectedDataLength:(NSUInteger)expectedDataLength
+                        buffer:(NSMutableData *)buffer
+           potentiallyAnimated:(BOOL)animated;
+
+- (instancetype)initWithUTType:(NSString *)UTType
+            expectedDataLength:(NSUInteger)expectedDataLength
+                        buffer:(NSMutableData *)buffer NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
@@ -105,10 +115,18 @@ NS_ASSUME_NONNULL_BEGIN
         }
     }
 
-    return (decoder) ? [[TIPBasicCGImageSourceCodec alloc] initWithDecoder:decoder encoder:encoder animated:animated] : nil;
+    if (!decoder) {
+        return nil;
+    }
+
+    return [[TIPBasicCGImageSourceCodec alloc] initWithDecoder:decoder
+                                                       encoder:encoder
+                                                      animated:animated];
 }
 
-- (instancetype)initWithDecoder:(id<TIPImageDecoder>)decoder encoder:(nullable id<TIPImageEncoder>)encoder animated:(BOOL)animated
+- (instancetype)initWithDecoder:(id<TIPImageDecoder>)decoder
+                        encoder:(nullable id<TIPImageEncoder>)encoder
+                       animated:(BOOL)animated
 {
     if (self = [super init]) {
         _tip_decoder = decoder;
@@ -130,7 +148,8 @@ NS_ASSUME_NONNULL_BEGIN
     return self;
 }
 
-- (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data earlyGuessImageType:(nullable NSString *)imageType
+- (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data
+                                      earlyGuessImageType:(nullable NSString *)imageType
 {
     if (!imageType) {
         imageType = TIPDetectImageType(data, NULL, NULL, NO);
@@ -144,17 +163,23 @@ NS_ASSUME_NONNULL_BEGIN
     return TIPImageDecoderDetectionResultNoMatch;
 }
 
-- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config expectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
+- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config
+                                expectedDataLength:(NSUInteger)expectedDataLength
+                                            buffer:(nullable NSMutableData *)buffer
 {
-    return [[TIPCGImageSourceDecoderContext alloc] initWithUTType:_UTType expectedDataLength:expectedDataLength buffer:buffer];
+    return [[TIPCGImageSourceDecoderContext alloc] initWithUTType:_UTType
+                                               expectedDataLength:expectedDataLength
+                                                           buffer:buffer];
 }
 
-- (TIPImageDecoderAppendResult)tip_append:(id<TIPImageDecoderContext>)context data:(NSData *)data
+- (TIPImageDecoderAppendResult)tip_append:(id<TIPImageDecoderContext>)context
+                                     data:(NSData *)data
 {
     return [(TIPCGImageSourceDecoderContext *)context appendData:data];
 }
 
-- (nullable TIPImageContainer *)tip_renderImage:(id<TIPImageDecoderContext>)context mode:(TIPImageDecoderRenderMode)mode
+- (nullable TIPImageContainer *)tip_renderImage:(id<TIPImageDecoderContext>)context
+                                           mode:(TIPImageDecoderRenderMode)mode
 {
     return [(TIPCGImageSourceDecoderContext *)context renderImage:mode];
 }
@@ -169,7 +194,8 @@ NS_ASSUME_NONNULL_BEGIN
     return NO;
 }
 
-- (nullable TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData config:(nullable id)config
+- (nullable TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData
+                                                 config:(nullable id)config
 {
     CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)imageData, NULL);
     TIPDeferRelease(imageSource);
@@ -189,9 +215,14 @@ NS_ASSUME_NONNULL_BEGIN
     return [self initWithUTType:(NSString *)kUTTypeJPEG];
 }
 
-- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config expectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
+- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config
+                                expectedDataLength:(NSUInteger)expectedDataLength
+                                            buffer:(nullable NSMutableData *)buffer
 {
-    return [[TIPJPEGCGImageSourceDecoderContext alloc] initWithUTType:self.UTType expectedDataLength:expectedDataLength buffer:buffer supportsProgressiveLoading:[self tip_supportsProgressiveDecoding]];
+    return [[TIPJPEGCGImageSourceDecoderContext alloc] initWithUTType:self.UTType
+                                                   expectedDataLength:expectedDataLength
+                                                               buffer:buffer
+                                           supportsProgressiveLoading:[self tip_supportsProgressiveDecoding]];
 }
 
 - (BOOL)tip_supportsProgressiveDecoding
@@ -207,9 +238,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation TIPAnimatedCGImageSourceDecoder
 
-- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config expectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
+- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config
+                                expectedDataLength:(NSUInteger)expectedDataLength
+                                            buffer:(nullable NSMutableData *)buffer
 {
-    return [[TIPCGImageSourceDecoderContext alloc] initWithUTType:self.UTType expectedDataLength:expectedDataLength buffer:buffer potentiallyAnimated:YES];
+    return [[TIPCGImageSourceDecoderContext alloc] initWithUTType:self.UTType
+                                               expectedDataLength:expectedDataLength
+                                                           buffer:buffer
+                                              potentiallyAnimated:YES];
 }
 
 @end
@@ -229,7 +265,12 @@ NS_ASSUME_NONNULL_BEGIN
                            suggestedQuality:(float)quality
                                       error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
-    return [image.image tip_writeToDataWithType:TIPImageTypeFromUTType(_UTType) encodingOptions:encodingOptions quality:quality animationLoopCount:image.loopCount animationFrameDurations:image.frameDurations error:error];
+    return [image.image tip_writeToDataWithType:TIPImageTypeFromUTType(_UTType)
+                                encodingOptions:encodingOptions
+                                        quality:quality
+                             animationLoopCount:image.loopCount
+                        animationFrameDurations:image.frameDurations
+                                          error:error];
 }
 
 - (BOOL)tip_writeToFile:(NSString *)filePath
@@ -239,7 +280,14 @@ NS_ASSUME_NONNULL_BEGIN
              atomically:(BOOL)atomic
                   error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
-    return [image.image tip_writeToFile:filePath type:TIPImageTypeFromUTType(_UTType) encodingOptions:encodingOptions quality:quality animationLoopCount:image.loopCount animationFrameDurations:image.frameDurations atomically:atomic error:error];
+    return [image.image tip_writeToFile:filePath
+                                   type:TIPImageTypeFromUTType(_UTType)
+                        encodingOptions:encodingOptions
+                                quality:quality
+                     animationLoopCount:image.loopCount
+                animationFrameDurations:image.frameDurations
+                             atomically:atomic
+                                  error:error];
 }
 
 @end
@@ -283,7 +331,9 @@ NS_ASSUME_NONNULL_BEGIN
     return nil;
 }
 
-- (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer
+- (instancetype)initWithUTType:(NSString *)UTType
+            expectedDataLength:(NSUInteger)expectedDataLength
+                        buffer:(NSMutableData *)buffer
 {
     if (self = [super init]) {
         _expectedDataLength = expectedDataLength;
@@ -293,7 +343,10 @@ NS_ASSUME_NONNULL_BEGIN
     return self;
 }
 
-- (instancetype)initWithUTType:(NSString *)UTType expectedDataLength:(NSUInteger)expectedDataLength buffer:(NSMutableData *)buffer supportsProgressiveLoading:(BOOL)supportsProgressive
+- (instancetype)initWithUTType:(NSString *)UTType
+            expectedDataLength:(NSUInteger)expectedDataLength
+                        buffer:(NSMutableData *)buffer
+    supportsProgressiveLoading:(BOOL)supportsProgressive
 {
     if (self = [self initWithUTType:UTType expectedDataLength:expectedDataLength buffer:buffer]) {
         _flags.isPotentiallyProgressive = !!supportsProgressive;
@@ -318,7 +371,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (TIPImageDecoderAppendResult)appendData:(NSData *)data
 {
-    return [self _tip_appendData:data complete:NO];
+    return _appendData(self, data, NO /*complete*/);
 }
 
 - (nullable TIPImageContainer *)renderImage:(TIPImageDecoderRenderMode)mode
@@ -328,12 +381,14 @@ NS_ASSUME_NONNULL_BEGIN
     if (_flags.didCompleteLoading) {
         mode = TIPImageDecoderRenderModeCompleteImage;
     }
-    imageContainer = [self _tip_cachedImageWithMode:mode];
+    imageContainer = _getCachedImage(self, mode);
 
     if (!imageContainer) {
-        NSData *chunk = [self _tip_extractChunkWithMode:mode];
-        imageContainer = [self _tip_generateImageWithChunk:chunk complete:(TIPImageDecoderRenderModeCompleteImage == mode)];
-        [self _tip_cacheImage:imageContainer mode:mode];
+        NSData *chunk = _extractChunk(self, mode);
+        imageContainer = _generateImage(self,
+                                        chunk,
+                                        (TIPImageDecoderRenderModeCompleteImage == mode) /*complete*/);
+        _cacheImage(self, imageContainer, mode);
     }
 
     return imageContainer;
@@ -341,43 +396,54 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (TIPImageDecoderAppendResult)finalizeDecoding
 {
-    return [self _tip_appendData:nil complete:YES];
+    return _appendData(self, nil, YES /*complete*/);
 }
 
 #pragma mark - Private
 
-- (void)_tip_cacheImage:(nullable TIPImageContainer *)imageContainer mode:(TIPImageDecoderRenderMode)mode
+static void _cacheImage(PRIVATE_SELF(TIPCGImageSourceDecoderContext),
+                        TIPImageContainer * __nullable imageContainer,
+                        TIPImageDecoderRenderMode mode)
 {
+    if (!self) {
+        return;
+    }
+
     if (!imageContainer) {
         return;
     }
 
-    if (mode >= TIPImageDecoderRenderModeFullFrameProgress || !_cachedImageContainer) {
-        _cachedImageContainer = imageContainer;
-        _cachedImageByteCount = _data.length;
-        _cachedImageRenderMode = mode;
+    if (mode >= TIPImageDecoderRenderModeFullFrameProgress || !self->_cachedImageContainer) {
+        self->_cachedImageContainer = imageContainer;
+        self->_cachedImageByteCount = self->_data.length;
+        self->_cachedImageRenderMode = mode;
     }
 }
 
-- (nullable TIPImageContainer *)_tip_cachedImageWithMode:(TIPImageDecoderRenderMode)mode
+static TIPImageContainer *__nullable _getCachedImage(PRIVATE_SELF(TIPCGImageSourceDecoderContext),
+                                                     TIPImageDecoderRenderMode mode)
 {
+    if (!self) {
+        return 0;
+    }
+
     TIPImageContainer *imageContainer = nil;
-    if (_cachedImageContainer) {
-        if (TIPImageDecoderRenderModeCompleteImage == _cachedImageRenderMode) {
-            imageContainer = _cachedImageContainer;
-        } else if (_cachedImageRenderMode == mode) {
-            if (_tip_isAnimated) {
-                if (!_flags.didCompleteLoading) {
-                    imageContainer = _cachedImageContainer;
+    if (self->_cachedImageContainer) {
+        if (TIPImageDecoderRenderModeCompleteImage == self->_cachedImageRenderMode) {
+            imageContainer = self->_cachedImageContainer;
+        } else if (self->_cachedImageRenderMode == mode) {
+            if (self->_tip_isAnimated) {
+                if (!self->_flags.didCompleteLoading) {
+                    imageContainer = self->_cachedImageContainer;
                 }
             } else {
                 if (TIPImageDecoderRenderModeFullFrameProgress == mode) {
-                    if (_frameCount == _cachedImageContainer.frameCount) {
-                        imageContainer = _cachedImageContainer;
+                    if (self->_frameCount == self->_cachedImageContainer.frameCount) {
+                        imageContainer = self->_cachedImageContainer;
                     }
                 } else if (TIPImageDecoderRenderModeAnyProgress == mode) {
-                    if (_data.length == _cachedImageByteCount) {
-                        imageContainer = _cachedImageContainer;
+                    if (self->_data.length == self->_cachedImageByteCount) {
+                        imageContainer = self->_cachedImageContainer;
                     }
                 } else {
                     TIPAssertNever();
@@ -389,137 +455,167 @@ NS_ASSUME_NONNULL_BEGIN
     return imageContainer;
 }
 
-- (nullable NSData *)_tip_extractChunkWithMode:(TIPImageDecoderRenderMode)mode
+static NSData * __nullable _extractChunk(PRIVATE_SELF(TIPCGImageSourceDecoderContext),
+                                         TIPImageDecoderRenderMode mode)
 {
-    if (_handledError != nil) {
+    if (!self) {
+        return nil;
+    }
+
+    if (self->_handledError != nil) {
         return nil;
     }
 
     NSUInteger len = 0;
     switch (mode) {
         case TIPImageDecoderRenderModeAnyProgress:
-            len = _data.length;
+            len = self->_data.length;
             break;
         case TIPImageDecoderRenderModeFullFrameProgress:
-            if (_tip_isAnimated) {
-                len = _data.length;
+            if (self->_tip_isAnimated) {
+                len = self->_data.length;
             } else {
-                if (_flags.didCompleteLoading) {
-                    len = _data.length;
+                if (self->_flags.didCompleteLoading) {
+                    len = self->_data.length;
                 } else {
-                    len = _lastFrameEndIndex + 1;
+                    len = self->_lastFrameEndIndex + 1;
                 }
             }
             break;
         case TIPImageDecoderRenderModeCompleteImage:
-            if (_flags.didCompleteLoading) {
-                len = _data.length;
+            if (self->_flags.didCompleteLoading) {
+                len = self->_data.length;
             }
             break;
     }
 
     if (len) {
-        return [_data tip_safeSubdataNoCopyWithRange:NSMakeRange(0, len)];
+        return [self->_data tip_safeSubdataNoCopyWithRange:NSMakeRange(0, len)];
     }
 
     return nil;
 }
 
-- (nullable TIPImageContainer *)_tip_generateImageWithChunk:(NSData *)chunk complete:(BOOL)complete
+static TIPImageContainer * __nullable _generateImage(PRIVATE_SELF(TIPCGImageSourceDecoderContext),
+                                                     NSData *chunk,
+                                                     BOOL complete)
 {
-    if (_handledError != nil) {
+    if (!self) {
+        return 0;
+    }
+
+    if (self->_handledError != nil) {
         return nil;
     }
 
     if (chunk.length) {
-        if (_tip_isAnimated) {
-            const size_t count = CGImageSourceGetCount(_imageSourceRef);
+        if (self->_tip_isAnimated) {
+            const size_t count = CGImageSourceGetCount(self->_imageSourceRef);
 
             if (0 == count) {
                 // no frames
                 return nil;
             } else if (1 == count) {
                 // animated image with 1 frame... needs extra handling
-                if (CGImageSourceGetStatusAtIndex(_imageSourceRef, 0) != kCGImageStatusComplete) {
+                if (CGImageSourceGetStatusAtIndex(self->_imageSourceRef, 0) != kCGImageStatusComplete) {
                     // didn't have the subframe status, but could still be a finished image
-                    if (!complete || CGImageSourceGetStatus(_imageSourceRef) != kCGImageStatusComplete) {
+                    if (!complete || CGImageSourceGetStatus(self->_imageSourceRef) != kCGImageStatusComplete) {
                         // really don't have the image
                         return nil;
                     }
                 }
-            } else if (CGImageSourceGetStatusAtIndex(_imageSourceRef, 0) != kCGImageStatusComplete) {
+            } else if (CGImageSourceGetStatusAtIndex(self->_imageSourceRef, 0) != kCGImageStatusComplete) {
                 // not enough data to render any frames of an animated image
                 return nil;
             }
 
             if (!complete) {
                 // just want the first frame
-                CGImageRef cgImage = CGImageSourceCreateImageAtIndex(_imageSourceRef, 0, NULL);
+                CGImageRef cgImage = CGImageSourceCreateImageAtIndex(self->_imageSourceRef, 0, NULL);
                 TIPDeferRelease(cgImage);
-                UIImage *image = (cgImage) ? [UIImage imageWithCGImage:cgImage scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp] : nil;
+                UIImage *image = nil;
+                if (cgImage) {
+                    image = [UIImage imageWithCGImage:cgImage
+                                                scale:[UIScreen mainScreen].scale
+                                          orientation:UIImageOrientationUp];
+                }
                 return (image) ? [[TIPImageContainer alloc] initWithImage:image] : nil;
             }
         } else {
             // Animated always updates the source as data flows in,
             // so only update the source for progressive/normal
-            [self _tip_updateImageSourceData:chunk complete:complete];
+            _updateImageSource(self, chunk, complete);
         }
 
         // Get what we have (all frames for animated image, all bytes in the "chunk" for non-animated)
-        return [TIPImageContainer imageContainerWithImageSource:_imageSourceRef];
+        return [TIPImageContainer imageContainerWithImageSource:self->_imageSourceRef];
     }
 
     return nil;
 }
 
-- (void)_tip_appendPrep
+static void _appendPrep(PRIVATE_SELF(TIPCGImageSourceDecoderContext))
 {
+    if (!self) {
+        return;
+    }
+
     // Prep data
-    if (!_data) {
-        _data = (_expectedDataLength) ? [NSMutableData dataWithCapacity:_expectedDataLength] : [NSMutableData data];
+    if (!self->_data) {
+        self->_data = (self->_expectedDataLength) ?
+                            [NSMutableData dataWithCapacity:self->_expectedDataLength] :
+                            [NSMutableData data];
     }
 
     // Prep the source
-    if (!_imageSourceRef) {
+    if (!self->_imageSourceRef) {
         NSDictionary *options = @{ (NSString *)kCGImageSourceShouldCache : @NO };
-        _imageSourceRef = CGImageSourceCreateIncremental((__bridge CFDictionaryRef)options);
-        TIPAssert(_imageSourceRef);
+        self->_imageSourceRef = CGImageSourceCreateIncremental((__bridge CFDictionaryRef)options);
+        TIPAssert(self->_imageSourceRef);
     }
 }
 
-- (TIPImageDecoderAppendResult)_tip_appendData:(nullable NSData *)data complete:(BOOL)complete
+static TIPImageDecoderAppendResult _appendData(PRIVATE_SELF(TIPCGImageSourceDecoderContext),
+                                               NSData * __nullable data,
+                                               BOOL complete)
 {
+    if (!self) {
+        return 0;
+    }
+
     // Check state
-    if (_flags.didCompleteLoading) {
+    if (self->_flags.didCompleteLoading) {
         return TIPImageDecoderAppendResultDidCompleteLoading;
     }
 
     // Prep
-    [self _tip_appendPrep];
+    _appendPrep(self);
     TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
 
     // Update our data
     if (data) {
-        [_data appendData:data];
+        [self->_data appendData:data];
     }
 
-    if (!_handledError) {
+    if (!self->_handledError) {
         @try {
             // Read headers if needed
-            if (!_flags.didFinishLoadingContextualHeaders) {
-                [self _tip_attemptToReadHeadersWithResult:&result complete:complete];
+            if (!self->_flags.didFinishLoadingContextualHeaders) {
+                _attemptToReadHeaders(self, &result, complete);
             }
 
             // Read image if possible
-            if (_flags.didFinishLoadingContextualHeaders) {
-                [self _tip_attemptToLoadMoreImageWithResult:&result complete:complete];
+            if (self->_flags.didFinishLoadingContextualHeaders) {
+                _attemptToLoadMoreImage(self, &result, complete);
             }
         } @catch (NSException *exception) {
-            _handledError = [NSError errorWithDomain:NSPOSIXErrorDomain code:EINTR userInfo:@{ @"exception" : exception }];
+            self->_handledError = [NSError errorWithDomain:NSPOSIXErrorDomain
+                                                      code:EINTR
+                                                  userInfo:@{ @"exception" : exception }];
         }
     }
 
-    if (_handledError && complete && !_flags.didCompleteLoading) {
+    if (self->_handledError && complete && !self->_flags.didCompleteLoading) {
 
         // Ugh... ImageIO can crash with some malformed image data.
         // If an exception was thrown (vs a signal) we can handle it.
@@ -527,14 +623,14 @@ NS_ASSUME_NONNULL_BEGIN
         // generate the final image without any progressive loading
         // or property detection.
 
-        UIImage *image = [UIImage imageWithData:_data];
+        UIImage *image = [UIImage imageWithData:self->_data];
         if (image) {
             result = TIPImageDecoderAppendResultDidCompleteLoading;
-            _flags.didCompleteLoading = 1;
+            self->_flags.didCompleteLoading = 1;
             TIPImageContainer *imageContainer = [[TIPImageContainer alloc] initWithImage:image];
             if (imageContainer) {
-                _progressive = NO;
-                [self _tip_cacheImage:imageContainer mode:TIPImageDecoderRenderModeCompleteImage];
+                self->_progressive = NO;
+                _cacheImage(self, imageContainer, TIPImageDecoderRenderModeCompleteImage /*mode*/);
             }
         }
     }
@@ -542,11 +638,17 @@ NS_ASSUME_NONNULL_BEGIN
     return result;
 }
 
-- (void)_tip_attemptToLoadMoreImageWithResult:(inout TIPImageDecoderAppendResult *)result complete:(BOOL)complete
+static void _attemptToLoadMoreImage(PRIVATE_SELF(TIPCGImageSourceDecoderContext),
+                                    TIPImageDecoderAppendResult * /*inout*/ result,
+                                    BOOL complete)
 {
-    const NSUInteger lastFrameCount = _frameCount;
-    if (_tip_isAnimated) {
-        [self _tip_updateImageSourceData:_data complete:complete];
+    if (!self) {
+        return;
+    }
+
+    const NSUInteger lastFrameCount = self->_frameCount;
+    if (self->_tip_isAnimated) {
+        _updateImageSource(self, self->_data, complete);
         BOOL canUpdateFrameCount;
         if (@available(iOS 11.0, *)) {
             // We want to avoid decoding the animation data here in case it conflicts with
@@ -559,83 +661,107 @@ NS_ASSUME_NONNULL_BEGIN
             canUpdateFrameCount = complete;
         }
         if (canUpdateFrameCount) {
-            _frameCount = CGImageSourceGetCount(_imageSourceRef);
+            self->_frameCount = CGImageSourceGetCount(self->_imageSourceRef);
         }
     } else {
         [self readMore:complete];
     }
 
-    if (lastFrameCount != _frameCount || complete) {
-        *result = (complete) ? TIPImageDecoderAppendResultDidCompleteLoading : TIPImageDecoderAppendResultDidLoadFrame;
+    if (lastFrameCount != self->_frameCount || complete) {
+        *result = (complete) ?
+                    TIPImageDecoderAppendResultDidCompleteLoading :
+                    TIPImageDecoderAppendResultDidLoadFrame;
     }
 
     if (complete) {
-        _flags.didCompleteLoading = YES;
+        self->_flags.didCompleteLoading = YES;
     }
 }
 
-- (void)_tip_attemptToReadHeadersWithResult:(inout TIPImageDecoderAppendResult *)result complete:(BOOL)complete
+static void _attemptToReadHeaders(PRIVATE_SELF(TIPCGImageSourceDecoderContext),
+                                  TIPImageDecoderAppendResult * /*inout*/ result,
+                                  BOOL complete)
 {
-    [self _tip_updateImageSourceData:_data complete:complete];
+    if (!self) {
+        return;
+    }
 
-    [self _tip_appendCheckType];
+    _updateImageSource(self, self->_data, complete);
 
-    [self _tip_appendAttemptToLoadPropertiesFromHeaders];
+    _appendCheckType(self);
 
-    [self _tip_appendAttemptToFinishLoadingContextualHeaders];
+    _appendAttemptToLoadPropertiesFromHeaders(self);
 
-    if (_flags.didDetectProperties && _flags.didFinishLoadingContextualHeaders) {
+    _appendAttemptToFinishLoadingContextualHeaders(self);
+
+    if (self->_flags.didDetectProperties && self->_flags.didFinishLoadingContextualHeaders) {
         *result = TIPImageDecoderAppendResultDidLoadHeaders;
     }
 }
 
-- (void)_tip_updateImageSourceData:(NSData *)data complete:(BOOL)complete
+static void _updateImageSource(PRIVATE_SELF(TIPCGImageSourceDecoderContext),
+                               NSData *data,
+                               BOOL complete)
 {
-    if (!_flags.didMakeFinalUpdate) {
-        CGImageSourceUpdateData(_imageSourceRef, (__bridge CFDataRef)data, complete);
+    if (!self) {
+        return;
+    }
+
+    if (!self->_flags.didMakeFinalUpdate) {
+        CGImageSourceUpdateData(self->_imageSourceRef, (__bridge CFDataRef)data, complete);
         if (complete) {
-            _flags.didMakeFinalUpdate = 1;
+            self->_flags.didMakeFinalUpdate = 1;
         }
     } else {
-        TIPLogWarning(@"Called %@ after already finalized!", NSStringFromSelector(_cmd));
+        TIPLogWarning(@"Called TIPCGImageSourceDecoderContext::_updateImageSource() after already finalized!");
     }
 }
 
-- (void)_tip_appendCheckType
+static void _appendCheckType(PRIVATE_SELF(TIPCGImageSourceDecoderContext))
 {
+    if (!self) {
+        return;
+    }
+
     // Read type
-    if (!_flags.didCheckType) {
-        CFStringRef imageSourceTypeRef = CGImageSourceGetType(_imageSourceRef);
+    if (!self->_flags.didCheckType) {
+        CFStringRef imageSourceTypeRef = CGImageSourceGetType(self->_imageSourceRef);
         if (imageSourceTypeRef) {
-            _flags.didCheckType = 1;
-            if (!UTTypeConformsTo(imageSourceTypeRef, (__bridge CFStringRef)_UTType)) {
+            self->_flags.didCheckType = 1;
+            if (!UTTypeConformsTo(imageSourceTypeRef, (__bridge CFStringRef)self->_UTType)) {
                 NSDictionary *userInfo = @{
-                                           @"decoder" : _UTType,
+                                           @"decoder" : self->_UTType,
                                            @"data" : (__bridge NSString *)imageSourceTypeRef
                                            };
-                @throw [NSException exceptionWithName:NSGenericException reason:@"Decoder image type mismatch!" userInfo:userInfo];
+                @throw [NSException exceptionWithName:NSGenericException
+                                               reason:@"Decoder image type mismatch!"
+                                             userInfo:userInfo];
             }
         }
     }
 }
 
-- (void)_tip_appendAttemptToLoadPropertiesFromHeaders
+static void _appendAttemptToLoadPropertiesFromHeaders(PRIVATE_SELF(TIPCGImageSourceDecoderContext))
 {
+    if (!self) {
+        return;
+    }
+
     // Read properties (if possible)
-    if (_flags.didCheckType && !_flags.didDetectProperties) {
+    if (self->_flags.didCheckType && !self->_flags.didDetectProperties) {
 
         // Check the status first
 
-        const CGImageSourceStatus status = CGImageSourceGetStatus(_imageSourceRef);
+        const CGImageSourceStatus status = CGImageSourceGetStatus(self->_imageSourceRef);
 
         switch (status) {
             case kCGImageStatusUnexpectedEOF:
                 // something's wrong
-                _flags.didDetectProperties = YES;
+                self->_flags.didDetectProperties = YES;
                 return;
             case kCGImageStatusInvalidData:
                 // gonna fail no matter what
-                _flags.didDetectProperties = YES;
+                self->_flags.didDetectProperties = YES;
                 return;
             case kCGImageStatusComplete:
             case kCGImageStatusIncomplete:
@@ -652,7 +778,7 @@ NS_ASSUME_NONNULL_BEGIN
 
         // Looks like we have headers, take a peek
 
-        CFDictionaryRef imageProperties = CGImageSourceCopyPropertiesAtIndex(_imageSourceRef, 0, NULL);
+        CFDictionaryRef imageProperties = CGImageSourceCopyPropertiesAtIndex(self->_imageSourceRef, 0, NULL);
         TIPDeferRelease(imageProperties);
         if (imageProperties != NULL && CFDictionaryGetCount(imageProperties) > 0) {
 
@@ -662,43 +788,44 @@ NS_ASSUME_NONNULL_BEGIN
             CFNumberRef heightNum = CFDictionaryGetValue(imageProperties, kCGImagePropertyPixelHeight);
 
             if (widthNum && heightNum) {
-                _tip_dimensions = CGSizeMake([(__bridge NSNumber *)widthNum floatValue], [(__bridge NSNumber *)heightNum floatValue]);
+                self->_tip_dimensions = CGSizeMake([(__bridge NSNumber *)widthNum floatValue],
+                                                   [(__bridge NSNumber *)heightNum floatValue]);
             }
 
             // Alpha
 
             // The "has alpha" property of a JPEG can incorrectly report "YES"
             // This check ensures we don't get the "has alpha" for JPEGs
-            if (![_UTType isEqualToString:(NSString *)kUTTypeJPEG]) {
+            if (![self->_UTType isEqualToString:(NSString *)kUTTypeJPEG]) {
                 CFBooleanRef hasAlphaBool = CFDictionaryGetValue(imageProperties, kCGImagePropertyHasAlpha) ?: kCFBooleanFalse;
-                _tip_hasAlpha = !!CFBooleanGetValue(hasAlphaBool);
+                self->_tip_hasAlpha = !!CFBooleanGetValue(hasAlphaBool);
             }
 
             // Progressive
 
-            if (_flags.isPotentiallyProgressive) {
-                if ([_UTType isEqualToString:(NSString *)kUTTypeJPEG]) {
+            if (self->_flags.isPotentiallyProgressive) {
+                if ([self->_UTType isEqualToString:(NSString *)kUTTypeJPEG]) {
                     CFDictionaryRef jfifProperties = CFDictionaryGetValue(imageProperties, kCGImagePropertyJFIFDictionary);
                     if (jfifProperties) {
                         CFBooleanRef isProgressiveBool = CFDictionaryGetValue(jfifProperties, kCGImagePropertyJFIFIsProgressive) ?: kCFBooleanFalse;
-                        _progressive = !!CFBooleanGetValue(isProgressiveBool);
+                        self->_progressive = !!CFBooleanGetValue(isProgressiveBool);
                     }
                 }
             }
 
             // Animated
 
-            if (!_progressive && _flags.isPotentiallyAnimated) {
-                if ([_UTType isEqualToString:(NSString *)kUTTypeGIF]) {
+            if (!self->_progressive && self->_flags.isPotentiallyAnimated) {
+                if ([self->_UTType isEqualToString:(NSString *)kUTTypeGIF]) {
                     CFDictionaryRef gifProperties = CFDictionaryGetValue(imageProperties, kCGImagePropertyGIFDictionary);
                     if (gifProperties) {
-                        _tip_isAnimated = YES;
+                        self->_tip_isAnimated = YES;
                     }
-                } else if ([_UTType isEqualToString:(NSString *)kUTTypePNG]) {
+                } else if ([self->_UTType isEqualToString:(NSString *)kUTTypePNG]) {
                     CFDictionaryRef pngProperties = CFDictionaryGetValue(imageProperties, kCGImagePropertyPNGDictionary);
                     if (pngProperties && [[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)] /* iOS 8+ */) {
                         if (CFDictionaryGetValue(pngProperties, kCGImagePropertyAPNGDelayTime) != NULL) {
-                            _tip_isAnimated = YES;
+                            self->_tip_isAnimated = YES;
                         }
                     }
                 }
@@ -707,18 +834,22 @@ NS_ASSUME_NONNULL_BEGIN
             // GPS Info
             CFDictionaryRef gpsInfo = CFDictionaryGetValue(imageProperties, kCGImagePropertyGPSDictionary);
             if (gpsInfo != NULL && CFDictionaryGetCount(gpsInfo) > 0) {
-                _tip_hasGPSInfo = YES;
+                self->_tip_hasGPSInfo = YES;
             }
 
-            _flags.didDetectProperties = YES;
+            self->_flags.didDetectProperties = YES;
         }
     }
 }
 
-- (void)_tip_appendAttemptToFinishLoadingContextualHeaders
+static void _appendAttemptToFinishLoadingContextualHeaders(PRIVATE_SELF(TIPCGImageSourceDecoderContext))
 {
-    if (_flags.didDetectProperties && !_flags.didFinishLoadingContextualHeaders) {
-        _flags.didFinishLoadingContextualHeaders = !![self readContextualHeaders];
+    if (!self) {
+        return;
+    }
+
+    if (self->_flags.didDetectProperties && !self->_flags.didFinishLoadingContextualHeaders) {
+        self->_flags.didFinishLoadingContextualHeaders = !![self readContextualHeaders];
     }
 }
 
@@ -765,9 +896,11 @@ NS_ASSUME_NONNULL_BEGIN
 
     NSUInteger lastByteReadIndex = _lastByteReadIndex;
     NSData *subdata = [data subdataWithRange:NSMakeRange(lastByteReadIndex, data.length - lastByteReadIndex)];
-    [subdata enumerateByteRangesUsingBlock:^(const void * __nonnull rawBytes, NSRange byteRange, BOOL * __nonnull stop) {
+    [subdata enumerateByteRangesUsingBlock:^(const void * __nonnull rawBytes,
+                                             NSRange byteRange,
+                                             BOOL * __nonnull stop) {
         byteRange.location += lastByteReadIndex;
-        [self _tip_readMoreBytes:rawBytes range:byteRange];
+        _readMore(self, rawBytes, byteRange);
     }];
 
     // If we've reached the end but didn't complete our frame, complete it now
@@ -781,36 +914,42 @@ NS_ASSUME_NONNULL_BEGIN
     return oldFrameCount != _frameCount;
 }
 
-- (void)_tip_readMoreBytes:(const unsigned char *)bytes range:(NSRange)byteRange
+static void _readMore(PRIVATE_SELF(TIPJPEGCGImageSourceDecoderContext),
+                      const unsigned char *bytes,
+                      NSRange byteRange)
 {
+    if (!self) {
+        return;
+    }
+
     const NSUInteger limitIndex = byteRange.location + byteRange.length;
 
-    if (_lastByteReadIndex >= limitIndex) {
+    if (self->_lastByteReadIndex >= limitIndex) {
         // already read these bytes
         return;
     }
 
     // Iterate through bytes from our last progress to as many bytes as we have
     for (const unsigned char *endBytes = bytes + byteRange.length; bytes < endBytes; bytes++) {
-        if (_lastByteWasEscapeMarker) {
-            _lastByteWasEscapeMarker = 0;
+        if (self->_lastByteWasEscapeMarker) {
+            self->_lastByteWasEscapeMarker = 0;
             if (*bytes == kJPEG_MARKER_START_FRAME) {
 
                 // OK, did we get a full frame of bytes?
-                if (_lastFrameStartIndex > _lastFrameEndIndex) {
-                    _lastFrameEndIndex = _lastByteReadIndex - 2;
+                if (self->_lastFrameStartIndex > self->_lastFrameEndIndex) {
+                    self->_lastFrameEndIndex = self->_lastByteReadIndex - 2;
 
                     // This was a new frame, increment
-                    _frameCount++;
+                    self->_frameCount++;
                 }
 
-                _lastFrameStartIndex = _lastByteReadIndex - 1;
+                self->_lastFrameStartIndex = self->_lastByteReadIndex - 1;
 
             }
         } else if (*bytes == kJPEG_MARKER_SPECIAL_BYTE) {
-            _lastByteWasEscapeMarker = 1;
+            self->_lastByteWasEscapeMarker = 1;
         }
-        _lastByteReadIndex++;
+        self->_lastByteReadIndex++;
     }
 }
 

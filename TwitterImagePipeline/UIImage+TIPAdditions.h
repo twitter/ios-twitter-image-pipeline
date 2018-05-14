@@ -8,6 +8,7 @@
 
 #import <ImageIO/ImageIO.h>
 #import <TwitterImagePipeline/TIPImageTypes.h>
+#import <TwitterImagePipeline/TIPImageUtils.h>
 #import <UIKit/UIImage.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -86,6 +87,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)tip_matchesTargetDimensions:(CGSize)targetDimensions contentMode:(UIViewContentMode)targetContentMode;
 
 #pragma mark Transform Methods
+
+/**
+ Generic rendering method based on this image
+ @param formatBlock an optional block to configure the formatting (_opaque_, _scale_, _size_)
+ @param renderBlock a block to perform the render (provided the source `UIImage` and `CGContextRef`)
+ @return The rendered `UIImage`
+ @note a target that is an animation will yield `nil`
+ */
+- (nullable UIImage *)tip_imageWithRenderFormatting:(nullable __attribute__((noescape))  TIPImageRenderFormattingBlock)formatBlock
+                                             render:(__attribute__((noescape)) TIPImageRenderBlock)renderBlock;
 
 /**
  Return a copy of the image scaled

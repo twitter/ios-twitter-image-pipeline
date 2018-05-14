@@ -24,7 +24,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 FOUNDATION_EXTERN NSString * const TIPImageDownloaderCancelSource;
 
-typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedBytes, NSString * __nullable lastModified);
+typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedBytes,
+                                                 NSString * __nullable lastModified);
 
 @interface TIPImageDownloader : NSObject
 
@@ -33,7 +34,8 @@ typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedByt
 + (instancetype)new NS_UNAVAILABLE;
 
 - (id<TIPImageDownloadContext>)fetchImageWithDownloadDelegate:(id<TIPImageDownloadDelegate>)delegate;
-- (void)removeDelegate:(id<TIPImageDownloadDelegate>)delegate forContext:(id<TIPImageDownloadContext>)context;
+- (void)removeDelegate:(id<TIPImageDownloadDelegate>)delegate
+            forContext:(id<TIPImageDownloadContext>)context;
 - (void)updatePriorityOfContext:(id<TIPImageDownloadContext>)context;
 
 @end
@@ -86,7 +88,8 @@ typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedByt
 
 - (void)imageDownloadDidStart:(id<TIPImageDownloadContext>)context;
 
-- (void)imageDownload:(id<TIPImageDownloadContext>)context didResetFromPartialImage:(TIPPartialImage *)oldPartialImage;
+- (void)imageDownload:(id<TIPImageDownloadContext>)context
+        didResetFromPartialImage:(TIPPartialImage *)oldPartialImage;
 
 - (void)imageDownload:(id<TIPImageDownloadContext>)op
        didAppendBytes:(NSUInteger)byteCount

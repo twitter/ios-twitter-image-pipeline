@@ -157,7 +157,17 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
 
 #pragma mark Transform Methods
 
-- (nullable UIImage *)_tip_CoreGraphics_scaleImageToSpecificDimensions:(CGSize)scaledDimensions scale:(CGFloat)scale
+- (nullable UIImage *)tip_imageWithRenderFormatting:(nullable TIPImageRenderFormattingBlock)formatBlock
+                                             render:(nonnull TIPImageRenderBlock)renderBlock
+{
+    return TIPRenderImage(self, formatBlock, renderBlock);
+}
+
+// below code works but is unused since the UIKit method of scaling is preferred
+#if 0
+static UIImage * __nullable _CoreGraphicsScale(PRIVATE_SELF(UIImage),
+                                               CGSize scaledDimensions,
+                                               CGFloat scale)
 {
     CGImageRef cgImage = self.CGImage;
     if (!cgImage) {
@@ -204,81 +214,103 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
         CGImageRef scaledCGImage = CGBitmapContextCreateImage(context);
         TIPDeferRelease(scaledCGImage);
 
-        image = [UIImage imageWithCGImage:scaledCGImage scale:((0.0 == scale) ? [UIScreen mainScreen].scale : scale) orientation:orientation];
+        image = [UIImage imageWithCGImage:scaledCGImage
+                                    scale:((0.0 == scale) ? [UIScreen mainScreen].scale : scale)
+                              orientation:orientation];
     });
     return image;
 }
+#endif
 
-- (UIImage *)_tip_UIKit_scaleImageToSpecificDimensions:(CGSize)scaledDimensions scale:(CGFloat)scale
+static UIImage *_UIKitScale(PRIVATE_SELF(UIImage),
+                            CGSize scaledDimensions,
+                            CGFloat scale)
 {
+    TIPAssert(self);
     if (0.0 == scale) {
         scale = [UIScreen mainScreen].scale;
     }
-    __block UIImage *image = self;
-    const CGRect drawRect = CGRectMake(0, 0, scaledDimensions.width / scale, scaledDimensions.height / scale);
+    const CGRect drawRect = CGRectMake(0,
+                                       0,
+                                       scaledDimensions.width / scale,
+                                       scaledDimensions.height / scale);
 
-    TIPExecuteCGContextBlock(^{
-        UIImage *renderedImage = nil;
-        if (image.images.count == 0 && image.tip_usesWideGamutColorSpace) {
-            // we're dealing with a wide gamut color image... do it in a wide gamut safe way
-            // WARNING: Using UIGraphicsImageRenderer is 25x slower than using the old
-            //          UIGraphicsBeginImageContextWithOptions way!
-            //          This is why we only do this with wide gamut images on wide gamut devices.
-            renderedImage = [image _tip_modernDrawInRect:drawRect scale:scale];
-        }
+    if (self.images.count > 1) {
+        return _UIKitScaleAnimated(self, drawRect, scale);
+    }
 
-        if (!renderedImage) {
-            renderedImage = [image _tip_legacyDrawInRect:drawRect scale:scale];
-        }
-
-        if (renderedImage) {
-            image = renderedImage;
-        }
-    });
-
-    return image;
-}
-
-- (nullable UIImage *)_tip_modernDrawInRect:(CGRect)drawRect scale:(CGFloat)scale
-{
-    // WARNING: this method is SLOOOW!!
-
-    TIPAssert([UIGraphicsImageRenderer class] != Nil);
-
-    const BOOL hasAlpha = [self tip_hasAlpha:NO];
-    UIGraphicsImageRendererFormat *format = [[UIGraphicsImageRendererFormat alloc] init];
-    format.scale = scale;
-    format.opaque = !hasAlpha;
-    format.prefersExtendedRange = YES;
-    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:drawRect.size format:format];
-    UIImage *renderedImage = [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
+    UIImage *image = [self tip_imageWithRenderFormatting:^(id<TIPRenderImageFormat> format) {
+        format.scale = scale;
+        format.renderSize = drawRect.size;
+    } render:^(UIImage *sourceImage, CGContextRef ctx) {
         [self drawInRect:drawRect];
     }];
-    return renderedImage;
+    return image ?: self;
 }
 
-- (nullable UIImage *)_tip_legacyDrawInRect:(CGRect)drawRect scale:(CGFloat)scale
+static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
+                                    CGRect drawRect,
+                                    CGFloat scale)
 {
-    const BOOL hasAlpha = [self tip_hasAlpha:NO];
-    UIGraphicsBeginImageContextWithOptions(drawRect.size, !hasAlpha, scale);
-    tip_defer(^{
-        UIGraphicsEndImageContext();
-    });
-    if (!self.images.count) {
-        [self drawInRect:drawRect];
-        return UIGraphicsGetImageFromCurrentImageContext();
-    }
+    TIPAssert(self.images.count > 1);
+    TIPAssert(scale != 0.);
 
-    NSMutableArray *newFrames = [[NSMutableArray alloc] initWithCapacity:self.images.count];
-    for (UIImage *frame in self.images) {
-        @autoreleasepool {
-            [frame drawInRect:drawRect];
-            UIImage *newFrame = UIGraphicsGetImageFromCurrentImageContext();
-            [newFrames addObject:newFrame];
-            CGContextClearRect(UIGraphicsGetCurrentContext(), drawRect);
+    const BOOL hasAlpha = ![self tip_hasAlpha:NO];
+    __block UIImage *outImage = self;
+
+    TIPExecuteCGContextBlock(^{
+        // Modern animation scaling
+        if ([UIGraphicsRenderer class] != Nil) {
+            UIGraphicsImageRendererFormat *format = self.imageRendererFormat;
+            UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:drawRect.size format:format];
+            NSMutableArray *newFrames = [[NSMutableArray alloc] initWithCapacity:self.images.count];
+            for (UIImage *frame in self.images) {
+                @autoreleasepool {
+                    UIImage *newFrame = [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull rendererContext) {
+                        [frame drawInRect:drawRect];
+                    }];
+                    if (!newFrame) {
+                        // buggy scaling of animation, give up
+                        newFrames = nil;
+                        break;
+                    }
+                    [newFrames addObject:newFrame];
+                    if (hasAlpha) {
+                        CGContextClearRect(UIGraphicsGetCurrentContext(), drawRect);
+                    }
+                }
+            }
+            if (newFrames) {
+                outImage = [UIImage animatedImageWithImages:newFrames duration:self.duration];
+                return;
+            }
         }
-    }
-    return [UIImage animatedImageWithImages:newFrames duration:self.duration];
+
+        // Legacy animation scaling
+        {
+            UIGraphicsBeginImageContextWithOptions(drawRect.size, !hasAlpha, scale);
+            tip_defer(^{
+                UIGraphicsEndImageContext();
+            });
+            NSMutableArray *newFrames = [[NSMutableArray alloc] initWithCapacity:self.images.count];
+            for (UIImage *frame in self.images) {
+                @autoreleasepool {
+                    [frame drawInRect:drawRect];
+                    UIImage *newFrame = UIGraphicsGetImageFromCurrentImageContext();
+                    if (!newFrame) {
+                        return; // buggy scaling, give up
+                    }
+                    [newFrames addObject:newFrame];
+                    if (hasAlpha) {
+                        CGContextClearRect(UIGraphicsGetCurrentContext(), drawRect);
+                    }
+                }
+            }
+            outImage = [UIImage animatedImageWithImages:newFrames duration:self.duration];
+        }
+    });
+
+    return outImage;
 }
 
 - (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions contentMode:(UIViewContentMode)targetContentMode;
@@ -305,8 +337,8 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
         // would merely be prone to a performance hit.
 
         // scale with UIKit at screen scale
-        image = [self _tip_UIKit_scaleImageToSpecificDimensions:scaledTargetDimensions scale:0.0];
-        // image = [self _tip_CoreGraphics_scaleImageToSpecificDimensions:scaledTargetDimensions scale:0.0];
+        image = _UIKitScale(self, scaledTargetDimensions, 0 /*auto scale*/);
+        // image = _CoreGraphicsScale(self, scaledTargetDimensions, 0 /*auto scale*/);
 
     } else {
         image = self;
@@ -835,11 +867,11 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
     // Crashes on iOS 8 and 9 too, but very infrequently.
     // We'll avoid it altogether to be safe.
     if (self.images.count <= 0) {
-        TIPExecuteCGContextBlock(^{
-            UIGraphicsBeginImageContextWithOptions(CGSizeMake(1, 1), NO, 0.0);
-            [self drawAtPoint:CGPointZero];
-            UIGraphicsEndImageContext();
-        });
+        (void)[self tip_imageWithRenderFormatting:^(id<TIPRenderImageFormat> format) {
+            format.renderSize = CGSizeMake(1, 1);
+        } render:^(UIImage *sourceImage, CGContextRef ctx) {
+            [sourceImage drawAtPoint:CGPointZero];
+        }];
     }
 }
 

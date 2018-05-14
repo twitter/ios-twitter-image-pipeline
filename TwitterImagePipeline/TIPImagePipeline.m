@@ -70,10 +70,10 @@ static void TIPUnregisterImagePipelineWithIdentifier(NSString *identifier);
 static NSString * TIPImagePipelinePath(void) __attribute__((const));
 static NSString * __nullable TIPOpenImagePipelineWithIdentifier(NSString *identifier);
 static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
-
-@interface TIPImagePipeline (Private)
-- (void)_tip_enqueueOperation:(TIPImageFetchOperation *)operation;
-@end
+static void TIPEnqueueOperation(TIPImageFetchOperation *operation);
+static void TIPFireFetchCompletionBlock(TIPImagePipelineFetchCompletionBlock __nullable completion,
+                                        id<TIPImageFetchResult> __nullable finalResult,
+                                        NSError * __nullable error);
 
 @implementation TIPImagePipeline
 {
@@ -109,7 +109,7 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
 
 #pragma mark Class Methods
 
-+ (NSDictionary *)allRegisteredImagePipelines
++ (NSDictionary<NSString *, TIPImagePipeline *> *)allRegisteredImagePipelines
 {
     return TIPCopyAllRegisteredImagePipelines();
 }
@@ -178,17 +178,25 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
 
 #pragma mark Generate Operation
 
-- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request context:(nullable id)context delegate:(nullable id<TIPImageFetchDelegate>)delegate
+- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request
+                                         context:(nullable id)context
+                                        delegate:(nullable id<TIPImageFetchDelegate>)delegate
 {
-    TIPImageFetchOperation *operation = [[TIPImageFetchOperation alloc] initWithImagePipeline:self request:request delegate:delegate];
+    TIPImageFetchOperation *operation = [[TIPImageFetchOperation alloc] initWithImagePipeline:self
+                                                                                      request:request
+                                                                                     delegate:delegate];
     operation.context = context;
     return operation;
 }
 
-- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request context:(nullable id)context completion:(nullable TIPImagePipelineFetchCompletionBlock)completion
+- (TIPImageFetchOperation *)operationWithRequest:(id<TIPImageFetchRequest>)request
+                                         context:(nullable id)context
+                                      completion:(nullable TIPImagePipelineFetchCompletionBlock)completion
 {
     TIPSimpleImageFetchDelegate *delegate = [[TIPSimpleImageFetchDelegate alloc] initWithCompletion:completion];
-    return [self operationWithRequest:request context:context delegate:delegate];
+    return [self operationWithRequest:request
+                              context:context
+                             delegate:delegate];
 }
 
 #pragma mark Fetch
@@ -196,11 +204,15 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
 - (void)fetchImageWithOperation:(TIPImageFetchOperation *)op
 {
     if (!op) {
-        @throw [NSException exceptionWithName:NSInvalidArgumentException reason:@"Provided TIPImageFetchOperation is nil" userInfo:nil];
+        @throw [NSException exceptionWithName:NSInvalidArgumentException
+                                       reason:@"Provided TIPImageFetchOperation is nil"
+                                     userInfo:nil];
     }
 
     if (op.imagePipeline != self) {
-        @throw [NSException exceptionWithName:NSInvalidArgumentException reason:@"Provided TIPImageFetchOperation does not belong to the target TIPImagePipeline." userInfo:@{ @"operation" : op }];
+        @throw [NSException exceptionWithName:NSInvalidArgumentException
+                                       reason:@"Provided TIPImageFetchOperation does not belong to the target TIPImagePipeline."
+                                     userInfo:@{ @"operation" : op }];
     }
 
     TIPImageCacheEntry *entry = nil;
@@ -226,31 +238,44 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
     CGSize sourceImageDimensions = CGSizeZero;
     if ([NSThread isMainThread] && [op supportsLoadingFromRenderedCache] && (imageId != nil)) {
         // Sync Access, for optimization
-        entry = [_renderedCache imageEntryWithIdentifier:imageId transformerIdentifier:transformerId targetDimensions:targetDimensions targetContentMode:targetContentMode sourceImageDimensions:&sourceImageDimensions];
+        entry = [_renderedCache imageEntryWithIdentifier:imageId
+                                   transformerIdentifier:transformerId
+                                        targetDimensions:targetDimensions
+                                       targetContentMode:targetContentMode
+                                   sourceImageDimensions:&sourceImageDimensions];
     }
 
     if (entry.completeImage) {
         // Sync Completion
-        [op completeOperationEarlyWithImageEntry:entry transformed:(transformerId != nil) sourceImageDimensions:sourceImageDimensions];
+        [op completeOperationEarlyWithImageEntry:entry
+                                     transformed:(transformerId != nil)
+                           sourceImageDimensions:sourceImageDimensions];
     } else {
         // Async Operation
-        [self _tip_enqueueOperation:op];
+        TIPEnqueueOperation(op);
     }
 }
 
 #pragma mark Store / Move
 
-- (NSObject<TIPDependencyOperation> *)changeIdentifierForImageWithIdentifier:(NSString *)currentIdentifier toIdentifier:(NSString *)newIdentifier completion:(nullable TIPImagePipelineOperationCompletionBlock)completion
+- (NSObject<TIPDependencyOperation> *)changeIdentifierForImageWithIdentifier:(NSString *)currentIdentifier
+                                                                toIdentifier:(NSString *)newIdentifier
+                                                                  completion:(nullable TIPImagePipelineOperationCompletionBlock)completion
 {
-    TIPImageMoveOperation *moveOp = [[TIPImageMoveOperation alloc] initWithPipeline:self originalIdentifier:currentIdentifier updatedIdentifier:newIdentifier completion:completion];
+    TIPImageMoveOperation *moveOp = [[TIPImageMoveOperation alloc] initWithPipeline:self
+                                                                 originalIdentifier:currentIdentifier
+                                                                  updatedIdentifier:newIdentifier
+                                                                         completion:completion];
     [[TIPGlobalConfiguration sharedInstance] enqueueImagePipelineOperation:moveOp];
     return moveOp;
 }
 
-- (NSObject<TIPDependencyOperation> *)storeImageWithRequest:(id<TIPImageStoreRequest>)request completion:(nullable TIPImagePipelineOperationCompletionBlock)completion
+- (NSObject<TIPDependencyOperation> *)storeImageWithRequest:(id<TIPImageStoreRequest>)request
+                                                 completion:(nullable TIPImagePipelineOperationCompletionBlock)completion
 {
-    TIPImageStoreOperation *storeOp = [self storeOperationWithRequest:request completion:completion];
-    TIPImageStoreHydrationOperation *prepOp = [self _tip_hydrateOperationWithRequest:request];
+    TIPImageStoreOperation *storeOp = [self storeOperationWithRequest:request
+                                                           completion:completion];
+    TIPImageStoreHydrationOperation *prepOp = _createHydrationOperation(self, request);
     if (prepOp) {
         [storeOp setHydrationDependency:prepOp];
         [[TIPGlobalConfiguration sharedInstance] enqueueImagePipelineOperation:prepOp];
@@ -259,19 +284,29 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
     return storeOp;
 }
 
-- (TIPImageStoreOperation *)storeOperationWithRequest:(id<TIPImageStoreRequest>)request completion:(nullable TIPImagePipelineOperationCompletionBlock)completion
+- (TIPImageStoreOperation *)storeOperationWithRequest:(id<TIPImageStoreRequest>)request
+                                           completion:(nullable TIPImagePipelineOperationCompletionBlock)completion
 {
-    return [[TIPImageStoreOperation alloc] initWithRequest:request pipeline:self completion:completion];
+    return [[TIPImageStoreOperation alloc] initWithRequest:request
+                                                  pipeline:self
+                                                completion:completion];
 }
 
-- (nullable TIPImageStoreHydrationOperation *)_tip_hydrateOperationWithRequest:(id<TIPImageStoreRequest>)request
+static TIPImageStoreHydrationOperation * __nullable _createHydrationOperation(PRIVATE_SELF(TIPImagePipeline),
+                                                                              id<TIPImageStoreRequest> request)
 {
+    if (!self) {
+        return nil;
+    }
+
     id<TIPImageStoreRequestHydrater> hydrater = [request respondsToSelector:@selector(hydrater)] ? request.hydrater : nil;
     if (!hydrater) {
         return nil;
     }
 
-    return [[TIPImageStoreHydrationOperation alloc] initWithRequest:request pipeline:self hydrater:hydrater];
+    return [[TIPImageStoreHydrationOperation alloc] initWithRequest:request
+                                                           pipeline:self
+                                                           hydrater:hydrater];
 }
 
 #pragma mark Clear
@@ -303,21 +338,25 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
 
 #pragma mark Copy Disk Cache File
 
-- (void)copyDiskCacheFileWithIdentifier:(NSString *)imageIdentifier completion:(nullable TIPImagePipelineCopyFileCompletionBlock)completion
+- (void)copyDiskCacheFileWithIdentifier:(NSString *)imageIdentifier
+                             completion:(nullable TIPImagePipelineCopyFileCompletionBlock)completion
 {
     TIPAssert(imageIdentifier != nil);
     NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
-        [self _tip_background_copyDiskCacheFileWithIdentifier:imageIdentifier completion:completion];
+        _background_copyDiskCacheFile(self, imageIdentifier, completion);
     }];
     [[TIPGlobalConfiguration sharedInstance] enqueueImagePipelineOperation:op];
 }
 
-- (void)_tip_background_copyDiskCacheFileWithIdentifier:(NSString *)imageIdentifier completion:(nullable TIPImagePipelineCopyFileCompletionBlock)completion
+static void _background_copyDiskCacheFile(PRIVATE_SELF(TIPImagePipeline),
+                                          NSString * imageIdentifier,
+                                          TIPImagePipelineCopyFileCompletionBlock __nullable completion)
 {
     // Copy to temp location
     NSString *temporaryFile = nil;
     NSError *error = nil;
-    temporaryFile = [self.diskCache copyImageEntryFileForIdentifier:imageIdentifier error:&error];
+    temporaryFile = [self.diskCache copyImageEntryFileForIdentifier:imageIdentifier
+                                                              error:&error];
 
     // Indicate completion
     if (completion) {
@@ -350,7 +389,9 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
         userInfo[TIPImagePipelineImagePipelineIdentifierNotificationKey] = self.identifier;
         userInfo[TIPImagePipelineImageTreatAsPlaceholderNofiticationKey] = @(entry.completeImageContext.treatAsPlaceholder);
 
-        [[NSNotificationCenter defaultCenter] postNotificationName:TIPImagePipelineDidStoreCachedImageNotification object:self userInfo:userInfo];
+        [[NSNotificationCenter defaultCenter] postNotificationName:TIPImagePipelineDidStoreCachedImageNotification
+                                                            object:self
+                                                          userInfo:userInfo];
     });
 }
 
@@ -370,12 +411,6 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
 }
 
 #pragma mark Private
-
-- (void)_tip_enqueueOperation:(TIPImageFetchOperation *)operation
-{
-    [operation willEnqueue];
-    [[TIPGlobalConfiguration sharedInstance] enqueueImagePipelineOperation:operation];
-}
 
 - (void)_tip_applicationDidEnterBackground
 {
@@ -424,22 +459,16 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines(void);
     return self;
 }
 
-- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op didLoadFinalImage:(id<TIPImageFetchResult>)finalResult
+- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+              didLoadFinalImage:(id<TIPImageFetchResult>)finalResult
 {
-    [self _tip_internal_complete:finalResult error:nil];
+    TIPFireFetchCompletionBlock(self.completion, finalResult, nil);
 }
 
-- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op didFailToLoadFinalImage:(NSError *)error
+- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+        didFailToLoadFinalImage:(NSError *)error
 {
-    [self _tip_internal_complete:nil error:error];
-}
-
-- (void)_tip_internal_complete:(nullable id<TIPImageFetchResult>)finalResult error:(nullable NSError *)error
-{
-    TIPImagePipelineFetchCompletionBlock block = self.completion;
-    if (block) {
-        block(finalResult, error);
-    }
+    TIPFireFetchCompletionBlock(self.completion, nil, error);
 }
 
 @end
@@ -564,6 +593,21 @@ static NSDictionary *TIPCopyAllRegisteredImagePipelines()
         pipelines = sStrongIdentifierToWeakImagePipelineMap.dictionaryRepresentation;
     });
     return pipelines;
+}
+
+static void TIPEnqueueOperation(TIPImageFetchOperation *operation)
+{
+    [operation willEnqueue];
+    [[TIPGlobalConfiguration sharedInstance] enqueueImagePipelineOperation:operation];
+}
+
+static void TIPFireFetchCompletionBlock(TIPImagePipelineFetchCompletionBlock __nullable completion,
+                                        id<TIPImageFetchResult> __nullable finalResult,
+                                        NSError * __nullable error)
+{
+    if (completion) {
+        completion(finalResult, error);
+    }
 }
 
 NS_ASSUME_NONNULL_END

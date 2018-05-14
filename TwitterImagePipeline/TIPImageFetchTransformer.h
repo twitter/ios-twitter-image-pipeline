@@ -2,7 +2,7 @@
 //  TIPImageFetchTransformer.h
 //  TwitterImagePipeline
 //
-//  Created by Nolan O'Brien on 5/4/17.
+//  Created on 5/4/17.
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
@@ -37,7 +37,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  @note Transformed images are NOT cached.  The cache will persist the raw source image.
  */
-- (nullable UIImage *)tip_transformImage:(UIImage *)image withProgress:(float)progress hintTargetDimensions:(CGSize)targetDimensions hintTargetContentMode:(UIViewContentMode)targetContentMode forImageFetchOperation:(TIPImageFetchOperation *)op;
+- (nullable UIImage *)tip_transformImage:(UIImage *)image
+                            withProgress:(float)progress
+                    hintTargetDimensions:(CGSize)targetDimensions
+                   hintTargetContentMode:(UIViewContentMode)targetContentMode
+                  forImageFetchOperation:(TIPImageFetchOperation *)op;
 
 @optional
 

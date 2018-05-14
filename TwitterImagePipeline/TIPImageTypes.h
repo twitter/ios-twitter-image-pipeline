@@ -164,7 +164,10 @@ FOUNDATION_EXTERN NSString * __nullable TIPImageTypeToUTType(NSString * __nullab
  `NO` if the data is partial progress
  @return The image type detected or `nil` if no type could be detected
  */
-FOUNDATION_EXTERN NSString * __nullable TIPDetectImageType(NSData *data, TIPImageEncodingOptions * __nullable optionsOut, NSUInteger * __nullable animationFrameCountOut, BOOL hasCompleteImageData);
+FOUNDATION_EXTERN NSString * __nullable TIPDetectImageType(NSData *data,
+                                                           TIPImageEncodingOptions * __nullable optionsOut,
+                                                           NSUInteger * __nullable animationFrameCountOut,
+                                                           BOOL hasCompleteImageData);
 /**
  Detect the image type from raw encoded data via magic numbers.
  @param data The `NSData`

@@ -54,7 +54,8 @@ typedef void(^TIPImageFetchDidLoadPreviewCallback)(TIPImageFetchPreviewLoadedBeh
  image will be resumed, and it would be possible for the image to have to fully load and complete
  with `TIPImageLoadSourceNetwork`.
  */
-- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op willAttemptToLoadFromSource:(TIPImageLoadSource)source;
+- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op
+    willAttemptToLoadFromSource:(TIPImageLoadSource)source;
 
 /**
  Called when a preview image is loaded.
@@ -73,7 +74,9 @@ typedef void(^TIPImageFetchDidLoadPreviewCallback)(TIPImageFetchPreviewLoadedBeh
  `previewResult.imageSource` will be either from `TIPImageLoadSourceMemoryCache` or
  `TIPImageLoadSourceDiskCache`
  */
-- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op didLoadPreviewImage:(nonnull id<TIPImageFetchResult>)previewResult completion:(nonnull TIPImageFetchDidLoadPreviewCallback)completion;
+- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op
+            didLoadPreviewImage:(nonnull id<TIPImageFetchResult>)previewResult
+                     completion:(nonnull TIPImageFetchDidLoadPreviewCallback)completion;
 
 /**
  Implement this method to support progressive loading.
@@ -89,7 +92,11 @@ typedef void(^TIPImageFetchDidLoadPreviewCallback)(TIPImageFetchPreviewLoadedBeh
 
  @note This method is called synchronously from a background thread.
  */
-- (BOOL)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op shouldLoadProgressivelyWithIdentifier:(nonnull NSString *)identifier URL:(nonnull NSURL *)URL imageType:(nonnull NSString *)imageType originalDimensions:(CGSize)originalDimensions;
+- (BOOL)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op
+        shouldLoadProgressivelyWithIdentifier:(nonnull NSString *)identifier
+        URL:(nonnull NSURL *)URL
+        imageType:(nonnull NSString *)imageType
+        originalDimensions:(CGSize)originalDimensions;
 
 /**
  Called when a progressive image was loaded for images that support it.
@@ -102,7 +109,9 @@ typedef void(^TIPImageFetchDidLoadPreviewCallback)(TIPImageFetchPreviewLoadedBeh
  `progressiveResult.source` the source of the image (likely one of `TIPImageLoadSourceNetwork`,
  `TIPImageLoadSourceNetworkResumed` or `TIPImageLoadSourceDiskCache`)
  */
-- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op didUpdateProgressiveImage:(nonnull id<TIPImageFetchResult>)progressiveResult progress:(float)progress;
+- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op
+      didUpdateProgressiveImage:(nonnull id<TIPImageFetchResult>)progressiveResult
+                       progress:(float)progress;
 
 /**
  Called when an animated image has loaded enough to display its first frame.
@@ -115,7 +124,9 @@ typedef void(^TIPImageFetchDidLoadPreviewCallback)(TIPImageFetchPreviewLoadedBeh
  `progressiveResult.source` the source of the image (likely one of `TIPImageLoadSourceNetwork`,
  `TIPImageLoadSourceNetworkResumed` or `TIPImageLoadSourceDiskCache`)
  */
-- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op didLoadFirstAnimatedImageFrame:(nonnull id<TIPImageFetchResult>)progressiveResult progress:(float)progress;
+- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op
+ didLoadFirstAnimatedImageFrame:(nonnull id<TIPImageFetchResult>)progressiveResult
+                       progress:(float)progress;
 
 /**
  Called when progress has occurred.
@@ -123,7 +134,8 @@ typedef void(^TIPImageFetchDidLoadPreviewCallback)(TIPImageFetchPreviewLoadedBeh
  @param op The image fetch operation
  @param progress total progress
  */
-- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op didUpdateProgress:(float)progress;
+- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op
+              didUpdateProgress:(float)progress;
 
 /**
  Called when the final image was loaded, thus completing the operation
@@ -134,7 +146,8 @@ typedef void(^TIPImageFetchDidLoadPreviewCallback)(TIPImageFetchPreviewLoadedBeh
  `finalResult.imageContainer` will be resized if _targetDimensions_ and _targetContentMode_ are
  provided by the `TIPImageRequest`
  */
-- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op didLoadFinalImage:(nonnull id<TIPImageFetchResult>)finalResult;
+- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op
+              didLoadFinalImage:(nonnull id<TIPImageFetchResult>)finalResult;
 
 /**
  Called when the final image was unable to load
@@ -142,6 +155,7 @@ typedef void(^TIPImageFetchDidLoadPreviewCallback)(TIPImageFetchPreviewLoadedBeh
  @param op The image fetch operation
  @param error The error that was encountered
  */
-- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op didFailToLoadFinalImage:(nonnull NSError *)error;
+- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op
+        didFailToLoadFinalImage:(nonnull NSError *)error;
 
 @end

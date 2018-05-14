@@ -16,8 +16,13 @@ FOUNDATION_EXTERN NSString * const TIPTestURLProtocolErrorDomain;
 
 @interface TIPTestURLProtocol : NSURLProtocol
 
-+ (void)registerURLResponse:(NSHTTPURLResponse *)response body:(nullable NSData *)body config:(nullable TIPTestURLProtocolResponseConfig *)config withEndpoint:(NSURL *)endpoint;
-+ (void)registerURLResponse:(NSHTTPURLResponse *)response body:(nullable NSData *)body withEndpoint:(NSURL *)endpoint;
++ (void)registerURLResponse:(NSHTTPURLResponse *)response
+                       body:(nullable NSData *)body
+                     config:(nullable TIPTestURLProtocolResponseConfig *)config
+               withEndpoint:(NSURL *)endpoint;
++ (void)registerURLResponse:(NSHTTPURLResponse *)response
+                       body:(nullable NSData *)body
+               withEndpoint:(NSURL *)endpoint;
 
 + (void)unregisterEndpoint:(NSURL *)endpoint;
 + (void)unregisterAllEndpoints;
@@ -41,3 +46,4 @@ FOUNDATION_EXTERN NSString * const TIPTestURLProtocolErrorDomain;
 @end
 
 NS_ASSUME_NONNULL_END
+

@@ -2,13 +2,25 @@
 
 ## Info
 
-**Document version:** 2.9.0
+**Document version:** 2.9.2
 
-**Last updated:** 02/01/2018
+**Last updated:** 04/27/2018
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.9.2
+
+- Add `TIPRenderImage` util function
+- Add `tip_imageWithRenderFormattings:render:` method to `UIImage+TIPAdditions`
+
+### 2.9.1
+
+- Use modern `UIGraphicsImageRenderer` always when scaling images on iOS 10+
+  - source the `UIGraphicsImageRendererFormat` from the image being scaled, this is optimal
+  - roughly 10% speed boost
+  - add _GraphicsRendererSpeed_ project that validates the perf differences
 
 ### 2.9.0
 

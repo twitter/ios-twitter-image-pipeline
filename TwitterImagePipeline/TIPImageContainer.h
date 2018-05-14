@@ -84,7 +84,9 @@ NS_ASSUME_NONNULL_BEGIN
  calculated off of `[UIImage duration]`.
  @return The image container encapsulating the specified _image_.
  */
-- (instancetype)initWithAnimatedImage:(UIImage *)image loopCount:(NSUInteger)loopCount frameDurations:(nullable NSArray<NSNumber *> *)durations;
+- (instancetype)initWithAnimatedImage:(UIImage *)image
+                            loopCount:(NSUInteger)loopCount
+                       frameDurations:(nullable NSArray<NSNumber *> *)durations;
 
 #pragma mark Methods
 
@@ -127,7 +129,9 @@ NS_ASSUME_NONNULL_BEGIN
  `[TIPImageCodecCatalogue sharedInstance]`
  @return image container encapsulating the desired image, or `nil` if the image could not be loaded
  */
-+ (nullable instancetype)imageContainerWithData:(NSData *)data decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue;
++ (nullable instancetype)imageContainerWithData:(NSData *)data
+                               decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                 codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue;
 
 /**
  Convenience constructor.
@@ -139,7 +143,10 @@ NS_ASSUME_NONNULL_BEGIN
  @return image container encapsulating the desired image, or `nil` if the image could not be loaded
  @warning Loading with memory mapped file is very fragile. Modification/move/deletion and even high velocity reading of the underlying file (at that path) can yield a crash or corruption. Take care to only provide `YES` for _map_ if you are very confident in the approach.
  */
-+ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue memoryMap:(BOOL)map;
++ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath
+                                   decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                     codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+                                          memoryMap:(BOOL)map;
 
 /**
  Convenience constructor.
@@ -151,7 +158,10 @@ NS_ASSUME_NONNULL_BEGIN
  @return image container encapsulating the desired image, or `nil` if the image could not be loaded
  @warning Loading with memory mapped file is very fragile. Modification/move/deletion and even high velocity reading of the underlying file (at that path) can yield a crash or corruption. Take care to only provide `YES` for _map_ if you are very confident in the approach.
  */
-+ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue memoryMap:(BOOL)map;
++ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL
+                                  decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                    codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+                                         memoryMap:(BOOL)map;
 
 #pragma mark Inferred Properties
 
@@ -174,7 +184,8 @@ NS_ASSUME_NONNULL_BEGIN
  @return the new `TIPImageContainer` encapsulated the scaled image, `nil` in the extreme case that
  the scaling failed (super exceptional case).
  */
-- (nullable TIPImageContainer *)scaleToTargetDimensions:(CGSize)dimensions contentMode:(UIViewContentMode)contentMode;
+- (nullable TIPImageContainer *)scaleToTargetDimensions:(CGSize)dimensions
+                                            contentMode:(UIViewContentMode)contentMode;
 
 /**
  Save the encapsulated image to disk
@@ -187,7 +198,13 @@ NS_ASSUME_NONNULL_BEGIN
  @param error set if an error was encountered
  @return `YES` on success, `NO` on failure
  */
-- (BOOL)saveToFilePath:(NSString *)path type:(nullable NSString *)type codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue options:(TIPImageEncodingOptions)options quality:(float)quality atomic:(BOOL)atomic error:(out NSError * __nullable * __nullable)error;
+- (BOOL)saveToFilePath:(NSString *)path
+                  type:(nullable NSString *)type
+        codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+               options:(TIPImageEncodingOptions)options
+               quality:(float)quality
+                atomic:(BOOL)atomic
+                 error:(out NSError * __nullable * __nullable)error;
 
 @end
 

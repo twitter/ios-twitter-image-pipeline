@@ -2,7 +2,7 @@
 //  TwitterSearchViewController.swift
 //  TwitterImagePipeline
 //
-//  Created by Nolan O'Brien on 3/3/17.
+//  Created on 3/3/17.
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 

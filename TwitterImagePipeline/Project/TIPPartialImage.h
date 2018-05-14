@@ -44,8 +44,10 @@ typedef NS_ENUM(NSInteger, TIPPartialImageState) {
 + (instancetype)new NS_UNAVAILABLE;
 
 - (void)updateDecoderConfigMap:(nullable NSDictionary<NSString *, id> *)configMap;
-- (TIPImageDecoderAppendResult)appendData:(nullable NSData *)data final:(BOOL)final;
-- (nullable TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode decoded:(BOOL)decode;
+- (TIPImageDecoderAppendResult)appendData:(nullable NSData *)data
+                                    final:(BOOL)final;
+- (nullable TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode
+                                            decoded:(BOOL)decode;
 
 @end
 

@@ -17,8 +17,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface TIPImageRenderedCache : NSObject <TIPImageCache, TIPInspectableCache>
 
-- (nullable TIPImageCacheEntry *)imageEntryWithIdentifier:(NSString *)identifier transformerIdentifier:(nullable NSString *)transformerIdentifier targetDimensions:(CGSize)size targetContentMode:(UIViewContentMode)mode sourceImageDimensions:(out CGSize * __nullable)sourceDimsOut; // main thread only
-- (void)storeImageEntry:(TIPImageCacheEntry *)entry transformerIdentifier:(nullable NSString *)transformerIdentifier sourceImageDimensions:(CGSize)sourceDims;
+- (nullable TIPImageCacheEntry *)imageEntryWithIdentifier:(NSString *)identifier
+                                    transformerIdentifier:(nullable NSString *)transformerIdentifier
+                                         targetDimensions:(CGSize)size
+                                        targetContentMode:(UIViewContentMode)mode
+                                    sourceImageDimensions:(out CGSize * __nullable)sourceDimsOut; // main thread only
+- (void)storeImageEntry:(TIPImageCacheEntry *)entry
+  transformerIdentifier:(nullable NSString *)transformerIdentifier
+  sourceImageDimensions:(CGSize)sourceDims;
 - (void)clearImagesWithIdentifier:(NSString *)identifier;
 - (void)clearAllImages:(nullable void (^)(void))completion;
 

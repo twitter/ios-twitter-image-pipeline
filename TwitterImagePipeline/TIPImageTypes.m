@@ -212,7 +212,10 @@ TIPRecommendedImageTypeOptions TIPRecommendedImageTypeOptionsFromEncodingOptions
 
 #pragma mark Debug Stuff
 
-NSString * __nullable TIPDetectImageType(NSData *data, TIPImageEncodingOptions * __nullable optionsOut, NSUInteger * __nullable animationFrameCountOut, BOOL hasCompleteImageData)
+NSString * __nullable TIPDetectImageType(NSData *data,
+                                         TIPImageEncodingOptions * __nullable optionsOut,
+                                         NSUInteger * __nullable animationFrameCountOut,
+                                         BOOL hasCompleteImageData)
 {
     NSString *type = nil;
 

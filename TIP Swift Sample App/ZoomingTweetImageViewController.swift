@@ -2,7 +2,7 @@
 //  ZoomingTweetImageViewController.swift
 //  TwitterImagePipeline
 //
-//  Created by Nolan O'Brien on 3/2/17.
+//  Created on 3/2/17.
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
