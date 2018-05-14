@@ -13,7 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface TIPImageMemoryCache : NSObject <TIPImageCache, TIPInspectableCache>
 
 - (nullable TIPImageMemoryCacheEntry *)imageEntryForIdentifier:(NSString *)identifier;
-- (void)updateImageEntry:(TIPImageCacheEntry *)entry forciblyReplaceExisting:(BOOL)force;
+- (void)updateImageEntry:(TIPImageCacheEntry *)entry
+ forciblyReplaceExisting:(BOOL)force;
 - (void)touchImageWithIdentifier:(NSString *)identifier;
 - (void)clearImageWithIdentifier:(NSString *)identifier;
 - (void)clearAllImages:(nullable void (^)(void))completion;

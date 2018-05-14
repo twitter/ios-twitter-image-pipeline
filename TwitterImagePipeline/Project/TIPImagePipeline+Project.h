@@ -28,8 +28,10 @@ FOUNDATION_EXTERN NSString * const TIPImagePipelineDidTearDownImagePipelineNotif
 @property (nonatomic, readonly, nullable) TIPImageDiskCache *diskCache;
 @property (nonatomic, readonly, nullable) TIPImageDownloader *downloader;
 
-- (TIPImageStoreOperation *)storeOperationWithRequest:(id<TIPImageStoreRequest>)request completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
-- (void)postCompletedEntry:(TIPImageCacheEntry *)entry manual:(BOOL)manual;
+- (TIPImageStoreOperation *)storeOperationWithRequest:(id<TIPImageStoreRequest>)request
+                                           completion:(nullable TIPImagePipelineOperationCompletionBlock)completion;
+- (void)postCompletedEntry:(TIPImageCacheEntry *)entry
+                    manual:(BOOL)manual;
 - (nullable id<TIPImageCache>)cacheOfType:(TIPImageCacheType)type;
 
 + (NSDictionary<NSString *, TIPImagePipeline *> *)allRegisteredImagePipelines;

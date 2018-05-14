@@ -86,7 +86,8 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 /** initializer (convenience) */
 - (instancetype)init;
 /** initializer with delegate & data source (designated) */
-- (instancetype)initWithDelegate:(nullable id<TIPImageViewFetchHelperDelegate>)delegate dataSource:(nullable id<TIPImageViewFetchHelperDataSource>)dataSource  NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithDelegate:(nullable id<TIPImageViewFetchHelperDelegate>)delegate
+                      dataSource:(nullable id<TIPImageViewFetchHelperDataSource>)dataSource  NS_DESIGNATED_INITIALIZER;
 
 #pragma mark Primary Actions
 
@@ -133,7 +134,9 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 #pragma mark Transition a UIView between fetch helpers
 
 /** call to transition view from one fetch helper to a new fetch helper */
-+ (void)transitionView:(UIView<TIPImageFetchable> *)fetchableView fromFetchHelper:(nullable TIPImageViewFetchHelper *)fromHelper toFetchHelper:(nullable TIPImageViewFetchHelper *)toHelper;
++ (void)transitionView:(UIView<TIPImageFetchable> *)fetchableView
+       fromFetchHelper:(nullable TIPImageViewFetchHelper *)fromHelper
+         toFetchHelper:(nullable TIPImageViewFetchHelper *)toHelper;
 
 @end
 
@@ -219,7 +222,8 @@ FOUNDATION_EXTERN NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotif
 @optional
 
 /** should update image with preview image?  default == `NO` */
-- (BOOL)tip_fetchHelper:(TIPImageViewFetchHelper *)helper shouldUpdateImageWithPreviewImageResult:(id<TIPImageFetchResult>)previewImageResult;
+- (BOOL)tip_fetchHelper:(TIPImageViewFetchHelper *)helper
+        shouldUpdateImageWithPreviewImageResult:(id<TIPImageFetchResult>)previewImageResult;
 /**
  should continue to load after fetching preview?
  Default behavior:
@@ -228,17 +232,28 @@ FOUNDATION_EXTERN NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotif
  - If preview is larger or equal to target sizing, `NO`.
  - Otherwise, `YES`.
  */
-- (BOOL)tip_fetchHelper:(TIPImageViewFetchHelper *)helper shouldContinueLoadingAfterFetchingPreviewImageResult:(id<TIPImageFetchResult>)previewImageResult;
+- (BOOL)tip_fetchHelper:(TIPImageViewFetchHelper *)helper
+        shouldContinueLoadingAfterFetchingPreviewImageResult:(id<TIPImageFetchResult>)previewImageResult;
 /**
  should load progressively?  default == `NO`
  Called via a background thread synchronously.
  */
-- (BOOL)tip_fetchHelper:(TIPImageViewFetchHelper *)helper shouldLoadProgressivelyWithIdentifier:(NSString *)identifier URL:(NSURL *)URL imageType:(NSString *)imageType originalDimensions:(CGSize)originalDimensions;
+- (BOOL)tip_fetchHelper:(TIPImageViewFetchHelper *)helper
+        shouldLoadProgressivelyWithIdentifier:(NSString *)identifier
+        URL:(NSURL *)URL
+        imageType:(NSString *)imageType
+        originalDimensions:(CGSize)originalDimensions;
 /**
  should reload after a different fetch completed?
  Has automatic/default behavior, call super to utilize auto behavior
  */
-- (BOOL)tip_fetchHelper:(TIPImageViewFetchHelper *)helper shouldReloadAfterDifferentFetchCompletedWithImage:(UIImage *)image dimensions:(CGSize)dimensions identifier:(NSString *)identifier URL:(NSURL *)URL treatedAsPlaceholder:(BOOL)placeholder manuallyStored:(BOOL)manuallyStored;
+- (BOOL)tip_fetchHelper:(TIPImageViewFetchHelper *)helper
+        shouldReloadAfterDifferentFetchCompletedWithImage:(UIImage *)image
+        dimensions:(CGSize)dimensions
+        identifier:(NSString *)identifier
+        URL:(NSURL *)URL
+        treatedAsPlaceholder:(BOOL)placeholder
+        manuallyStored:(BOOL)manuallyStored;
 
 #pragma mark Events
 @optional

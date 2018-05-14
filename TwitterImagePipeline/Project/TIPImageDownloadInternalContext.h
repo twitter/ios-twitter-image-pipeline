@@ -44,8 +44,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)containsDelegate:(id<TIPImageDownloadDelegate>)delegate;
 - (void)addDelegate:(id<TIPImageDownloadDelegate>)delegate;
 - (void)removeDelegate:(id<TIPImageDownloadDelegate>)delegate;
-- (void)executePerDelegateSuspendingQueue:(nullable dispatch_queue_t)queue block:(void(^)(id<TIPImageDownloadDelegate>))block;
-+ (void)executeDelegate:(id<TIPImageDownloadDelegate>)delegate suspendingQueue:(nullable dispatch_queue_t)queue block:(void (^)(id<TIPImageDownloadDelegate>))block;
+- (void)executePerDelegateSuspendingQueue:(nullable dispatch_queue_t)queue
+                                    block:(void(^)(id<TIPImageDownloadDelegate>))block;
++ (void)executeDelegate:(id<TIPImageDownloadDelegate>)delegate
+        suspendingQueue:(nullable dispatch_queue_t)queue
+                  block:(void (^)(id<TIPImageDownloadDelegate>))block;
 
 @end
 

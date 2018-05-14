@@ -12,6 +12,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// Primary class gets the SELF_ARG convenience
+#define SELF_ARG PRIVATE_SELF(TIPPartialImage)
+
 @interface TIPPartialImageCodecDetector : NSObject
 @property (nullable, nonatomic, readonly) NSMutableData *codecDetectionBuffer;
 @property (nullable, nonatomic, readonly) id<TIPImageCodec> detectedCodec;
@@ -129,32 +132,58 @@ static const float kUnfinishedImageProgressCap = 0.999f;
 
     dispatch_sync(_renderQueue, ^{
         @autoreleasepool {
-            result = [self _tip_appendData:data final:final];
+            result = _appendData(self, data, final);
         }
     });
 
     return result;
 }
 
-- (BOOL)_tip_detectCodec:(NSData *)data final:(BOOL)final
+- (nullable TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode decoded:(BOOL)decode
 {
-    if (!_codec) {
-        if (!_codecDetector) {
-            _codecDetector = [[TIPPartialImageCodecDetector alloc] initWithExpectedDataLength:_expectedContentLength];
+    __block TIPImageContainer *image = nil;
+
+    dispatch_sync(_renderQueue, ^{
+        @autoreleasepool {
+            image = [self->_decoder tip_renderImage:self->_decoderContext mode:mode];
+            if (image && decode) {
+                [image decode];
+            }
+        }
+    });
+
+    return image;
+}
+
+#pragma mark Private
+
+static BOOL _detectCodec(SELF_ARG,
+                         NSData *data,
+                         BOOL final)
+{
+    if (!self) {
+        return NO;
+    }
+
+    if (!self->_codec) {
+        if (!self->_codecDetector) {
+            self->_codecDetector = [[TIPPartialImageCodecDetector alloc] initWithExpectedDataLength:self->_expectedContentLength];
         }
 
-        if ([_codecDetector appendData:data final:final]) {
-            _type = _codecDetector.detectedImageType;
-            _codec = _codecDetector.detectedCodec;
-            _decoder = _codec.tip_decoder;
-            NSMutableData *buffer = _codecDetector.codecDetectionBuffer;
+        if ([self->_codecDetector appendData:data final:final]) {
+            self->_type = self->_codecDetector.detectedImageType;
+            self->_codec = self->_codecDetector.detectedCodec;
+            self->_decoder = self->_codec.tip_decoder;
+            NSMutableData *buffer = self->_codecDetector.codecDetectionBuffer;
             if (buffer.length == 0) {
-                buffer = [NSMutableData dataWithCapacity:_expectedContentLength];
+                buffer = [NSMutableData dataWithCapacity:self->_expectedContentLength];
                 [buffer appendData:data];
             }
-            id config = _decoderConfigMap[_type];
-            _decoderContext = [_decoder tip_initiateDecoding:config expectedDataLength:_expectedContentLength buffer:buffer];
-            _codecDetector = nil;
+            id config = self->_decoderConfigMap[self->_type];
+            self->_decoderContext = [self->_decoder tip_initiateDecoding:config
+                                                      expectedDataLength:self->_expectedContentLength
+                                                                  buffer:buffer];
+            self->_codecDetector = nil;
             return YES;
         }
     }
@@ -162,15 +191,21 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     return NO;
 }
 
-- (TIPImageDecoderAppendResult)_tip_appendData:(NSData *)data final:(BOOL)final
+static TIPImageDecoderAppendResult _appendData(SELF_ARG,
+                                               NSData *data,
+                                               BOOL final)
 {
+    if (!self) {
+        return 0;
+    }
+
     if (TIPPartialImageStateComplete == self.state) {
         return TIPImageDecoderAppendResultDidCompleteLoading;
     }
 
     TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
-    if (!_codec) {
-        if ([self _tip_detectCodec:data final:final]) {
+    if (!self->_codec) {
+        if (_detectCodec(self, data, final)) {
             // We want our append to be unified below
             // but at this point we'll have prepopulated the buffer.
             // Change "data" to be 0 bytes so that we can keep our logic
@@ -179,23 +214,28 @@ static const float kUnfinishedImageProgressCap = 0.999f;
         }
     }
 
-    if (_decoder) {
-        result = [_decoder tip_append:_decoderContext data:data];
+    if (self->_decoder) {
+        result = [self->_decoder tip_append:self->_decoderContext data:data];
         if (final) {
-            if ([_decoder tip_finalizeDecoding:_decoderContext] == TIPImageDecoderAppendResultDidCompleteLoading) {
+            if ([self->_decoder tip_finalizeDecoding:self->_decoderContext] == TIPImageDecoderAppendResultDidCompleteLoading) {
                 result = TIPImageDecoderAppendResultDidCompleteLoading;
             }
         }
-        [self _tip_extractState];
+        _extractState(self);
     }
 
-    [self _tip_updateStateWithLatestResult:result];
+    _updateState(self ,result);
     return result;
 }
 
-- (void)_tip_updateStateWithLatestResult:(TIPImageDecoderAppendResult)result
+static void _updateState(SELF_ARG,
+                         TIPImageDecoderAppendResult latestResult)
 {
-    switch (result) {
+    if (!self) {
+        return;
+    }
+
+    switch (latestResult) {
         case TIPImageDecoderAppendResultDidLoadHeaders:
         case TIPImageDecoderAppendResultDidLoadFrame:
             if (self.state <= TIPPartialImageStateLoadingImage) {
@@ -216,41 +256,29 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     }
 }
 
-- (void)_tip_extractState
+static void _extractState(SELF_ARG)
 {
-    if (_decoderContext) {
-        _byteCount = _decoderContext.tip_data.length;
-        _frameCount = _decoderContext.tip_frameCount;
-        _dimensions = _decoderContext.tip_dimensions;
-        if ([_decoderContext respondsToSelector:@selector(tip_isProgressive)]) {
-            _progressive = _decoderContext.tip_isProgressive;
+    if (!self) {
+        return;
+    }
+
+    if (self->_decoderContext) {
+        self->_byteCount = self->_decoderContext.tip_data.length;
+        self->_frameCount = self->_decoderContext.tip_frameCount;
+        self->_dimensions = self->_decoderContext.tip_dimensions;
+        if ([self->_decoderContext respondsToSelector:@selector(tip_isProgressive)]) {
+            self->_progressive = self->_decoderContext.tip_isProgressive;
         }
-        if ([_decoderContext respondsToSelector:@selector(tip_isAnimated)]) {
-            _animated = _decoderContext.tip_isAnimated;
+        if ([self->_decoderContext respondsToSelector:@selector(tip_isAnimated)]) {
+            self->_animated = self->_decoderContext.tip_isAnimated;
         }
-        if ([_decoderContext respondsToSelector:@selector(tip_hasAlpha)]) {
-            _hasAlpha = _decoderContext.tip_hasAlpha;
+        if ([self->_decoderContext respondsToSelector:@selector(tip_hasAlpha)]) {
+            self->_hasAlpha = self->_decoderContext.tip_hasAlpha;
         }
-        if ([_decoderContext respondsToSelector:@selector(tip_hasGPSInfo)]) {
-            _hasGPSInfo = _decoderContext.tip_hasGPSInfo;
+        if ([self->_decoderContext respondsToSelector:@selector(tip_hasGPSInfo)]) {
+            self->_hasGPSInfo = self->_decoderContext.tip_hasGPSInfo;
         }
     }
-}
-
-- (nullable TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode decoded:(BOOL)decode
-{
-    __block TIPImageContainer *image = nil;
-
-    dispatch_sync(_renderQueue, ^{
-        @autoreleasepool {
-            image = [self->_decoder tip_renderImage:self->_decoderContext mode:mode];
-            if (image && decode) {
-                [image decode];
-            }
-        }
-    });
-
-    return image;
 }
 
 @end
@@ -275,7 +303,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     if (!_codecDetectionImageSource) {
         TIPAssert(!_codecDetectionBuffer);
 
-        if ([self _tip_quickDetectCodec:data]) {
+        if (_quickDetectCodec(self, data)) {
             TIPAssert(_detectedCodec != nil);
             return YES;
         }
@@ -293,7 +321,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     }
     CGImageSourceUpdateData(_codecDetectionImageSource, (CFDataRef)_codecDetectionBuffer, final);
 
-    [self _tip_detectCodec];
+    _fullDetectCodec(self);
     return _detectedCodec != nil;
 }
 
@@ -304,16 +332,22 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     }
 }
 
-- (BOOL)_tip_quickDetectCodec:(NSData *)data
+static BOOL _quickDetectCodec(PRIVATE_SELF(TIPPartialImageCodecDetector),
+                              NSData *data)
 {
+    if (!self) {
+        return NO;
+    }
+
     NSString *quickDetectType = TIPDetectImageTypeViaMagicNumbers(data);
     if (quickDetectType) {
         id<TIPImageCodec> quickCodec = [TIPImageCodecCatalogue sharedInstance][quickDetectType];
         if (quickCodec) {
-            TIPImageDecoderDetectionResult result = [quickCodec.tip_decoder tip_detectDecodableData:data earlyGuessImageType:quickDetectType];
+            TIPImageDecoderDetectionResult result = [quickCodec.tip_decoder tip_detectDecodableData:data
+                                                                                earlyGuessImageType:quickDetectType];
             if (TIPImageDecoderDetectionResultMatch == result) {
-                _detectedCodec = quickCodec;
-                _detectedImageType = [quickDetectType copy];
+                self->_detectedCodec = quickCodec;
+                self->_detectedImageType = [quickDetectType copy];
                 return YES;
             }
         }
@@ -321,37 +355,45 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     return NO;
 }
 
-- (void)_tip_detectCodec
+static void _fullDetectCodec(PRIVATE_SELF(TIPPartialImageCodecDetector))
 {
-    TIPAssert(_codecDetectionImageSource != nil);
-    if (_detectedCodec || _potentialCodecs.count == 0) {
+    if (!self) {
+        return;
+    }
+
+    TIPAssert(self->_codecDetectionImageSource != nil);
+    if (self->_detectedCodec || self->_potentialCodecs.count == 0) {
         return;
     }
 
     NSString *detectedImageType = nil;
-    NSString *detectedUTType = (NSString *)CGImageSourceGetType(_codecDetectionImageSource);
+    NSString *detectedUTType = (NSString *)CGImageSourceGetType(self->_codecDetectionImageSource);
     if (detectedUTType) {
         detectedImageType = TIPImageTypeFromUTType(detectedUTType);
     }
 
-    id<TIPImageCodec> matchingImageTypeCodec = (detectedImageType) ? _potentialCodecs[detectedImageType] : nil;
+    id<TIPImageCodec> matchingImageTypeCodec = (detectedImageType) ? self->_potentialCodecs[detectedImageType] : nil;
     if (matchingImageTypeCodec) {
-        TIPImageDecoderDetectionResult result = [matchingImageTypeCodec.tip_decoder tip_detectDecodableData:_codecDetectionBuffer earlyGuessImageType:detectedImageType];
+        TIPImageDecoderDetectionResult result;
+        result = [matchingImageTypeCodec.tip_decoder tip_detectDecodableData:self->_codecDetectionBuffer
+                                                         earlyGuessImageType:detectedImageType];
         if (TIPImageDecoderDetectionResultMatch == result) {
-            _detectedCodec = matchingImageTypeCodec;
-            _detectedImageType = detectedImageType;
+            self->_detectedCodec = matchingImageTypeCodec;
+            self->_detectedImageType = detectedImageType;
             return;
         } else if (TIPImageDecoderDetectionResultNoMatch == result) {
-            [_potentialCodecs removeObjectForKey:detectedImageType];
-            if (0 == _potentialCodecs.count) {
+            [self->_potentialCodecs removeObjectForKey:detectedImageType];
+            if (0 == self->_potentialCodecs.count) {
                 return;
             }
         }
     }
 
-    NSMutableArray<NSString *> *excludedCodecImageTypes = [[NSMutableArray alloc] initWithCapacity:_potentialCodecs.count];
-    [_potentialCodecs enumerateKeysAndObjectsUsingBlock:^(NSString *imageType, id<TIPImageCodec> codec, BOOL *stop) {
-        TIPImageDecoderDetectionResult result = [codec.tip_decoder tip_detectDecodableData:self->_codecDetectionBuffer earlyGuessImageType:detectedImageType];
+    NSMutableArray<NSString *> *excludedCodecImageTypes = [[NSMutableArray alloc] initWithCapacity:self->_potentialCodecs.count];
+    [self->_potentialCodecs enumerateKeysAndObjectsUsingBlock:^(NSString *imageType, id<TIPImageCodec> codec, BOOL *stop) {
+        TIPImageDecoderDetectionResult result;
+        result = [codec.tip_decoder tip_detectDecodableData:self->_codecDetectionBuffer
+                                        earlyGuessImageType:detectedImageType];
         if (TIPImageDecoderDetectionResultMatch == result) {
             self->_detectedCodec = codec;
             self->_detectedImageType = imageType;
@@ -361,8 +403,8 @@ static const float kUnfinishedImageProgressCap = 0.999f;
         }
     }];
 
-    if (!_detectedCodec) {
-        [_potentialCodecs removeObjectsForKeys:excludedCodecImageTypes];
+    if (!self->_detectedCodec) {
+        [self->_potentialCodecs removeObjectsForKeys:excludedCodecImageTypes];
     }
 }
 

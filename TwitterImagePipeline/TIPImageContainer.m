@@ -26,10 +26,15 @@ NS_ASSUME_NONNULL_BEGIN
     UIImage *_image;
 }
 
-- (instancetype)initWithImage:(UIImage *)image animated:(BOOL)animated loopCount:(NSUInteger)loopCount frameDurations:(nullable NSArray *)durations
+- (instancetype)initWithImage:(UIImage *)image
+                     animated:(BOOL)animated
+                    loopCount:(NSUInteger)loopCount
+               frameDurations:(nullable NSArray *)durations
 {
     if (!image) {
-        @throw [NSException exceptionWithName:NSInvalidArgumentException reason:@"MUST provide non-nil image argument!" userInfo:nil];
+        @throw [NSException exceptionWithName:NSInvalidArgumentException
+                                       reason:@"MUST provide non-nil image argument!"
+                                     userInfo:nil];
     }
 
     if (durations != nil && durations.count != image.images.count) {
@@ -48,12 +53,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithImage:(UIImage *)image
 {
-    return [self initWithImage:image animated:(image.images.count > 1) loopCount:0 frameDurations:nil];
+    return [self initWithImage:image
+                      animated:(image.images.count > 1)
+                     loopCount:0
+                frameDurations:nil];
 }
 
-- (instancetype)initWithAnimatedImage:(UIImage *)image loopCount:(NSUInteger)loopCount frameDurations:(nullable NSArray *)durations
+- (instancetype)initWithAnimatedImage:(UIImage *)image
+                            loopCount:(NSUInteger)loopCount
+                       frameDurations:(nullable NSArray *)durations
 {
-    return [self initWithImage:image animated:(image.images.count > 1) loopCount:loopCount frameDurations:durations];
+    return [self initWithImage:image
+                      animated:(image.images.count > 1)
+                     loopCount:loopCount
+                frameDurations:durations];
 }
 
 - (UIImage *)image
@@ -149,25 +162,42 @@ NS_ASSUME_NONNULL_BEGIN
 
     NSArray *durations;
     NSUInteger loopCount;
-    UIImage *image = [UIImage tip_imageWithAnimatedImageSource:imageSource durations:&durations loopCount:&loopCount];
-    return [(TIPImageContainer *)[[self class] alloc] initWithAnimatedImage:image loopCount:loopCount frameDurations:durations];
+    UIImage *image = [UIImage tip_imageWithAnimatedImageSource:imageSource
+                                                     durations:&durations
+                                                     loopCount:&loopCount];
+    return [(TIPImageContainer *)[[self class] alloc] initWithAnimatedImage:image
+                                                                  loopCount:loopCount
+                                                             frameDurations:durations];
 }
 
-+ (nullable instancetype)imageContainerWithData:(NSData *)data decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
++ (nullable instancetype)imageContainerWithData:(NSData *)data
+                               decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                 codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
 {
     if (!catalogue) {
         catalogue = [TIPImageCodecCatalogue sharedInstance];
     }
 
-    return [catalogue decodeImageWithData:data decoderConfigMap:decoderConfigMap imageType:NULL];
+    return [catalogue decodeImageWithData:data
+                         decoderConfigMap:decoderConfigMap
+                                imageType:NULL];
 }
 
-+ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue memoryMap:(BOOL)map
++ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath
+                                   decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                     codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+                                          memoryMap:(BOOL)map
 {
-    return [self imageContainerWithFileURL:[NSURL fileURLWithPath:filePath isDirectory:NO] decoderConfigMap:decoderConfigMap codecCatalogue:catalogue memoryMap:map];
+    return [self imageContainerWithFileURL:[NSURL fileURLWithPath:filePath isDirectory:NO]
+                          decoderConfigMap:decoderConfigMap
+                            codecCatalogue:catalogue
+                                 memoryMap:map];
 }
 
-+ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue memoryMap:(BOOL)map
++ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL
+                                  decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                    codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+                                         memoryMap:(BOOL)map
 {
     if (!fileURL.isFileURL) {
         return nil;
@@ -180,7 +210,13 @@ NS_ASSUME_NONNULL_BEGIN
         data = [NSData dataWithContentsOfURL:fileURL];
     }
 
-    return (data) ? [self imageContainerWithData:data decoderConfigMap:decoderConfigMap codecCatalogue:catalogue] : nil;
+    if (!data) {
+        return nil;
+    }
+
+    return [self imageContainerWithData:data
+                       decoderConfigMap:decoderConfigMap
+                         codecCatalogue:catalogue];
 }
 
 - (NSUInteger)sizeInMemory
@@ -198,7 +234,13 @@ NS_ASSUME_NONNULL_BEGIN
     return [self.image tip_pointSize];
 }
 
-- (BOOL)saveToFilePath:(NSString *)path type:(nullable NSString *)type codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue options:(TIPImageEncodingOptions)options quality:(float)quality atomic:(BOOL)atomic error:(out NSError * __autoreleasing __nullable * __nullable)error
+- (BOOL)saveToFilePath:(NSString *)path
+                  type:(nullable NSString *)type
+        codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+               options:(TIPImageEncodingOptions)options
+               quality:(float)quality
+                atomic:(BOOL)atomic
+                 error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     if (!catalogue) {
         catalogue = [TIPImageCodecCatalogue sharedInstance];
@@ -208,18 +250,29 @@ NS_ASSUME_NONNULL_BEGIN
         type = [self.image tip_recommendedImageType:recoOptions];
     }
 
-    return [catalogue encodeImage:self toFilePath:path withImageType:type quality:quality options:options atomic:atomic error:error];
+    return [catalogue encodeImage:self
+                       toFilePath:path
+                    withImageType:type
+                          quality:quality
+                          options:options
+                           atomic:atomic
+                            error:error];
 }
 
-- (nullable TIPImageContainer *)scaleToTargetDimensions:(CGSize)dimensions contentMode:(UIViewContentMode)contentMode
+- (nullable TIPImageContainer *)scaleToTargetDimensions:(CGSize)dimensions
+                                            contentMode:(UIViewContentMode)contentMode
 {
     TIPAssert(self.image != nil);
-    UIImage *image = [self.image tip_scaledImageWithTargetDimensions:dimensions contentMode:contentMode];
+    UIImage *image = [self.image tip_scaledImageWithTargetDimensions:dimensions
+                                                         contentMode:contentMode];
     if (!image) {
         return nil;
     }
 
-    return [[TIPImageContainer alloc] initWithImage:image animated:self.isAnimated loopCount:self.loopCount frameDurations:self.frameDurations];
+    return [[TIPImageContainer alloc] initWithImage:image
+                                           animated:self.isAnimated
+                                          loopCount:self.loopCount
+                                     frameDurations:self.frameDurations];
 }
 
 - (void)decode

@@ -22,3 +22,4 @@ static const NSTimeInterval kTIPTimeEpsilon = 0.0005;
 FOUNDATION_EXTERN NSTimeInterval TIPComputeDuration(uint64_t startTime, uint64_t endTime);
 
 NS_ASSUME_NONNULL_END
+

@@ -275,7 +275,8 @@ typedef void(^TIPGlobalConfigurationInspectionCallback)(NSDictionary<NSString *,
 /**
  Get all the running TIP operations.  Provide `NULL` to skip an output.
  */
-- (void)getAllFetchOperations:(out NSArray<TIPImageFetchOperation *> * __nullable * __nullable)fetchOpsOut allStoreOperations:(out NSArray<TIPImageStoreOperation *> * __nullable * __nullable)storeOpsOut;
+- (void)getAllFetchOperations:(out NSArray<TIPImageFetchOperation *> * __nullable * __nullable)fetchOpsOut
+           allStoreOperations:(out NSArray<TIPImageStoreOperation *> * __nullable * __nullable)storeOpsOut;
 
 @end
 

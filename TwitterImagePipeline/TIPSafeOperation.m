@@ -2,13 +2,13 @@
 //  TIPSafeOperation.m
 //  TwitterImagePipeline
 //
-//  Created by Nolan O'Brien on 6/1/17.
+//  Created on 6/1/17
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
 #import "TIPSafeOperation.h"
 
-@import Foundation.NSProcessInfo;
+NS_ASSUME_NONNULL_BEGIN
 
 static BOOL _NSOperationHasCompletionBlockBug(void)
 {
@@ -37,7 +37,7 @@ static BOOL _NSOperationHasCompletionBlockBug(void)
 
 @implementation TIPSafeOperation
 
-- (void)setCompletionBlock:(void (^)(void))completionBlock
+- (void)setCompletionBlock:(nullable void (^)(void))completionBlock
 {
     if (!_NSOperationHasCompletionBlockBug()) {
         [super setCompletionBlock:completionBlock];
@@ -62,3 +62,5 @@ static BOOL _NSOperationHasCompletionBlockBug(void)
 }
 
 @end
+
+NS_ASSUME_NONNULL_END

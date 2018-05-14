@@ -47,7 +47,13 @@ NS_ASSUME_NONNULL_BEGIN
     return self;
 }
 
-- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op behaviorForProgress:(TIPImageFetchProgress)frameProgress frameCount:(NSUInteger)frameCount progress:(float)progress type:(NSString *)type dimensions:(CGSize)dimensions renderCount:(NSUInteger)renderCount
+- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+                                           behaviorForProgress:(TIPImageFetchProgress)frameProgress
+                                                    frameCount:(NSUInteger)frameCount
+                                                      progress:(float)progress
+                                                          type:(NSString *)type
+                                                    dimensions:(CGSize)dimensions
+                                                   renderCount:(NSUInteger)renderCount
 {
     if (TIPImageFetchProgressFullFrame == frameProgress) {
         // Always load the last frame
@@ -79,7 +85,13 @@ NS_ASSUME_NONNULL_BEGIN
     return self;
 }
 
-- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op behaviorForProgress:(TIPImageFetchProgress)frameProgress frameCount:(NSUInteger)frameCount progress:(float)progress type:(NSString *)type dimensions:(CGSize)dimensions renderCount:(NSUInteger)renderCount
+- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+                                           behaviorForProgress:(TIPImageFetchProgress)frameProgress
+                                                    frameCount:(NSUInteger)frameCount
+                                                      progress:(float)progress
+                                                          type:(NSString *)type
+                                                    dimensions:(CGSize)dimensions
+                                                   renderCount:(NSUInteger)renderCount
 {
     // We don't want to use any partial frames.
     // When I refer to "frame" in the comments below, I'm refering to full frames.
@@ -105,16 +117,30 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation TIPGreedyProgressiveLoadingPolicy
 
-- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op behaviorForProgress:(TIPImageFetchProgress)frameProgress frameCount:(NSUInteger)frameCount progress:(float)progress type:(NSString *)type dimensions:(CGSize)dimensions renderCount:(NSUInteger)renderCount
+- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+                                           behaviorForProgress:(TIPImageFetchProgress)frameProgress
+                                                    frameCount:(NSUInteger)frameCount
+                                                      progress:(float)progress
+                                                          type:(NSString *)type
+                                                    dimensions:(CGSize)dimensions
+                                                   renderCount:(NSUInteger)renderCount
 {
-    return (progress > self.minimumProgress) ? TIPImageFetchProgressUpdateBehaviorUpdateWithAnyProgress : TIPImageFetchProgressUpdateBehaviorNone;
+    return (progress > self.minimumProgress) ?
+                TIPImageFetchProgressUpdateBehaviorUpdateWithAnyProgress :
+                TIPImageFetchProgressUpdateBehaviorNone;
 }
 
 @end
 
 @implementation TIPFirstAndLastOpportunityProgressiveLoadingPolicy
 
-- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op behaviorForProgress:(TIPImageFetchProgress)frameProgress frameCount:(NSUInteger)frameCount progress:(float)progress type:(NSString *)type dimensions:(CGSize)dimensions renderCount:(NSUInteger)renderCount
+- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+                                           behaviorForProgress:(TIPImageFetchProgress)frameProgress
+                                                    frameCount:(NSUInteger)frameCount
+                                                      progress:(float)progress
+                                                          type:(NSString *)type
+                                                    dimensions:(CGSize)dimensions
+                                                   renderCount:(NSUInteger)renderCount
 {
     if (progress >= 1.f) {
         return TIPImageFetchProgressUpdateBehaviorUpdateWithFullFrameProgress;
@@ -131,7 +157,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation TIPDisabledProgressiveLoadingPolicy
 
-- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op behaviorForProgress:(TIPImageFetchProgress)frameProgress frameCount:(NSUInteger)frameCount progress:(float)progress type:(NSString *)type dimensions:(CGSize)dimensions renderCount:(NSUInteger)renderCount
+- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+                                           behaviorForProgress:(TIPImageFetchProgress)frameProgress
+                                                    frameCount:(NSUInteger)frameCount
+                                                      progress:(float)progress
+                                                          type:(NSString *)type
+                                                    dimensions:(CGSize)dimensions
+                                                   renderCount:(NSUInteger)renderCount
 {
     return TIPImageFetchProgressUpdateBehaviorNone;
 }
@@ -153,11 +185,23 @@ NS_ASSUME_NONNULL_BEGIN
     return self;
 }
 
-- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op behaviorForProgress:(TIPImageFetchProgress)frameProgress frameCount:(NSUInteger)frameCount progress:(float)progress type:(NSString *)type dimensions:(CGSize)dimensions renderCount:(NSUInteger)renderCount
+- (TIPImageFetchProgressUpdateBehavior)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+                                           behaviorForProgress:(TIPImageFetchProgress)frameProgress
+                                                    frameCount:(NSUInteger)frameCount
+                                                      progress:(float)progress
+                                                          type:(NSString *)type
+                                                    dimensions:(CGSize)dimensions
+                                                   renderCount:(NSUInteger)renderCount
 {
     id<TIPImageFetchProgressiveLoadingPolicy> policy = self.wrappedPolicy;
     if (policy) {
-        return [policy tip_imageFetchOperation:op behaviorForProgress:frameProgress frameCount:frameCount progress:progress type:type dimensions:dimensions renderCount:renderCount];
+        return [policy tip_imageFetchOperation:op
+                           behaviorForProgress:frameProgress
+                                    frameCount:frameCount
+                                      progress:progress
+                                          type:type
+                                    dimensions:dimensions
+                                   renderCount:renderCount];
     }
     return TIPImageFetchProgressUpdateBehaviorNone;
 }

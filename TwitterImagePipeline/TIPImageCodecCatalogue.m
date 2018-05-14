@@ -89,7 +89,8 @@ NS_ASSUME_NONNULL_BEGIN
     [self removeCodecForImageType:imageType removedCodec:NULL];
 }
 
-- (void)removeCodecForImageType:(NSString *)imageType removedCodec:(id<TIPImageCodec> __autoreleasing *)codec
+- (void)removeCodecForImageType:(NSString *)imageType
+                   removedCodec:(id<TIPImageCodec> __autoreleasing *)codec
 {
     if (codec) {
         dispatch_barrier_sync(_codecQueue, ^{
@@ -189,7 +190,9 @@ NS_ASSUME_NONNULL_BEGIN
     return properties;
 }
 
-- (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap imageType:(out NSString * __autoreleasing __nullable * __nullable)imageType
+- (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data
+                                   decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                          imageType:(out NSString * __autoreleasing __nullable * __nullable)imageType
 {
     __block TIPImageContainer *container = nil;
     NSDictionary<NSString *, id<TIPImageCodec>> *codecs = self.allCodecs;
@@ -225,13 +228,21 @@ NS_ASSUME_NONNULL_BEGIN
     return container;
 }
 
-- (BOOL)encodeImage:(TIPImageContainer *)image toFilePath:(NSString *)filePath withImageType:(NSString *)imageType quality:(float)quality options:(TIPImageEncodingOptions)options atomic:(BOOL)atomic error:(out NSError **)error
+- (BOOL)encodeImage:(TIPImageContainer *)image
+         toFilePath:(NSString *)filePath
+      withImageType:(NSString *)imageType
+            quality:(float)quality
+            options:(TIPImageEncodingOptions)options
+             atomic:(BOOL)atomic
+              error:(out NSError **)error
 {
     id<TIPImageCodec> codec = [self codecForImageType:imageType];
     id<TIPImageEncoder> encoder = codec.tip_encoder;
     if (!encoder) {
         if (error) {
-            *error = [NSError errorWithDomain:TIPErrorDomain code:TIPErrorCodeEncodingUnsupported userInfo:(imageType) ? @{ @"imageType" : imageType } : nil];
+            *error = [NSError errorWithDomain:TIPErrorDomain
+                                         code:TIPErrorCodeEncodingUnsupported
+                                     userInfo:(imageType) ? @{ @"imageType" : imageType } : nil];
         }
         return NO;
     }
@@ -239,17 +250,26 @@ NS_ASSUME_NONNULL_BEGIN
     return TIPEncodeImageToFile(codec, image, filePath, options, quality, atomic, error);
 }
 
-- (nullable NSData *)encodeImage:(TIPImageContainer *)image withImageType:(NSString *)imageType quality:(float)quality options:(TIPImageEncodingOptions)options error:(out NSError * __autoreleasing __nullable * __nullable)error
+- (nullable NSData *)encodeImage:(TIPImageContainer *)image
+                   withImageType:(NSString *)imageType
+                         quality:(float)quality
+                         options:(TIPImageEncodingOptions)options
+                           error:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     NSData *data = nil;
     id<TIPImageCodec> codec = [self codecForImageType:imageType];
     id<TIPImageEncoder> encoder = [codec tip_encoder];
     if (!encoder) {
         if (error) {
-            *error = [NSError errorWithDomain:TIPErrorDomain code:TIPErrorCodeEncodingUnsupported userInfo:(imageType) ? @{ @"imageType" : imageType } : nil];
+            *error = [NSError errorWithDomain:TIPErrorDomain
+                                         code:TIPErrorCodeEncodingUnsupported
+                                     userInfo:(imageType) ? @{ @"imageType" : imageType } : nil];
         }
     } else {
-        data = [encoder tip_writeDataWithImage:image encodingOptions:options suggestedQuality:quality error:error];
+        data = [encoder tip_writeDataWithImage:image
+                               encodingOptions:options
+                              suggestedQuality:quality
+                                         error:error];
     }
     return data;
 }

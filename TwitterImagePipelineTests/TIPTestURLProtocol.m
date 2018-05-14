@@ -11,6 +11,10 @@
 #import "TIP_Project.h"
 #import "TIPTestURLProtocol.h"
 
+#define SELF_ARG PRIVATE_SELF(TIPTestURLProtocol)
+
+NS_ASSUME_NONNULL_BEGIN
+
 #define ABORT_IF_NECESSARY() \
 do { \
     if (self.stopped) { \
@@ -24,10 +28,14 @@ static NSMutableDictionary *sOriginToResponseDictionary;
 static dispatch_queue_t sOriginQueue;
 
 static NSString * __nullable _UnderlyingURLString(NSURL * __nullable url);
-static NSHTTPURLResponse * __nonnull _UpdateResponse(NSHTTPURLResponse * __nonnull response, NSUInteger contentLength, NSInteger statusCode);
-static NSRange _RangeForRequest(NSURLRequest * __nonnull request, NSUInteger dataLength, NSString * __nonnull stringForIfRange);
+static NSHTTPURLResponse *_UpdateResponse(NSHTTPURLResponse *response,
+                                          NSUInteger contentLength,
+                                          NSInteger statusCode);
+static NSRange _RangeForRequest(NSURLRequest *request,
+                                NSUInteger dataLength,
+                                NSString *stringForIfRange);
 
-typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull client);
+typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> client);
 
 @interface TIPTestURLProtocol ()
 
@@ -36,19 +44,31 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
 @property (nonatomic, nullable) dispatch_queue_t protocolQueue;
 @property (nonatomic, nullable) CFRunLoopRef protocolRunLoop;
 
-- (void)executeClientBlock:(TIPTestURLProtocolClientBlock)block;
+static void _executeClientBlock(SELF_ARG,
+                                TIPTestURLProtocolClientBlock block);
 @end
 
 @implementation TIPTestURLProtocol
 
-+ (void)registerURLResponse:(NSHTTPURLResponse *)response body:(NSData *)body withEndpoint:(NSURL *)endpoint
++ (void)registerURLResponse:(NSHTTPURLResponse *)response
+                       body:(nullable NSData *)body
+               withEndpoint:(NSURL *)endpoint
 {
-    [self registerURLResponse:response body:body config:nil withEndpoint:endpoint];
+    [self registerURLResponse:response
+                         body:body
+                       config:nil
+                 withEndpoint:endpoint];
 }
 
-+ (void)registerURLResponse:(NSHTTPURLResponse *)response body:(NSData *)body config:(TIPTestURLProtocolResponseConfig *)config withEndpoint:(NSURL *)endpoint
++ (void)registerURLResponse:(NSHTTPURLResponse *)response
+                       body:(nullable NSData *)body
+                     config:(nullable TIPTestURLProtocolResponseConfig *)config
+               withEndpoint:(NSURL *)endpoint
 {
-    NSCachedURLResponse *cachedResponse = [[NSCachedURLResponse alloc] initWithResponse:response data:body userInfo:(config) ? @{ @"config" : [config copy] } : nil storagePolicy:NSURLCacheStorageAllowed];
+    NSCachedURLResponse *cachedResponse = [[NSCachedURLResponse alloc] initWithResponse:response
+                                                                                   data:body
+                                                                               userInfo:(config) ? @{ @"config" : [config copy] } : nil
+                                                                          storagePolicy:NSURLCacheStorageAllowed];
 
     dispatch_barrier_async(sOriginQueue, ^{
         sOriginToResponseDictionary[_UnderlyingURLString(endpoint)] = cachedResponse;
@@ -105,9 +125,11 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
 {
     NSMutableURLRequest *mRequest = [request mutableCopy];
     mRequest.URL = [NSURL URLWithString:request.URL.absoluteString.lowercaseString];
-    NSMutableDictionary *mDictionary = [request.allHTTPHeaderFields mutableCopy];
-    for (NSString *key in request.allHTTPHeaderFields.allKeys) {
-        [mDictionary tip_setObject:mDictionary[key] forCaseInsensitiveKey:key.uppercaseString];
+    NSDictionary *allFields = request.allHTTPHeaderFields;
+    NSMutableDictionary *mDictionary = [[NSMutableDictionary alloc] init];
+    for (NSString *key in allFields.allKeys) {
+        [mDictionary tip_setObject:allFields[key]
+             forCaseInsensitiveKey:key.lowercaseString];
     }
     mRequest.allHTTPHeaderFields = mDictionary;
     return mRequest;
@@ -136,15 +158,15 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
             if (self.cachedResponse) {
                 dispatch_async(self->_protocolQueue, ^{
                     ABORT_IF_NECESSARY();
-                    [self executeClientBlock:^(id<NSURLProtocolClient> client){
+                    _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
                         [client URLProtocol:self cachedResponseIsValid:self.cachedResponse];
-                    }];
+                    });
                     dispatch_async(self->_protocolQueue, ^{
                         ABORT_IF_NECESSARY();
                         self.stopped = YES;
-                        [self executeClientBlock:^(id<NSURLProtocolClient> client){
+                        _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
                             [client URLProtocolDidFinishLoading:self];
-                        }];
+                        });
                     });
                 });
             } else {
@@ -168,9 +190,9 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
 
                     if (config.failureError) {
                         self.stopped = YES;
-                        [self executeClientBlock:^(id<NSURLProtocolClient> client){
+                        _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
                             [client URLProtocol:self didFailWithError:config.failureError];
-                        }];
+                        });
                         return;
                     }
 
@@ -192,9 +214,11 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
 
                     dispatch_async(self->_protocolQueue, ^{
                         ABORT_IF_NECESSARY();
-                        [self executeClientBlock:^(id<NSURLProtocolClient> client){
-                            [client URLProtocol:self didReceiveResponse:httpResponse cacheStoragePolicy:response.storagePolicy];
-                        }];
+                        _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
+                            [client URLProtocol:self
+                             didReceiveResponse:httpResponse
+                             cacheStoragePolicy:response.storagePolicy];
+                        });
 
                         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(latency * NSEC_PER_SEC)), self->_protocolQueue, ^{
                             ABORT_IF_NECESSARY();
@@ -204,7 +228,11 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
                                 bps = (NSUInteger)MIN(config.bps / 8ULL, (uint64_t)NSUIntegerMax);
                             }
 
-                            [self chunkData:data bps:bps bytesSent:0 latency:MAX(latency, 0.25)];
+                            _chunkData(self,
+                                       data,
+                                       bps,
+                                       0 /*bytesSent*/,
+                                       MAX(latency, 0.25));
                         });
                     });
                 });
@@ -213,16 +241,27 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
             dispatch_async(self->_protocolQueue, ^{
                 ABORT_IF_NECESSARY();
                 self.stopped = YES;
-                [self executeClientBlock:^(id<NSURLProtocolClient> client){
-                    [client URLProtocol:self didFailWithError:[NSError errorWithDomain:TIPTestURLProtocolErrorDomain code:ENOENT userInfo:nil]];
-                }];
+                _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
+                    [client URLProtocol:self
+                       didFailWithError:[NSError errorWithDomain:TIPTestURLProtocolErrorDomain
+                                                            code:ENOENT
+                                                        userInfo:nil]];
+                });
             });
         }
     });
 }
 
-- (void)chunkData:(NSData *)data bps:(NSUInteger)bps bytesSent:(NSUInteger)bytesSent latency:(NSTimeInterval)latency
+static void _chunkData(SELF_ARG,
+                       NSData *data,
+                       NSUInteger bps,
+                       NSUInteger bytesSent,
+                       NSTimeInterval latency)
 {
+    if (!self) {
+        return;
+    }
+
     NSUInteger bytesPerLatencyGap = (NSUInteger)MAX(bps * latency, 1UL);
     NSUInteger bytesToSend = 0;
     if (bytesSent < data.length) {
@@ -231,24 +270,24 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
 
     if (bytesToSend > 0) {
         NSData *chunk = [data tip_safeSubdataNoCopyWithRange:NSMakeRange(bytesSent, bytesToSend)];
-        [self executeClientBlock:^(id<NSURLProtocolClient> client){
+        _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
             [client URLProtocol:self didLoadData:chunk];
-        }];
+        });
         bytesSent += bytesToSend;
     }
 
     if (bytesSent >= data.length) {
-        dispatch_async(_protocolQueue, ^{
+        dispatch_async(self->_protocolQueue, ^{
             ABORT_IF_NECESSARY();
             self.stopped = YES;
-            [self executeClientBlock:^(id<NSURLProtocolClient> client){
+            _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
                 [client URLProtocolDidFinishLoading:self];
-            }];
+            });
         });
     } else {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(latency * NSEC_PER_SEC)), _protocolQueue, ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(latency * NSEC_PER_SEC)), self->_protocolQueue, ^{
             ABORT_IF_NECESSARY();
-            [self chunkData:data bps:bps bytesSent:bytesSent latency:latency];
+            _chunkData(self, data, bps, bytesSent, latency);
         });
     }
 }
@@ -258,20 +297,30 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
     self.stopped = YES;
 }
 
-- (instancetype)initWithRequest:(NSURLRequest *)request cachedResponse:(NSCachedURLResponse *)cachedResponse client:(id<NSURLProtocolClient>)client
+- (instancetype)initWithRequest:(NSURLRequest *)request
+                 cachedResponse:(nullable NSCachedURLResponse *)cachedResponse
+                         client:(nullable id<NSURLProtocolClient>)client
 {
-    if (self = [super initWithRequest:request cachedResponse:cachedResponse client:client]) {
+    self = [super initWithRequest:request
+                   cachedResponse:cachedResponse
+                           client:client];
+    if (self) {
         _protocolQueue = dispatch_queue_create("TIPTestURLProtocol.queue", DISPATCH_QUEUE_SERIAL);
     }
     return self;
 }
 
-- (void)executeClientBlock:(TIPTestURLProtocolClientBlock)block
+static void _executeClientBlock(SELF_ARG,
+                                TIPTestURLProtocolClientBlock block)
 {
-    CFRunLoopPerformBlock(_protocolRunLoop, kCFRunLoopDefaultMode, ^{
+    if (!self) {
+        return;
+    }
+
+    CFRunLoopPerformBlock(self->_protocolRunLoop, kCFRunLoopDefaultMode, ^{
         block(self.client);
     });
-    CFRunLoopWakeUp(_protocolRunLoop);
+    CFRunLoopWakeUp(self->_protocolRunLoop);
 }
 
 @end
@@ -286,7 +335,7 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
     return self;
 }
 
-- (id)copyWithZone:(NSZone *)zone
+- (id)copyWithZone:(nullable NSZone *)zone
 {
     TIPTestURLProtocolResponseConfig *config = [[[self class] allocWithZone:zone] init];
 
@@ -304,7 +353,7 @@ typedef void(^TIPTestURLProtocolClientBlock)(id<NSURLProtocolClient> __nonnull c
 
 @end
 
-static NSString *_UnderlyingURLString(NSURL *url)
+static NSString *_UnderlyingURLString(NSURL * __nullable url)
 {
     return url.absoluteString.lowercaseString;
 }
@@ -341,3 +390,6 @@ static NSRange _RangeForRequest(NSURLRequest *request, NSUInteger dataLength, NS
 
     return NSMakeRange(NSNotFound, 0);
 }
+
+NS_ASSUME_NONNULL_END
+

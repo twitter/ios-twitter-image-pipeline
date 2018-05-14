@@ -171,14 +171,18 @@ typedef NS_ENUM(NSInteger, TIPErrorCode) {
  @param problemName the name of the problem
  @param userInfo a dictionary of user info related to the problem
  */
-- (void)tip_problemWasEncountered:(NSString *)problemName userInfo:(NSDictionary<NSString *, id> *)userInfo;
+- (void)tip_problemWasEncountered:(NSString *)problemName
+                         userInfo:(NSDictionary<NSString *, id> *)userInfo;
 
 /**
  Callback when a CGContext is accessed
  @param duration the access duration of CGContext
  @param serially `YES` if the CGContext access was serialized
+ @param mainThread `YES` if the CGContext access was on the main thread
  */
-- (void)tip_CGContextAccessed:(NSTimeInterval)duration serially:(BOOL)serially;
+- (void)tip_CGContextAccessed:(NSTimeInterval)duration
+                     serially:(BOOL)serially
+               fromMainThread:(BOOL)mainThread;
 
 @end
 

@@ -14,20 +14,6 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8BFF17691DF5B4AD005DE734"
-               BuildableName = "TwitterImagePipeline.framework"
-               BlueprintName = "TwitterImagePipeline.framework"
-               ReferencedContainer = "container:TwitterImagePipeline.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "8BB66A0F1E450DFB00A8F241"
                BuildableName = "TIP Sample App.app"
                BlueprintName = "TIP Sample App"

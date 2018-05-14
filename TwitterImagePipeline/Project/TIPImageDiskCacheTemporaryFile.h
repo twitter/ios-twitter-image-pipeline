@@ -31,7 +31,10 @@ NS_ASSUME_NONNULL_BEGIN
 @interface TIPImageDiskCacheTemporaryFile (DiskCache)
 @property (nonatomic, readonly, copy) NSString *temporaryPath;
 @property (nonatomic, readonly, copy) NSString *finalPath;
-- (instancetype)initWithIdentifier:(NSString *)identifier temporaryPath:(NSString *)tempPath finalPath:(NSString *)finalPath diskCache:(nullable TIPImageDiskCache *)diskCache;
+- (instancetype)initWithIdentifier:(NSString *)identifier
+                     temporaryPath:(NSString *)tempPath
+                         finalPath:(NSString *)finalPath
+                         diskCache:(nullable TIPImageDiskCache *)diskCache;
 @end
 
 NS_ASSUME_NONNULL_END

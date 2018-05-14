@@ -64,7 +64,8 @@ NS_ASSUME_NONNULL_BEGIN
  @param codec if not set to `NULL`, will be populated with the codec that was removed (or `nil` if
  no codec was removed)
  */
-- (void)removeCodecForImageType:(NSString *)imageType removedCodec:(out id<TIPImageCodec> __nullable * __nullable)codec;
+- (void)removeCodecForImageType:(NSString *)imageType
+                   removedCodec:(out id<TIPImageCodec> __nullable * __nullable)codec;
 
 @end
 
@@ -107,13 +108,25 @@ NS_ASSUME_NONNULL_BEGIN
 - (TIPImageCodecProperties)propertiesForCodecWithImageType:(nullable NSString *)type;
 
 /** Convenience method to load an image via catalogue of codecs  */
-- (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap imageType:(out NSString * __nullable * __nullable)imageType;
+- (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data
+                                   decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                          imageType:(out NSString * __nullable * __nullable)imageType;
 
 /** Convenience method to save an image to a file (_quality_ is between `0` and `1`) */
-- (BOOL)encodeImage:(TIPImageContainer *)image toFilePath:(NSString *)filePath withImageType:(NSString *)imageType quality:(float)quality options:(TIPImageEncodingOptions)options atomic:(BOOL)atomic error:(out NSError * __nullable * __nullable)error;
+- (BOOL)encodeImage:(TIPImageContainer *)image
+         toFilePath:(NSString *)filePath
+      withImageType:(NSString *)imageType
+            quality:(float)quality
+            options:(TIPImageEncodingOptions)options
+             atomic:(BOOL)atomic
+              error:(out NSError * __nullable * __nullable)error;
 
 /** Convenience method to encode an image to `NSData` (_quality_ is between `0` and `1`) */
-- (nullable NSData *)encodeImage:(TIPImageContainer *)image withImageType:(NSString *)imageType quality:(float)quality options:(TIPImageEncodingOptions)options error:(out NSError * __nullable * __nullable)error;
+- (nullable NSData *)encodeImage:(TIPImageContainer *)image
+                   withImageType:(NSString *)imageType
+                         quality:(float)quality
+                         options:(TIPImageEncodingOptions)options
+                           error:(out NSError * __nullable * __nullable)error;
 
 @end
 

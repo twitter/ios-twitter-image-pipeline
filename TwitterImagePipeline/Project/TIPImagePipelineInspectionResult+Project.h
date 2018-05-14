@@ -31,7 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) float progress;
 @property (nonatomic, nullable) UIImage *image;
 
-+ (nullable instancetype)entryWithCacheEntry:(TIPImageCacheEntry *)cacheEntry class:(Class)class;
++ (nullable instancetype)entryWithCacheEntry:(TIPImageCacheEntry *)cacheEntry
+                                       class:(Class)class;
 
 @end
 

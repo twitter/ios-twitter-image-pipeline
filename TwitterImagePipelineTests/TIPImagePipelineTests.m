@@ -570,22 +570,33 @@ static TIPImagePipeline *sPipeline = nil;
         TIPImagePipeline *temporaryPipeline = [[TIPImagePipeline alloc] initWithIdentifier:tmpPipelineIdentifier];
 
         [self _runFillingTheCaches:sPipeline bps:1024 * 1024 * 1024 * 8 testCacheHits:NO];
+
+        TIPGlobalConfiguration *globalConfig = [TIPGlobalConfiguration sharedInstance];
+
         XCTAssertGreaterThan(sPipeline.renderedCache.manifest.numberOfEntries, (NSUInteger)0);
-        XCTAssertGreaterThan(sPipeline.memoryCache.manifest.numberOfEntries, (NSUInteger)0);
-        XCTAssertGreaterThan(sPipeline.diskCache.manifest.numberOfEntries, (NSUInteger)0);
+        dispatch_sync(globalConfig.queueForMemoryCaches, ^{
+            XCTAssertGreaterThan(sPipeline.memoryCache.manifest.numberOfEntries, (NSUInteger)0);
+        });
+        dispatch_sync(globalConfig.queueForDiskCaches, ^{
+            XCTAssertGreaterThan(sPipeline.diskCache.manifest.numberOfEntries, (NSUInteger)0);
+        });
 
         [self _runFillingTheCaches:temporaryPipeline bps:1024 * 1024 * 1024 * 8 testCacheHits:NO];
         XCTAssertGreaterThan(temporaryPipeline.renderedCache.manifest.numberOfEntries, (NSUInteger)0);
-        XCTAssertGreaterThan(temporaryPipeline.memoryCache.manifest.numberOfEntries, (NSUInteger)0);
-        XCTAssertGreaterThan(temporaryPipeline.diskCache.manifest.numberOfEntries, (NSUInteger)0);
         XCTAssertEqual(sPipeline.renderedCache.manifest.numberOfEntries, (NSUInteger)0);
-        XCTAssertEqual(sPipeline.memoryCache.manifest.numberOfEntries, (NSUInteger)0);
-        XCTAssertEqual(sPipeline.diskCache.manifest.numberOfEntries, (NSUInteger)0);
+        dispatch_sync(globalConfig.queueForMemoryCaches, ^{
+            XCTAssertGreaterThan(temporaryPipeline.memoryCache.manifest.numberOfEntries, (NSUInteger)0);
+            XCTAssertEqual(sPipeline.memoryCache.manifest.numberOfEntries, (NSUInteger)0);
+        });
+        dispatch_sync(globalConfig.queueForMemoryCaches, ^{
+            XCTAssertGreaterThan(temporaryPipeline.diskCache.manifest.numberOfEntries, (NSUInteger)0);
+            XCTAssertEqual(sPipeline.diskCache.manifest.numberOfEntries, (NSUInteger)0);
+        });
 
-        dispatch_sync([TIPGlobalConfiguration sharedInstance].queueForDiskCaches, ^{
+        dispatch_sync(globalConfig.queueForDiskCaches, ^{
             preDeallocDiskSize = config.internalTotalBytesForAllDiskCaches;
         });
-        dispatch_sync([TIPGlobalConfiguration sharedInstance].queueForMemoryCaches, ^{
+        dispatch_sync(globalConfig.queueForMemoryCaches, ^{
             preDeallocMemSize = config.internalTotalBytesForAllMemoryCaches;
         });
         preDeallocRendSize = config.internalTotalBytesForAllRenderedCaches;

@@ -17,10 +17,13 @@ NS_ASSUME_NONNULL_BEGIN
 FOUNDATION_EXTERN const NSTimeInterval TIPTimeToLiveDefault; // 30 days
 
 //! Block to call with the hydrated `NSURLRequest` when hydration is triggered
-typedef void(^TIPImageFetchHydrationCompletionBlock)(NSURLRequest * __nullable hydratedRequest, NSError * __nullable error);
+typedef void(^TIPImageFetchHydrationCompletionBlock)(NSURLRequest * __nullable hydratedRequest,
+                                                     NSError * __nullable error);
 
 //! Block to hydrate an `NSURLRequest` for a given _context_
-typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest *requestToHydrate, id<TIPImageFetchOperationUnderlyingContext> context, TIPImageFetchHydrationCompletionBlock complete);
+typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest *requestToHydrate,
+                                           id<TIPImageFetchOperationUnderlyingContext> context,
+                                           TIPImageFetchHydrationCompletionBlock complete);
 
 /** Options for a `TIPImageFetchRequest` */
 typedef NS_OPTIONS(NSInteger, TIPImageFetchOptions)
@@ -191,7 +194,10 @@ NS_INLINE NSString *TIPImageFetchRequestGetImageIdentifier(id<TIPImageFetchReque
 @property (nonatomic, readonly, copy, nullable) TIPImageFetchHydrationBlock imageRequestHydrationBlock;
 @property (nonatomic, readonly, copy, nullable) NSDictionary<NSString *, id> *decoderConfigMap;
 
-- (instancetype)initWithImageURL:(NSURL *)imageURL identifier:(nullable NSString *)imageIdentifier targetDimensions:(CGSize)dims targetContentMode:(UIViewContentMode)mode;
+- (instancetype)initWithImageURL:(NSURL *)imageURL
+                      identifier:(nullable NSString *)imageIdentifier
+                targetDimensions:(CGSize)dims
+               targetContentMode:(UIViewContentMode)mode;
 - (instancetype)initWithImageURL:(NSURL *)imageURL NS_DESIGNATED_INITIALIZER;
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;

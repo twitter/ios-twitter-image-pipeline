@@ -205,7 +205,8 @@ typedef NS_ENUM(NSInteger, TIPImageDecoderRenderMode)
  @param imageType   a guess as to the image type, can be `nil`
  @return `Match` if decodable, `NoMatch` if not decodable and `NeedMoreData` if inconclusive
  */
-- (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data earlyGuessImageType:(nullable NSString *)imageType;
+- (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data
+                                      earlyGuessImageType:(nullable NSString *)imageType;
 
 /**
  Initiate decoding, will be called first in the decoding process.
@@ -216,7 +217,9 @@ typedef NS_ENUM(NSInteger, TIPImageDecoderRenderMode)
  Can safely use this as the image decoding buffer or just copy the data from the buffer.
  @return a context to use throughout the decoding process (to help maintain state)
  */
-- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id)config expectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer;
+- (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id)config
+                                expectedDataLength:(NSUInteger)expectedDataLength
+                                            buffer:(nullable NSMutableData *)buffer;
 
 /**
  Append data to a decoding
@@ -228,7 +231,8 @@ typedef NS_ENUM(NSInteger, TIPImageDecoderRenderMode)
  @param data the non-nil data to append (though it can be zero-length)
  @return the result of the append if decoding on the fly.
  */
-- (TIPImageDecoderAppendResult)tip_append:(id<TIPImageDecoderContext>)context data:(NSData *)data;
+- (TIPImageDecoderAppendResult)tip_append:(id<TIPImageDecoderContext>)context
+                                     data:(NSData *)data;
 
 /**
  Render the image with given _mode_ with whatever progress has been made.
@@ -245,7 +249,8 @@ typedef NS_ENUM(NSInteger, TIPImageDecoderRenderMode)
  @param mode the mode to render with
  @return an image (encapsulated in a `TIPImageContainer`) or `nil`.
  */
-- (nullable TIPImageContainer *)tip_renderImage:(id<TIPImageDecoderContext>)context mode:(TIPImageDecoderRenderMode)mode;
+- (nullable TIPImageContainer *)tip_renderImage:(id<TIPImageDecoderContext>)context
+                                           mode:(TIPImageDecoderRenderMode)mode;
 
 /**
  Finalize the decoding, only called after all image data has been provided with `tip_append:data:`.
@@ -271,17 +276,29 @@ typedef NS_ENUM(NSInteger, TIPImageDecoderRenderMode)
  @return the decoded image (wrapped in a `TIPImageContainer`) or `nil` if the image could not be
  decoded
  */
-- (nullable TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData config:(nullable id)config;
+- (nullable TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData
+                                                 config:(nullable id)config;
 
 @end
 
 #pragma mark - Convenience Functions
 
 //! Convenience function to decode an image from data
-FOUNDATION_EXTERN TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec, id __nullable config, NSData *imageData) __attribute__((overloadable));
+FOUNDATION_EXTERN TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec,
+                                                                        id __nullable config,
+                                                                        NSData *imageData) __attribute__((overloadable));
 //! Convenience function to decode an image from data, with a guess at the image type to be decoded
-FOUNDATION_EXTERN TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec, id __nullable config, NSData *imageData, NSString * __nullable earlyGuessImageType) __attribute__((overloadable));
+FOUNDATION_EXTERN TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec,
+                                                                        id __nullable config,
+                                                                        NSData *imageData,
+                                                                        NSString * __nullable earlyGuessImageType) __attribute__((overloadable));
 //! Convenience function to encode an image to a file
-FOUNDATION_EXTERN BOOL TIPEncodeImageToFile(id<TIPImageCodec> codec, TIPImageContainer *imageContainer, NSString *filePath, TIPImageEncodingOptions options, float quality, BOOL atomic, NSError * __nullable * __nullable error);
+FOUNDATION_EXTERN BOOL TIPEncodeImageToFile(id<TIPImageCodec> codec,
+                                            TIPImageContainer *imageContainer,
+                                            NSString *filePath,
+                                            TIPImageEncodingOptions options,
+                                            float quality,
+                                            BOOL atomic,
+                                            NSError * __nullable * __nullable error);
 
 NS_ASSUME_NONNULL_END

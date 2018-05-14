@@ -37,6 +37,9 @@ NSString * const TIPErrorUserInfoHTTPStatusCodeKey = @"httpStatusCode";
 
 NS_ASSUME_NONNULL_BEGIN
 
+// Primary class gets the SELF_ARG convenience
+#define SELF_ARG PRIVATE_SELF(TIPImageFetchOperation)
+
 typedef void(^TIPBoolBlock)(BOOL boolVal);
 typedef void(^TIPImageFetchDelegateWorkBlock)(id<TIPImageFetchDelegate> __nullable  delegate);
 
@@ -77,7 +80,8 @@ static NSQualityOfService ConvertNSOperationQueuePriorityToQualityOfService(NSOp
 @end
 
 @interface TIPImageFetchDelegateDeallocHandler : NSObject
-- (instancetype)initWithFetchOperation:(TIPImageFetchOperation *)operation delegate:(id<TIPImageFetchDelegate>)delegate;
+- (instancetype)initWithFetchOperation:(TIPImageFetchOperation *)operation
+                              delegate:(id<TIPImageFetchDelegate>)delegate;
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 - (void)invalidate;
@@ -89,7 +93,14 @@ static NSQualityOfService ConvertNSOperationQueuePriorityToQualityOfService(NSOp
 @end
 
 @interface TIPImageFetchResultInternal : NSObject <TIPImageFetchResult>
-+ (nullable instancetype)resultWithImageContainer:(nullable TIPImageContainer *)imageContainer identifier:(nullable NSString *)identifier source:(TIPImageLoadSource)source URL:(nullable NSURL *)URL originalDimensions:(CGSize)originalDimensions placeholder:(BOOL)placeholder transformed:(BOOL)transformed;
+static TIPImageFetchResultInternal * __nullable
+_CreateFetchResultInternal(TIPImageContainer * __nullable imageContainer,
+                           NSString * __nullable identifier,
+                           TIPImageLoadSource source,
+                           NSURL * __nullable URL,
+                           CGSize originalDimensions,
+                           BOOL placeholder,
+                           BOOL transformed);
 @end
 
 @implementation TIPImageFetchOperationNetworkStepContext
@@ -118,74 +129,161 @@ static NSQualityOfService ConvertNSOperationQueuePriorityToQualityOfService(NSOp
 @property (nonatomic, nullable, copy) NSString *networkLoadImageType;
 @property (nonatomic) CGSize networkImageOriginalDimensions;
 
-- (void)_tip_extractBasicRequestInfo;
-- (void)_tip_initializeDelegate:(nullable id<TIPImageFetchDelegate>)delegate;
-- (void)_tip_clearDelegateHandler;
+// Private
+static void _extractBasicRequestInfo(SELF_ARG);
+static void _initializeDelegate(SELF_ARG,
+                                id<TIPImageFetchDelegate> __nullable delegate);
+static void _clearDelegateHandler(SELF_ARG);
+static void _hydrateNewContext(SELF_ARG,
+                               TIPImageCacheEntryContext *context,
+                               NSURL *imageURL,
+                               BOOL placeholder);
 
 @end
 
 @interface TIPImageFetchOperation (Background)
 
 // Start/Abort
-- (void)_tip_background_start;
-- (BOOL)_tip_background_shouldAbort;
+static void _background_start(SELF_ARG);
+static BOOL _background_shouldAbort(SELF_ARG);
 
 // Generate State
-- (void)_tip_background_extractObservers;
-- (void)_tip_background_extractAdvancedRequestInfo;
-- (void)_tip_background_extractTargetInfo;
-- (void)_tip_background_extractStorageInfo;
-- (void)_tip_background_validateProgressiveSupport:(TIPPartialImage *)partialImage;
-- (void)_tip_background_clearNetworkContextVariables;
-- (void)_tip_background_setFinalStateAfterFlushingDelegate:(TIPImageFetchOperationState)state;
+static void _background_extractObservers(SELF_ARG);
+static void _background_extractAdvancedRequestInfo(SELF_ARG);
+static void _background_extractTargetInfo(SELF_ARG);
+static void _background_extractStorageInfo(SELF_ARG);
+static void _background_validateProgressiveSupport(SELF_ARG,
+                                                   TIPPartialImage *partialImage);
+static void _background_clearNetworkContextVariables(SELF_ARG);
+static void _background_setFinalStateAfterFlushingDelegate(SELF_ARG,
+                                                           TIPImageFetchOperationState state);
 
 // Load
-- (void)_tip_background_dispatchLoadStartedFromSource:(TIPImageLoadSource)source;
-- (void)_tip_background_loadFromNextSource;
-- (void)_tip_background_loadFromMemory;
-- (void)_tip_background_loadFromDisk;
-- (void)_tip_background_loadFromOtherPipelineDisk;
-- (void)_tip_background_loadFromAdditional;
-- (void)_tip_background_loadImageURL:(NSURL *)imageURL fromNextAdditionalCache:(NSMutableArray<id<TIPImageAdditionalCache>> *)caches;
-- (void)_tip_background_loadFromNetwork;
+static void _background_dispatchLoadStarted(SELF_ARG,
+                                            TIPImageLoadSource source);
+static void _background_loadFromNextSource(SELF_ARG);
+static void _background_loadFromMemory(SELF_ARG);
+static void _background_loadFromDisk(SELF_ARG);
+static void _background_loadFromOtherPipelineDisk(SELF_ARG);
+static void _background_loadFromAdditional(SELF_ARG);
+static void _background_loadFromNextAdditionalCache(SELF_ARG,
+                                                    NSURL *imageURL,
+                                                    NSMutableArray<id<TIPImageAdditionalCache>> *caches);
+static void _background_loadFromNetwork(SELF_ARG);
 
 // Update
-- (void)_tip_background_updateFailureToLoadFinalImage:(NSError *)error updateMetrics:(BOOL)updateMetrics;
-- (void)_tip_background_updateWithProgress:(float)progress;
-- (void)_tip_background_updateWithFinalImage:(TIPImageContainer *)image imageRenderLatency:(NSTimeInterval)latency URL:(NSURL *)URL source:(TIPImageLoadSource)source networkImageType:(nullable NSString *)imageType networkBytes:(NSUInteger)byteSize placeholder:(BOOL)placeholder;
-- (void)_tip_background_updateWithPreviewImageEntry:(TIPImageCacheEntry *)entry source:(TIPImageLoadSource)source;
-- (void)_tip_background_updateWithProgressiveImage:(UIImage *)image transformed:(BOOL)transformed imageRenderLatency:(NSTimeInterval)latency URL:(NSURL *)URL progress:(float)progress sourcePartialImage:(TIPPartialImage *)partialImage source:(TIPImageLoadSource)source;
-- (void)_tip_background_updateWithFirstAnimatedImageFrame:(UIImage *)image imageRenderLatency:(NSTimeInterval)latency URL:(NSURL *)URL progress:(float)progress sourcePartialImage:(TIPPartialImage *)partialImage source:(TIPImageLoadSource)source;
-- (void)_tip_background_updateWithCompletedMemoryEntry:(TIPImageMemoryCacheEntry *)entry;
-- (void)_tip_background_updateWithPartialMemoryEntry:(TIPImageMemoryCacheEntry *)entry;
-- (void)_tip_background_updateWithCompletedDiskEntry:(TIPImageDiskCacheEntry *)entry;
-- (void)_tip_background_updateWithPartialDiskEntry:(TIPImageDiskCacheEntry *)entry tryOtherPipelineDiskCachesIfNeeded:(BOOL)tryOtherPipelines;
+static void _background_updateFailureToLoadFinalImage(SELF_ARG,
+                                                      NSError *error,
+                                                      BOOL updateMetrics);
+static void _background_updateProgress(SELF_ARG,
+                                       float progress);
+static void _background_updateFinalImage(SELF_ARG,
+                                         TIPImageContainer *image,
+                                         NSTimeInterval imageRenderLatency,
+                                         NSURL *URL,
+                                         TIPImageLoadSource source,
+                                         NSString * __nullable networkImageType,
+                                         NSUInteger networkByteCount,
+                                         BOOL placeholder);
+static void _background_updatePreviewImage(SELF_ARG,
+                                           TIPImageCacheEntry *cacheEntry,
+                                           TIPImageLoadSource source);
+static void _background_updateProgressiveImage(SELF_ARG,
+                                               UIImage *image,
+                                               BOOL transformed,
+                                               NSTimeInterval imageRenderLatency,
+                                               NSURL *URL,
+                                               float progress,
+                                               TIPPartialImage *sourcePartialImage,
+                                               TIPImageLoadSource source);
+static void _background_updateFirstAnimatedImageFrame(SELF_ARG,
+                                                      UIImage *image,
+                                                      NSTimeInterval imageRenderLatency,
+                                                      NSURL *URL,
+                                                      float progress,
+                                                      TIPPartialImage *sourcePartialImage,
+                                                      TIPImageLoadSource source);
+static void _background_handleCompletedMemoryEntry(SELF_ARG,
+                                                   TIPImageMemoryCacheEntry *entry);
+static void _background_handlePartialMemoryEntry(SELF_ARG,
+                                                 TIPImageMemoryCacheEntry *entry);
+static void _background_handleCompletedDiskEntry(SELF_ARG,
+                                                 TIPImageDiskCacheEntry *entry);
+static void _background_handlePartialDiskEntry(SELF_ARG,
+                                               TIPImageDiskCacheEntry *entry,
+                                               BOOL tryOtherPipelineDiskCachesIfNeeded);
 
 // Render Progress
-- (void)_tip_background_processContinuedPartialEntry:(TIPPartialImage *)partialImage forURL:(NSURL *)URL source:(TIPImageLoadSource)source;
-- (nullable UIImage *)_tip_background_progressiveImageGivenAppendResult:(TIPImageDecoderAppendResult)result partialImage:(TIPPartialImage *)partialImage renderCount:(NSUInteger)renderCount;
-- (nullable UIImage *)_tip_background_firstFrameOfAnimatedImageIfNotYetProvidedFromPartialImage:(TIPPartialImage *)partialImage;
-- (UIImage *)_tip_background_transformAndScaleImage:(UIImage *)image progress:(float)progress transformed:(BOOL *)transformed;
-- (TIPImageContainer *)_tip_background_transformAndScaleImageContainer:(TIPImageContainer *)image progress:(float)progress transformed:(BOOL *)transformed;
+static void _background_processContinuedPartialEntry(SELF_ARG,
+                                                     TIPPartialImage *partialImage,
+                                                     NSURL *URL,
+                                                     TIPImageLoadSource source);
+static UIImage * __nullable _background_getNextProgressiveImage(SELF_ARG,
+                                                                TIPImageDecoderAppendResult appendResult,
+                                                                TIPPartialImage *partialImage,
+                                                                NSUInteger renderCount);
+static UIImage * __nullable _background_getFirstFrameOfAnimatedImageIfNotYetProvided(SELF_ARG,
+                                                                                     TIPPartialImage *partialImage);
+static UIImage *_background_transformAndScaleImage(SELF_ARG,
+                                                   UIImage *image,
+                                                   float progress,
+                                                   BOOL *transformedOut);
+static TIPImageContainer *_background_transformAndScaleImageContainer(SELF_ARG,
+                                                                      TIPImageContainer *imageContainer,
+                                                                      float progress,
+                                                                      BOOL *transformedOut);
 
 // Create Cache Entry
-- (nullable TIPImageCacheEntry *)_tip_background_createCacheEntryFromRaw:(BOOL)useRawImage permitPreviewFallback:(BOOL)previewFallback didFallbackToPreview:(out BOOL * __nullable)didFallbackToPreviewOut;
-- (nullable TIPImageCacheEntry *)_tip_background_createCacheEntryFromPartialImage:(TIPPartialImage *)partialImage lastModified:(NSString *)lastModified URL:(NSURL *)URL;
+static TIPImageCacheEntry * __nullable _background_createCacheEntry(SELF_ARG,
+                                                                    BOOL useRawImage,
+                                                                    BOOL permitPreviewFallback,
+                                                                    BOOL * __nullable didFallbackToPreviewOut);
+static TIPImageCacheEntry * __nullable _background_createCacheEntryFromPartialImage(SELF_ARG,
+                                                                                    TIPPartialImage *partialImage,
+                                                                                    NSString *lastModified,
+                                                                                    NSURL *imageURL);
 
 // Cache propagation
-- (void)_tip_background_propagateFinalImageFromSource:(TIPImageLoadSource)source;
-- (void)_tip_background_propagatePartialImageFromNetwork:(TIPPartialImage *)partialImage lastModified:(NSString *)lastModified;
-- (void)_tip_background_propagatePreviewImageFromSource:(TIPImageLoadSource)source;
+static void _background_propagateFinalImage(SELF_ARG,
+                                            TIPImageLoadSource source);
+static void _background_propagateFinalRenderedImage(SELF_ARG,
+                                                    TIPImageLoadSource source);
+static void _background_propagatePartialImage(SELF_ARG,
+                                              TIPPartialImage *partialImage,
+                                              NSString *lastModified,
+                                              BOOL wasResumed); // source is always the network
+static void _background_propagatePreviewImage(SELF_ARG,
+                                              TIPImageLoadSource source);
 
 // Notifications
-- (void)_tip_background_postDidStart;
-- (void)_tip_background_postDidFinish;
-- (void)_tip_background_postDidStartDownload;
-- (void)_tip_background_postDidFinishDownloadingImageType:(NSString *)imageType sizeInBytes:(NSUInteger)byteSize;
+static void _background_postDidStart(SELF_ARG);
+static void _background_postDidFinish(SELF_ARG);
+static void _background_postDidStartDownload(SELF_ARG);
+static void _background_postDidFinishDownloading(SELF_ARG,
+                                                 NSString *imageType,
+                                                 NSUInteger sizeInBytes);
 
 // Execute
-- (void)_tip_background_executeDelegateWork:(TIPImageFetchDelegateWorkBlock)block;
-- (void)_tip_executeBackgroundWork:(dispatch_block_t)block;
+static void _background_executeDelegateWork(SELF_ARG,
+                                            TIPImageFetchDelegateWorkBlock block);
+static void _executeBackgroundWork(SELF_ARG,
+                                   dispatch_block_t block);
+
+@end
+
+@interface TIPImageFetchOperation (DiskCache)
+
+static void _diskCache_loadFromOtherPipelines(SELF_ARG,
+                                              NSArray<TIPImagePipeline *> *pipelines,
+                                              uint64_t startMachTime);
+static BOOL _diskCache_attemptLoadFromOtherPipelineDisk(SELF_ARG,
+                                                        TIPImagePipeline *nextPipeline,
+                                                        uint64_t startMachTime);
+static void _diskCache_completeLoadFromOtherPipelineDisk(SELF_ARG,
+                                                         TIPImageContainer * __nullable imageContainer,
+                                                         NSURL * __nullable URL,
+                                                         NSTimeInterval latency,
+                                                         BOOL placeholder);
 
 @end
 
@@ -249,7 +347,9 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     abort();
 }
 
-- (instancetype)initWithImagePipeline:(TIPImagePipeline *)pipeline request:(id<TIPImageFetchRequest>)request delegate:(id<TIPImageFetchDelegate>)delegate
+- (instancetype)initWithImagePipeline:(TIPImagePipeline *)pipeline
+                              request:(id<TIPImageFetchRequest>)request
+                             delegate:(id<TIPImageFetchDelegate>)delegate
 {
     if (self = [super init]) {
         _imagePipeline = pipeline;
@@ -260,33 +360,44 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
         atomic_init(&_state, TIPImageFetchOperationStateIdle);
         _networkContext = [[TIPImageFetchOperationNetworkStepContext alloc] init];
 
-        [self _tip_initializeDelegate:delegate];
-        [self _tip_extractBasicRequestInfo];
+        _initializeDelegate(self, delegate);
+        _extractBasicRequestInfo(self);
     }
     return self;
 }
 
-- (void)_tip_initializeDelegate:(nullable id<TIPImageFetchDelegate>)delegate
+static void _initializeDelegate(SELF_ARG,
+                                id<TIPImageFetchDelegate> __nullable delegate)
 {
-    _delegate = delegate;
-    _flags.delegateSupportsAttemptWillStartCallbacks = ([delegate respondsToSelector:@selector(tip_imageFetchOperation:willAttemptToLoadFromSource:)] != NO);
+    if (!self) {
+        return;
+    }
+
+    self->_delegate = delegate;
+    self->_flags.delegateSupportsAttemptWillStartCallbacks = ([delegate respondsToSelector:@selector(tip_imageFetchOperation:willAttemptToLoadFromSource:)] != NO);
     if (!delegate) {
         // nil delegate, just let the operation happen
     } else if ([delegate isKindOfClass:[TIPSimpleImageFetchDelegate class]]) {
-        _strongDelegate = delegate;
+        self->_strongDelegate = delegate;
     } else {
         // associate an object to perform the cancel on dealloc of the delegate
-        TIPImageFetchDelegateDeallocHandler *handler = [[TIPImageFetchDelegateDeallocHandler alloc] initWithFetchOperation:self delegate:delegate];
+        TIPImageFetchDelegateDeallocHandler *handler;
+        handler = [[TIPImageFetchDelegateDeallocHandler alloc] initWithFetchOperation:self
+                                                                             delegate:delegate];
         if (handler) {
-            _delegateHandler = handler;
+            self->_delegateHandler = handler;
             // Use the reference as the unique key since a delegate could have multiple operations
             objc_setAssociatedObject(delegate, (__bridge const void *)(handler), handler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         }
     }
 }
 
-- (void)_tip_clearDelegateHandler
+static void _clearDelegateHandler(SELF_ARG)
 {
+    if (!self) {
+        return;
+    }
+
     TIPImageFetchDelegateDeallocHandler *handler = self.delegateHandler;
     if (handler) {
         [handler invalidate];
@@ -298,20 +409,26 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     }
 }
 
-- (void)_tip_extractBasicRequestInfo
+static void _extractBasicRequestInfo(SELF_ARG)
 {
-    _networkContext.imageDownloadRequest = [[TIPImageFetchDownloadRequest alloc] initWithRequest:_request];
-    _loadingSources = [_request respondsToSelector:@selector(loadingSources)] ? [_request loadingSources] : TIPImageFetchLoadingSourcesAll;
-    _decoderConfigMap = _networkContext.imageDownloadRequest.decoderConfigMap;
-    _transformer = [_request respondsToSelector:@selector(transformer)] ? _request.transformer : nil;
-    if ([_transformer respondsToSelector:@selector(tip_transformerIdentifier)]) {
-        _transfomerIdentifier = [[_transformer tip_transformerIdentifier] copy];
-        TIPAssert(_transfomerIdentifier.length > 0);
+    if (!self) {
+        return;
+    }
+
+    self->_networkContext.imageDownloadRequest = [[TIPImageFetchDownloadRequest alloc] initWithRequest:self->_request];
+    self->_loadingSources = [self->_request respondsToSelector:@selector(loadingSources)] ?
+                                [self->_request loadingSources] :
+                                TIPImageFetchLoadingSourcesAll;
+    self->_decoderConfigMap = self->_networkContext.imageDownloadRequest.decoderConfigMap;
+    self->_transformer = [self->_request respondsToSelector:@selector(transformer)] ? self->_request.transformer : nil;
+    if ([self->_transformer respondsToSelector:@selector(tip_transformerIdentifier)]) {
+        self->_transfomerIdentifier = [[self->_transformer tip_transformerIdentifier] copy];
+        TIPAssert(self->_transfomerIdentifier.length > 0);
     }
 
     if (!self.imageURL || self.imageIdentifier.length == 0) {
         TIPLogError(@"Cannot fetch request, it is invalid.  URL = '%@', Identifier = '%@'", self.imageURL, self.imageIdentifier);
-        _flags.invalidRequest = 1;
+        self->_flags.invalidRequest = 1;
     }
 }
 
@@ -421,7 +538,7 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
         // completion cleanup
         _transformer = nil; // leave _transformerIdentifier
-        [self _tip_clearDelegateHandler];
+        _clearDelegateHandler(self);
     }
 }
 
@@ -481,19 +598,19 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
 - (void)discardDelegate
 {
-    [self _tip_clearDelegateHandler];
+    _clearDelegateHandler(self);
     self.delegate = nil;
     self.strongDelegate = nil;
 }
 
 - (void)cancel
 {
-    [self _tip_executeBackgroundWork:^{
+    _executeBackgroundWork(self, ^{
         if (!self->_flags.cancelled) {
             self->_flags.cancelled = 1;
             [self->_imagePipeline.downloader removeDelegate:self forContext:self->_networkContext.imageDownloadContext];
         }
-    }];
+    });
 }
 
 - (void)cancelAndDiscardDelegate
@@ -531,15 +648,17 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
 - (void)start
 {
-    [self _tip_executeBackgroundWork:^{
+    _executeBackgroundWork(self, ^{
         if (!self->_flags.didStart) {
             self->_flags.didStart = 1;
-            [self _tip_background_start];
+            _background_start(self);
         }
-    }];
+    });
 }
 
-- (void)completeOperationEarlyWithImageEntry:(TIPImageCacheEntry *)entry transformed:(BOOL)transformed sourceImageDimensions:(CGSize)sourceDims
+- (void)completeOperationEarlyWithImageEntry:(TIPImageCacheEntry *)entry
+                                 transformed:(BOOL)transformed
+                       sourceImageDimensions:(CGSize)sourceDims
 {
     TIPAssert([NSThread isMainThread]);
     TIPAssert(!_flags.didStart);
@@ -558,10 +677,10 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
     _startTime = mach_absolute_time();
     self.state = TIPImageFetchOperationStateLoadingFromMemory;
-    [self _tip_executeBackgroundWork:^{
-        [self _tip_background_extractObservers];
-        [self _tip_background_postDidStart];
-    }];
+    _executeBackgroundWork(self, ^{
+        _background_extractObservers(self);
+        _background_postDidStart(self);
+    });
     id<TIPImageFetchDelegate> delegate = self.delegate;
     if ([delegate respondsToSelector:@selector(tip_imageFetchOperationDidStart:)]) {
         [delegate tip_imageFetchOperationDidStart:self];
@@ -571,7 +690,13 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
     _networkContext = nil;
     self.finalImageContainerRaw = entry.completeImage;
-    id<TIPImageFetchResult> finalResult = [TIPImageFetchResultInternal resultWithImageContainer:entry.completeImage identifier:entry.identifier source:TIPImageLoadSourceMemoryCache URL:entry.completeImageContext.URL originalDimensions:sourceDims placeholder:entry.completeImageContext.treatAsPlaceholder transformed:transformed];
+    id<TIPImageFetchResult> finalResult = _CreateFetchResultInternal(entry.completeImage,
+                                                                     entry.identifier,
+                                                                     TIPImageLoadSourceMemoryCache,
+                                                                     entry.completeImageContext.URL,
+                                                                     sourceDims,
+                                                                     entry.completeImageContext.treatAsPlaceholder,
+                                                                     transformed);
     self.finalResult = finalResult;
 
     [_imagePipeline.memoryCache touchImageWithIdentifier:entry.identifier];
@@ -587,9 +712,9 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     if (finalResult && [delegate respondsToSelector:@selector(tip_imageFetchOperation:didLoadFinalImage:)]) {
         [delegate tip_imageFetchOperation:self didLoadFinalImage:finalResult];
     }
-    [self _tip_executeBackgroundWork:^{
-        [self _tip_background_postDidFinish];
-    }];
+    _executeBackgroundWork(self, ^{
+        _background_postDidFinish(self);
+    });
     self.state = TIPImageFetchOperationStateSucceeded;
 }
 
@@ -664,25 +789,31 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
 - (void)imageDownloadDidStart:(id<TIPImageDownloadContext>)context
 {
-    [self _tip_background_postDidStartDownload];
+    _background_postDidStartDownload(self);
 }
 
 - (void)imageDownload:(id<TIPImageDownloadContext>)context didResetFromPartialImage:(TIPPartialImage *)oldPartialImage
 {
     TIPAssert(!_flags.didReceiveFirstByte);
-    [self _tip_background_clearNetworkContextVariables];
+    _background_clearNetworkContextVariables(self);
     if ([self supportsLoadingFromSource:TIPImageLoadSourceNetwork]) {
-        [self _tip_background_updateWithProgress:0.0f];
+        _background_updateProgress(self, 0.0f /*progress*/);
     } else {
         // Not configured to do a normal network load, fail
-        [self _tip_background_updateFailureToLoadFinalImage:[NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCouldNotLoadImage userInfo:nil] updateMetrics:YES];
+        NSError *error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                             code:TIPImageFetchErrorCouldNotLoadImage
+                                         userInfo:nil];
+        _background_updateFailureToLoadFinalImage(self, error, YES /*updateMetrics*/);
         [_imagePipeline.downloader removeDelegate:self forContext:context];
     }
 }
 
-- (void)imageDownload:(id<TIPImageDownloadContext>)context didAppendBytes:(NSUInteger)byteCount toPartialImage:(TIPPartialImage *)partialImage result:(TIPImageDecoderAppendResult)result
+- (void)imageDownload:(id<TIPImageDownloadContext>)context
+       didAppendBytes:(NSUInteger)byteCount
+       toPartialImage:(TIPPartialImage *)partialImage
+               result:(TIPImageDecoderAppendResult)result
 {
-    if ([self _tip_background_shouldAbort]) {
+    if (_background_shouldAbort(self)) {
         return;
     }
 
@@ -709,42 +840,76 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
     const float progress = partialImage.progress;
     if (partialImage.isAnimated) {
-        UIImage *image = [self _tip_background_firstFrameOfAnimatedImageIfNotYetProvidedFromPartialImage:partialImage];
+        UIImage *image = _background_getFirstFrameOfAnimatedImageIfNotYetProvided(self, partialImage);
         const NSTimeInterval latency = TIPComputeDuration(startMachTime, mach_absolute_time());
         if (image) {
             // First frame progress
-            [self _tip_background_updateWithFirstAnimatedImageFrame:image imageRenderLatency:latency URL:self.imageURL progress:progress sourcePartialImage:partialImage source:_flags.wasResumedDownload ? TIPImageLoadSourceNetworkResumed : TIPImageLoadSourceNetwork];
+            _background_updateFirstAnimatedImageFrame(self,
+                                                      image,
+                                                      latency,
+                                                      self.imageURL,
+                                                      progress,
+                                                      partialImage,
+                                                      (_flags.wasResumedDownload) ? TIPImageLoadSourceNetworkResumed : TIPImageLoadSourceNetwork);
         }
     } else if (partialImage.isProgressive) {
-        UIImage *image = [self _tip_background_progressiveImageGivenAppendResult:result partialImage:partialImage renderCount:_progressiveRenderCount];
+        UIImage *image = _background_getNextProgressiveImage(self,
+                                                             result,
+                                                             partialImage,
+                                                             _progressiveRenderCount);
         if (image) {
             // Progressive image progress
             BOOL transformed = NO;
-            image = [self _tip_background_transformAndScaleImage:image progress:progress transformed:&transformed];
+            image = _background_transformAndScaleImage(self,
+                                                       image,
+                                                       progress,
+                                                       &transformed);
             const NSTimeInterval latency = TIPComputeDuration(startMachTime, mach_absolute_time());
             _progressiveRenderCount++;
-            [self _tip_background_updateWithProgressiveImage:image transformed:transformed imageRenderLatency:latency URL:self.imageURL progress:progress sourcePartialImage:partialImage source:_flags.wasResumedDownload ? TIPImageLoadSourceNetworkResumed : TIPImageLoadSourceNetwork];
+            _background_updateProgressiveImage(self,
+                                               image,
+                                               transformed,
+                                               latency,
+                                               self.imageURL,
+                                               progress,
+                                               partialImage,
+                                               (_flags.wasResumedDownload) ? TIPImageLoadSourceNetworkResumed : TIPImageLoadSourceNetwork);
         }
     }
 
     // Always update the plain ol' progress
-    [self _tip_background_updateWithProgress:progress];
+    _background_updateProgress(self, progress);
 }
 
-- (void)imageDownload:(id<TIPImageDownloadContext>)context didCompleteWithPartialImage:(nullable TIPPartialImage *)partialImage lastModified:(nullable NSString *)lastModified byteSize:(NSUInteger)bytes imageType:(nullable NSString *)imageType image:(nullable TIPImageContainer *)image imageRenderLatency:(NSTimeInterval)latency statusCode:(NSInteger)statusCode error:(nullable NSError *)error
+- (void)imageDownload:(id<TIPImageDownloadContext>)context
+        didCompleteWithPartialImage:(nullable TIPPartialImage *)partialImage
+        lastModified:(nullable NSString *)lastModified
+        byteSize:(NSUInteger)bytes
+        imageType:(nullable NSString *)imageType
+        image:(nullable TIPImageContainer *)image
+        imageRenderLatency:(NSTimeInterval)latency
+        statusCode:(NSInteger)statusCode
+        error:(nullable NSError *)error
 {
     const BOOL wasResuming = (_networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming != nil);
-    [self _tip_background_clearNetworkContextVariables];
+    _background_clearNetworkContextVariables(self);
     _networkContext.imageDownloadContext = nil;
 
     id<TIPImageFetchDownload> download = (id<TIPImageFetchDownload>)context;
-    [_metricsInternal addNetworkMetrics:[download respondsToSelector:@selector(downloadMetrics)] ? download.downloadMetrics : nil forRequest:download.finalURLRequest imageType:imageType imageSizeInBytes:bytes imageDimensions:(image) ? image.dimensions : partialImage.dimensions];
+    [_metricsInternal addNetworkMetrics:[download respondsToSelector:@selector(downloadMetrics)] ? download.downloadMetrics : nil
+                             forRequest:download.finalURLRequest
+                              imageType:imageType
+                       imageSizeInBytes:bytes
+                        imageDimensions:(image) ? image.dimensions : partialImage.dimensions];
 
     if (partialImage && !image) {
-        [self _tip_background_propagatePartialImageFromNetwork:partialImage lastModified:lastModified];
+        _background_propagatePartialImage(self,
+                                          partialImage,
+                                          lastModified,
+                                          wasResuming);
     }
 
-    if ([self _tip_background_shouldAbort]) {
+    if (_background_shouldAbort(self)) {
         return;
     }
 
@@ -753,10 +918,19 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
         if (partialImage.hasGPSInfo) {
             // we should NEVER encounter an image with GPS info,
             // that would be a MAJOR security risk
-            [[TIPGlobalConfiguration sharedInstance] postProblem:TIPProblemImageDownloadedHasGPSInfo userInfo:@{ TIPProblemInfoKeyImageURL : self.imageURL }];
+            [[TIPGlobalConfiguration sharedInstance] postProblem:TIPProblemImageDownloadedHasGPSInfo
+                                                        userInfo:@{ TIPProblemInfoKeyImageURL : self.imageURL }];
         }
 
-        [self _tip_background_updateWithFinalImage:image imageRenderLatency:latency URL:self.imageURL source:(_flags.wasResumedDownload ? TIPImageLoadSourceNetworkResumed : TIPImageLoadSourceNetwork) networkImageType:imageType networkBytes:bytes placeholder:TIP_BITMASK_HAS_SUBSET_FLAGS(_networkContext.imageDownloadRequest.imageDownloadOptions, TIPImageFetchTreatAsPlaceholder)];
+        const BOOL placeholder = TIP_BITMASK_HAS_SUBSET_FLAGS(_networkContext.imageDownloadRequest.imageDownloadOptions, TIPImageFetchTreatAsPlaceholder);
+        _background_updateFinalImage(self,
+                                     image,
+                                     latency,
+                                     self.imageURL,
+                                     (_flags.wasResumedDownload) ? TIPImageLoadSourceNetworkResumed : TIPImageLoadSourceNetwork,
+                                     imageType,
+                                     bytes,
+                                     placeholder);
     } else {
         TIPAssert(error != nil);
 
@@ -764,12 +938,38 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
             TIPAssert(!_flags.wasResumedDownload);
             if (!_flags.wasResumedDownload) {
                 TIPLogWarning(@"Network resume yielded HTTP 416... retrying with full network load: %@", _networkContext.imageDownloadRequest.imageDownloadURL);
-                [self _tip_background_loadFromNetwork];
+                _background_loadFromNetwork(self);
                 return;
             }
         }
 
-        [self _tip_background_updateFailureToLoadFinalImage:error updateMetrics:YES];
+        _background_updateFailureToLoadFinalImage(self, error, YES /*updateMetrics*/);
+    }
+}
+
+#pragma mark Helpers
+
+static void _hydrateNewContext(SELF_ARG,
+                               TIPImageCacheEntryContext *context,
+                               NSURL *imageURL,
+                               BOOL placeholder)
+{
+    if (!self) {
+        return;
+    }
+
+    if (!imageURL) {
+        imageURL = self.imageURL;
+    }
+
+    const TIPImageFetchOptions options = self->_networkContext.imageDownloadRequest.imageDownloadOptions;
+    context.updateExpiryOnAccess = TIP_BITMASK_EXCLUDES_FLAGS(options, TIPImageFetchDoNotResetExpiryOnAccess);
+    context.treatAsPlaceholder = placeholder;
+    context.TTL = self->_networkContext.imageDownloadRequest.imageDownloadTTL;
+    context.URL = imageURL;
+    context.lastAccess = [NSDate date];
+    if (context.TTL <= 0.0) {
+        context.TTL = TIPTimeToLiveDefault;
     }
 }
 
@@ -779,43 +979,55 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
 #pragma mark Start / Abort
 
-- (void)_tip_background_start
+static void _background_start(SELF_ARG)
 {
-    _startTime = mach_absolute_time();
-    if ([self _tip_background_shouldAbort]) {
+    if (!self) {
+        return;
+    }
+
+    self->_startTime = mach_absolute_time();
+    if (_background_shouldAbort(self)) {
         return;
     }
 
     self.state = TIPImageFetchOperationStateStarting;
 
-    [self _tip_background_extractObservers];
+    _background_extractObservers(self);
 
-    [self _tip_background_postDidStart];
-    [self _tip_background_executeDelegateWork:^(id<TIPImageFetchDelegate> delegate){
+    _background_postDidStart(self);
+    _background_executeDelegateWork(self, ^(id<TIPImageFetchDelegate> delegate){
         if ([delegate respondsToSelector:@selector(tip_imageFetchOperationDidStart:)]) {
             [delegate tip_imageFetchOperationDidStart:self];
         }
-    }];
+    });
 
-    [self _tip_background_extractAdvancedRequestInfo];
-    [self _tip_background_loadFromNextSource];
+    _background_extractAdvancedRequestInfo(self);
+    _background_loadFromNextSource(self);
 }
 
-- (BOOL)_tip_background_shouldAbort
+static BOOL _background_shouldAbort(SELF_ARG)
 {
-    if (self.isFinished || _flags.transitioningToFinishedState) {
+    if (!self) {
+        return NO;
+    }
+
+    if (self.isFinished || self->_flags.transitioningToFinishedState) {
         return YES;
     }
 
-    if (_flags.cancelled) {
-        NSError *error = [NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeCancelled userInfo:nil];
-        [self _tip_background_updateFailureToLoadFinalImage:error updateMetrics:YES];
+    if (self->_flags.cancelled) {
+        NSError *error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                             code:TIPImageFetchErrorCodeCancelled
+                                         userInfo:nil];
+        _background_updateFailureToLoadFinalImage(self, error, YES/*updateMetrics*/);
         return YES;
     }
 
-    if (_flags.invalidRequest) {
-        NSError *error = [NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeInvalidRequest userInfo:nil];
-        [self _tip_background_updateFailureToLoadFinalImage:error updateMetrics:NO];
+    if (self->_flags.invalidRequest) {
+        NSError *error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                             code:TIPImageFetchErrorCodeInvalidRequest
+                                         userInfo:nil];
+        _background_updateFailureToLoadFinalImage(self, error, NO /*updateMetrics*/);
         return YES;
     }
 
@@ -824,121 +1036,178 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
 #pragma mark Generate State
 
-- (void)_tip_background_extractObservers
+static void _background_extractObservers(SELF_ARG)
 {
-    _observers = [TIPGlobalConfiguration sharedInstance].allImagePipelineObservers;
+    if (!self) {
+        return;
+    }
+
+    self->_observers = [TIPGlobalConfiguration sharedInstance].allImagePipelineObservers;
     id<TIPImagePipelineObserver> pipelineObserver = self.imagePipeline.observer;
     if (pipelineObserver) {
-        if (!_observers) {
-            _observers = @[pipelineObserver];
+        if (!self->_observers) {
+            self->_observers = @[pipelineObserver];
         } else {
-            _observers = [_observers arrayByAddingObject:pipelineObserver];
+            self->_observers = [self->_observers arrayByAddingObject:pipelineObserver];
         }
     }
 }
 
-- (void)_tip_background_extractStorageInfo
+static void _background_extractStorageInfo(SELF_ARG)
 {
-    if (_flags.didExtractStorageInfo) {
+    if (!self) {
+        return;
+    }
+    if (self->_flags.didExtractStorageInfo) {
         return;
     }
 
-    NSTimeInterval TTL = [_request respondsToSelector:@selector(timeToLive)] ? [_request timeToLive] : -1.0;
+    NSTimeInterval TTL = [self->_request respondsToSelector:@selector(timeToLive)] ?
+                                [self->_request timeToLive] :
+                                -1.0;
     if (TTL <= 0.0) {
         TTL = TIPTimeToLiveDefault;
     }
-    _networkContext.imageDownloadRequest.imageDownloadTTL = TTL;
+    self->_networkContext.imageDownloadRequest.imageDownloadTTL = TTL;
 
-    const TIPImageFetchOptions options = [_request respondsToSelector:@selector(options)] ? [_request options] : TIPImageFetchNoOptions;
-    _networkContext.imageDownloadRequest.imageDownloadOptions = options;
+    const TIPImageFetchOptions options = [self->_request respondsToSelector:@selector(options)] ?
+                                                [self->_request options] :
+                                                TIPImageFetchNoOptions;
+    self->_networkContext.imageDownloadRequest.imageDownloadOptions = options;
 
-    _flags.didExtractStorageInfo = 1;
+    self->_flags.didExtractStorageInfo = 1;
 }
 
-- (void)_tip_background_extractAdvancedRequestInfo
+static void _background_extractAdvancedRequestInfo(SELF_ARG)
 {
-    _networkContext.imageDownloadRequest.imageDownloadHydrationBlock = [_request respondsToSelector:@selector(imageRequestHydrationBlock)] ? _request.imageRequestHydrationBlock : nil;
-    _progressiveLoadingPolicies = nil;
+    if (!self) {
+        return;
+    }
+
+    self->_networkContext.imageDownloadRequest.imageDownloadHydrationBlock = [self->_request respondsToSelector:@selector(imageRequestHydrationBlock)] ? self->_request.imageRequestHydrationBlock : nil;
+    self->_progressiveLoadingPolicies = nil;
     id<TIPImageFetchDelegate> delegate = self.delegate;
     if ([delegate respondsToSelector:@selector(tip_imageFetchOperation:shouldLoadProgressivelyWithIdentifier:URL:imageType:originalDimensions:)]) {
         // could support progressive, prep the policy
-        _progressiveLoadingPolicies = [_request respondsToSelector:@selector(progressiveLoadingPolicies)] ? [[_request progressiveLoadingPolicies] copy] : nil;
+        self->_progressiveLoadingPolicies = [self->_request respondsToSelector:@selector(progressiveLoadingPolicies)] ?
+                                            [[self->_request progressiveLoadingPolicies] copy] :
+                                            nil;
     }
 }
 
-- (void)_tip_background_extractTargetInfo
+static void _background_extractTargetInfo(SELF_ARG)
 {
-    if (_flags.didExtractTargetInfo) {
+    if (!self) {
         return;
     }
-    _targetDimensions = [_request respondsToSelector:@selector(targetDimensions)] ? [_request targetDimensions] : CGSizeZero;
-    _targetContentMode = [_request respondsToSelector:@selector(targetContentMode)] ? [_request targetContentMode] : UIViewContentModeCenter;
 
-    _flags.didExtractTargetInfo = 1;
+    if (self->_flags.didExtractTargetInfo) {
+        return;
+    }
+    self->_targetDimensions = [self->_request respondsToSelector:@selector(targetDimensions)] ?
+                                    [self->_request targetDimensions] :
+                                    CGSizeZero;
+    self->_targetContentMode = [self->_request respondsToSelector:@selector(targetContentMode)] ?
+                                    [self->_request targetContentMode] :
+                                    UIViewContentModeCenter;
+
+    self->_flags.didExtractTargetInfo = 1;
 }
 
-- (void)_tip_background_validateProgressiveSupport:(TIPPartialImage *)partialImage
+static void _background_validateProgressiveSupport(SELF_ARG,
+                                                   TIPPartialImage *partialImage)
 {
-    if (!_flags.progressivePermissionValidated) {
+    if (!self) {
+        return;
+    }
+
+    if (!self->_flags.progressivePermissionValidated) {
         if (partialImage.state > TIPPartialImageStateLoadingHeaders) {
             id<TIPImageFetchDelegate> delegate = self.delegate;
             if (partialImage.progressive && [delegate respondsToSelector:@selector(tip_imageFetchOperation:shouldLoadProgressivelyWithIdentifier:URL:imageType:originalDimensions:)]) {
                 TIPAssert(partialImage.type != nil);
-                _progressiveLoadingPolicy = _progressiveLoadingPolicies[partialImage.type ?: @""] ?: [TIPImageFetchProgressiveLoadingPolicy defaultProgressiveLoadingPolicies][partialImage.type ?: @""];
-                if (_progressiveLoadingPolicy) {
-                    if ([delegate tip_imageFetchOperation:self shouldLoadProgressivelyWithIdentifier:self.imageIdentifier URL:self.imageURL imageType:partialImage.type originalDimensions:partialImage.dimensions]) {
-                        _flags.permitsProgressiveLoading = 1;
+                self->_progressiveLoadingPolicy = self->_progressiveLoadingPolicies[partialImage.type ?: @""];
+                if (!self->_progressiveLoadingPolicy) {
+                    self->_progressiveLoadingPolicy = [TIPImageFetchProgressiveLoadingPolicy defaultProgressiveLoadingPolicies][partialImage.type ?: @""];
+                }
+                if (self->_progressiveLoadingPolicy) {
+                    const BOOL shouldLoad = [delegate tip_imageFetchOperation:self
+                                        shouldLoadProgressivelyWithIdentifier:self.imageIdentifier
+                                                                          URL:self.imageURL
+                                                                    imageType:partialImage.type
+                                                           originalDimensions:partialImage.dimensions];
+                    if (shouldLoad) {
+                        self->_flags.permitsProgressiveLoading = 1;
                     }
                 }
             }
 
-            _flags.progressivePermissionValidated = 1;
+            self->_flags.progressivePermissionValidated = 1;
         }
     }
 }
 
-- (void)_tip_background_clearNetworkContextVariables
+static void _background_clearNetworkContextVariables(SELF_ARG)
 {
-    _networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming = nil;
-    _networkContext.imageDownloadRequest.imageDownloadLastModified = nil;
-    _networkContext.imageDownloadRequest.imageDownloadTemporaryFileForResuming = nil;
-    _progressiveRenderCount = 0;
+    if (!self) {
+        return;
+    }
+
+    self->_networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming = nil;
+    self->_networkContext.imageDownloadRequest.imageDownloadLastModified = nil;
+    self->_networkContext.imageDownloadRequest.imageDownloadTemporaryFileForResuming = nil;
+    self->_progressiveRenderCount = 0;
 }
 
-- (void)_tip_background_setFinalStateAfterFlushingDelegate:(TIPImageFetchOperationState)state
+static void _background_setFinalStateAfterFlushingDelegate(SELF_ARG,
+                                                           TIPImageFetchOperationState state)
 {
+    if (!self) {
+        return;
+    }
+
     TIPAssert(TIPImageFetchOperationStateIsFinished(state));
-    _flags.transitioningToFinishedState = 1;
-    [self _tip_background_executeDelegateWork:^(id<TIPImageFetchDelegate> __unused delegate) {
-        [self _tip_executeBackgroundWork:^{
+    self->_flags.transitioningToFinishedState = 1;
+    _background_executeDelegateWork(self, ^(id<TIPImageFetchDelegate> __unused delegate) {
+        _executeBackgroundWork(self, ^{
             self.state = state;
             self->_flags.transitioningToFinishedState = 0;
-        }];
-    }];
+        });
+    });
 }
 
 #pragma mark Load
 
-- (void)_tip_background_dispatchLoadStartedFromSource:(TIPImageLoadSource)source
+static void _background_dispatchLoadStarted(SELF_ARG,
+                                            TIPImageLoadSource source)
 {
-    if (_flags.delegateSupportsAttemptWillStartCallbacks) {
-        [self _tip_background_executeDelegateWork:^(id<TIPImageFetchDelegate> delegate) {
-            [delegate tip_imageFetchOperation:self willAttemptToLoadFromSource:source];
-        }];
+    if (!self) {
+        return;
+    }
+
+    if (self->_flags.delegateSupportsAttemptWillStartCallbacks) {
+        _background_executeDelegateWork(self, ^(id<TIPImageFetchDelegate> delegate) {
+            [delegate tip_imageFetchOperation:self
+                  willAttemptToLoadFromSource:source];
+        });
     }
 }
 
-- (void)_tip_background_loadFromNextSource
+static void _background_loadFromNextSource(SELF_ARG)
 {
-    if ([self _tip_background_shouldAbort]) {
+    if (!self) {
+        return;
+    }
+
+    if (_background_shouldAbort(self)) {
         return;
     }
 
     TIPImageLoadSource nextSource = TIPImageLoadSourceUnknown;
-    const TIPImageFetchOperationState currentState = atomic_load(&_state);
+    const TIPImageFetchOperationState currentState = atomic_load(&self->_state);
 
     // Get the next loading source
-    if (_flags.shouldJumpToResumingDownload && currentState < TIPImageFetchOperationStateLoadingFromNetwork) {
+    if (self->_flags.shouldJumpToResumingDownload && currentState < TIPImageFetchOperationStateLoadingFromNetwork) {
         nextSource = TIPImageLoadSourceNetwork;
     } else {
         switch (currentState) {
@@ -968,272 +1237,267 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
     // Update the metrics
     if (currentState != TIPImageFetchOperationStateIdle && currentState != TIPImageFetchOperationStateStarting) {
-        [_metricsInternal endSource];
+        [self->_metricsInternal endSource];
     }
     if (TIPImageLoadSourceUnknown != nextSource) {
-        [_metricsInternal startWithSource:nextSource];
+        [self->_metricsInternal startWithSource:nextSource];
     }
 
     // Load whatever's next (or set state to failed)
     switch (nextSource) {
         case TIPImageLoadSourceUnknown:
-            [self _tip_background_updateFailureToLoadFinalImage:[NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCouldNotLoadImage userInfo:nil] updateMetrics:NO];
+        {
+            NSError *error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                                 code:TIPImageFetchErrorCouldNotLoadImage
+                                             userInfo:nil];
+            _background_updateFailureToLoadFinalImage(self, error, NO /*updateMetrics*/);
             break;
+        }
         case TIPImageLoadSourceMemoryCache:
-            [self _tip_background_loadFromMemory];
+            _background_loadFromMemory(self);
             break;
         case TIPImageLoadSourceDiskCache:
-            [self _tip_background_loadFromDisk];
+            _background_loadFromDisk(self);
             break;
         case TIPImageLoadSourceAdditionalCache:
-            [self _tip_background_loadFromAdditional];
+            _background_loadFromAdditional(self);
             break;
         case TIPImageLoadSourceNetwork:
         case TIPImageLoadSourceNetworkResumed:
-            [self _tip_background_loadFromNetwork];
+            _background_loadFromNetwork(self);
             break;
     }
 }
 
-- (void)_tip_background_loadFromMemory
+static void _background_loadFromMemory(SELF_ARG)
 {
+    if (!self) {
+        return;
+    }
+
     self.state = TIPImageFetchOperationStateLoadingFromMemory;
     if (![self supportsLoadingFromSource:TIPImageLoadSourceMemoryCache]) {
-        [self _tip_background_loadFromNextSource];
+        _background_loadFromNextSource(self);
         return;
-    } else {
-        [self _tip_background_dispatchLoadStartedFromSource:TIPImageLoadSourceMemoryCache];
     }
 
-    TIPImageMemoryCacheEntry *entry = [_imagePipeline.memoryCache imageEntryForIdentifier:self.imageIdentifier];
-    [self _tip_background_updateWithCompletedMemoryEntry:entry];
+    _background_dispatchLoadStarted(self, TIPImageLoadSourceMemoryCache);
+
+    TIPImageMemoryCacheEntry *entry = [self->_imagePipeline.memoryCache imageEntryForIdentifier:self.imageIdentifier];
+    _background_handleCompletedMemoryEntry(self, entry);
 }
 
-- (void)_tip_background_loadFromDisk
+static void _background_loadFromDisk(SELF_ARG)
 {
+    if (!self) {
+        return;
+    }
+
     self.state = TIPImageFetchOperationStateLoadingFromDisk;
     if (![self supportsLoadingFromSource:TIPImageLoadSourceDiskCache]) {
-        [self _tip_background_loadFromNextSource];
+        _background_loadFromNextSource(self);
         return;
-    } else {
-        [self _tip_background_dispatchLoadStartedFromSource:TIPImageLoadSourceDiskCache];
     }
 
+    _background_dispatchLoadStarted(self, TIPImageLoadSourceDiskCache);
+
     // Just load the meta-data (options == TIPImageDiskCacheFetchOptionsNone)
-    TIPImageDiskCacheEntry *entry = [_imagePipeline.diskCache imageEntryForIdentifier:self.imageIdentifier options:TIPImageDiskCacheFetchOptionsNone decoderConfigMap:_decoderConfigMap];
-    [self _tip_background_updateWithCompletedDiskEntry:entry];
+    TIPImageDiskCacheEntry *entry;
+    entry = [self->_imagePipeline.diskCache imageEntryForIdentifier:self.imageIdentifier
+                                                            options:TIPImageDiskCacheFetchOptionsNone
+                                                   decoderConfigMap:self->_decoderConfigMap];
+    _background_handleCompletedDiskEntry(self, entry);
 }
 
-- (void)_tip_background_loadFromOtherPipelineDisk
+static void _background_loadFromOtherPipelineDisk(SELF_ARG)
 {
+    if (!self) {
+        return;
+    }
+
     TIPAssert(self.state == TIPImageFetchOperationStateLoadingFromDisk);
 
-    [self _tip_background_extractStorageInfo]; // need TTL and options
+    _background_extractStorageInfo(self); // need TTL and options
     NSMutableDictionary<NSString *, TIPImagePipeline *> *pipelines = [[TIPImagePipeline allRegisteredImagePipelines] mutableCopy];
-    [pipelines removeObjectForKey:_imagePipeline.identifier];
+    [pipelines removeObjectForKey:self->_imagePipeline.identifier];
     NSArray<TIPImagePipeline *> *otherPipelines = [pipelines allValues];
     tip_dispatch_async_autoreleasing([TIPGlobalConfiguration sharedInstance].queueForDiskCaches, ^{
-        [self _tip_diskCache_loadFromOtherPipelines:otherPipelines startMachTime:mach_absolute_time()];
+        _diskCache_loadFromOtherPipelines(self, otherPipelines, mach_absolute_time() /*start time*/);
     });
 }
 
-- (void)_tip_diskCache_loadFromOtherPipelines:(NSArray<TIPImagePipeline *> *)pipelines startMachTime:(uint64_t)startMachTime
+static void _background_loadFromAdditional(SELF_ARG)
 {
-    for (TIPImagePipeline *nextPipeline in pipelines) {
-        // look in the pipeline's disk cache
-        if ([self _tip_diskCache_attemptLoadFromOtherPipelineDisk:nextPipeline startMachTime:startMachTime]) {
-            // success!
-            return;
-        }
+    if (!self) {
+        return;
     }
 
-    // Ran out of "next" pipelines, load from next source
-    [self _tip_diskCache_completeLoadFromOtherPipelineDisk:nil URL:nil latency:TIPComputeDuration(startMachTime, mach_absolute_time()) placeholder:NO];
-}
-
-- (BOOL)_tip_diskCache_attemptLoadFromOtherPipelineDisk:(TIPImagePipeline *)nextPipeline startMachTime:(uint64_t)startMachTime
-{
-    TIPImageDiskCache *nextDiskCache = nextPipeline.diskCache;
-    if (nextDiskCache) {
-
-        // pull out the on disk path to the desired entry if available
-        TIPCompleteImageEntryContext *context = nil;
-        NSString *filePath = [nextDiskCache diskCache_imageEntryFilePathForIdentifier:self.imageIdentifier hitShouldMoveEntryToHead:NO context:&context];
-
-        // only accept an exact match (URLs are equal)
-        if (filePath && [context.URL isEqual:self.imageURL]) {
-
-            // override fetch values
-            const TIPImageFetchOptions options = _networkContext.imageDownloadRequest.imageDownloadOptions;
-            context.updateExpiryOnAccess = TIP_BITMASK_EXCLUDES_FLAGS(options, TIPImageFetchDoNotResetExpiryOnAccess);
-            context.TTL = _networkContext.imageDownloadRequest.imageDownloadTTL;
-            context.lastAccess = [NSDate date];
-            if (context.TTL <= 0.0) {
-                context.TTL = TIPTimeToLiveDefault;
-            }
-            // leave context.treatAsPlaceholder as-is
-
-            // create an entry
-            TIPImageCacheEntry *entry = [[TIPImageCacheEntry alloc] init];
-            entry.identifier = self.imageIdentifier;
-            entry.completeImageContext = context;
-            entry.completeImageFilePath = filePath;
-
-            // store the entry (via file path) to disk cache
-            [_imagePipeline.diskCache diskCache_updateImageEntry:entry forciblyReplaceExisting:!context.treatAsPlaceholder];
-
-            // complete the loop by retrieving entry (with UIImage) from disk cache
-            entry = [_imagePipeline.diskCache diskCache_imageEntryForIdentifier:entry.identifier options:TIPImageDiskCacheFetchOptionCompleteImage decoderConfigMap:_decoderConfigMap];
-
-            // did we get an image?
-            TIPImageContainer *image = entry.completeImage;
-            if (image) {
-
-                // complete
-                [self _tip_diskCache_completeLoadFromOtherPipelineDisk:image URL:context.URL latency:TIPComputeDuration(startMachTime, mach_absolute_time()) placeholder:context.treatAsPlaceholder];
-
-                // success!
-                return YES;
-            }
-        }
-    }
-
-    // didn't succeed
-    return NO;
-}
-
-- (void)_tip_diskCache_completeLoadFromOtherPipelineDisk:(nullable TIPImageContainer *)image URL:(nullable NSURL *)URL latency:(NSTimeInterval)latency placeholder:(BOOL)placeholder
-{
-    if (latency > 0.150) {
-        TIPLogWarning(@"Other Pipeline Duration (%@): %.3fs", (image != nil) ? @"HIT" : @"MISS", latency);
-    } else if (image) {
-        TIPLogDebug(@"Other Pipeline Duration (HIT): %.3fs", latency);
-    }
-
-    [self _tip_executeBackgroundWork:^{
-        if (image && URL) {
-            [self _tip_background_updateWithFinalImage:image imageRenderLatency:0.0 URL:URL source:TIPImageLoadSourceDiskCache networkImageType:nil networkBytes:0 placeholder:placeholder];
-        } else {
-            [self _tip_background_loadFromNextSource];
-        }
-    }];
-}
-
-- (void)_tip_background_loadFromAdditional
-{
     self.state = TIPImageFetchOperationStateLoadingFromAdditionalCache;
     if (![self supportsLoadingFromSource:TIPImageLoadSourceAdditionalCache]) {
-        [self _tip_background_loadFromNextSource];
+        _background_loadFromNextSource(self);
         return;
-    } else {
-        [self _tip_background_dispatchLoadStartedFromSource:TIPImageLoadSourceAdditionalCache];
     }
 
-    NSMutableArray<id<TIPImageAdditionalCache>> *additionalCaches = [_imagePipeline.additionalCaches mutableCopy];
-    [self _tip_background_loadImageURL:self.imageURL fromNextAdditionalCache:additionalCaches];
+    _background_dispatchLoadStarted(self, TIPImageLoadSourceAdditionalCache);
+
+    NSMutableArray<id<TIPImageAdditionalCache>> *additionalCaches = [self->_imagePipeline.additionalCaches mutableCopy];
+    _background_loadFromNextAdditionalCache(self, self.imageURL, additionalCaches);
 }
 
-- (void)_tip_background_loadImageURL:(NSURL *)imageURL fromNextAdditionalCache:(NSMutableArray<id<TIPImageAdditionalCache>> *)caches
+static void _background_loadFromNextAdditionalCache(SELF_ARG,
+                                                    NSURL *imageURL,
+                                                    NSMutableArray<id<TIPImageAdditionalCache>> *caches)
 {
+    if (!self) {
+        return;
+    }
+
     if (caches.count == 0) {
-        [self _tip_background_loadFromNextSource];
+        _background_loadFromNextSource(self);
         return;
     }
 
     id<TIPImageAdditionalCache> nextCache = caches.firstObject;
     [caches removeObjectAtIndex:0];
     [nextCache tip_retrieveImageForURL:imageURL completion:^(UIImage *image) {
-        [self _tip_executeBackgroundWork:^{
-            if ([self _tip_background_shouldAbort]) {
+        _executeBackgroundWork(self, ^{
+            if (_background_shouldAbort(self)) {
                 return;
             }
 
             if (image) {
-                [self _tip_background_updateWithFinalImage:[[TIPImageContainer alloc] initWithImage:image] imageRenderLatency:0.0 URL:imageURL source:TIPImageLoadSourceAdditionalCache networkImageType:nil networkBytes:0 placeholder:TIP_BITMASK_HAS_SUBSET_FLAGS(self->_networkContext.imageDownloadRequest.imageDownloadOptions, TIPImageFetchTreatAsPlaceholder)];
+                const BOOL placeholder = TIP_BITMASK_HAS_SUBSET_FLAGS(self->_networkContext.imageDownloadRequest.imageDownloadOptions, TIPImageFetchTreatAsPlaceholder);
+                _background_updateFinalImage(self,
+                                             [[TIPImageContainer alloc] initWithImage:image],
+                                             0 /*imageRenderLatency*/,
+                                             imageURL,
+                                             TIPImageLoadSourceAdditionalCache,
+                                             nil /*networkImageType*/,
+                                             0 /*networkByteCount*/,
+                                             placeholder);
             } else {
-                [self _tip_background_loadImageURL:imageURL fromNextAdditionalCache:caches];
+                _background_loadFromNextAdditionalCache(self, imageURL, caches);
             }
-        }];
+        });
     }];
 }
 
-- (void)_tip_background_loadFromNetwork
+static void _background_loadFromNetwork(SELF_ARG)
 {
+    if (!self) {
+        return;
+    }
+
     self.state = TIPImageFetchOperationStateLoadingFromNetwork;
 
-    if (!_imagePipeline.downloader) {
-        [self _tip_background_updateFailureToLoadFinalImage:[NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCouldNotDownloadImage userInfo:nil] updateMetrics:YES];
+    if (!self->_imagePipeline.downloader) {
+        NSError *error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                             code:TIPImageFetchErrorCouldNotDownloadImage
+                                         userInfo:nil];
+        _background_updateFailureToLoadFinalImage(self, error, YES /*updateMetrics*/);
         return;
     }
 
     if (![self supportsLoadingFromSource:TIPImageLoadSourceNetwork]) {
-        if (![self supportsLoadingFromSource:TIPImageLoadSourceNetworkResumed] || !_networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming) {
+        if (![self supportsLoadingFromSource:TIPImageLoadSourceNetworkResumed] || !self->_networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming) {
             // if full loads not OK and resuming not OK - fail
-            [self _tip_background_updateFailureToLoadFinalImage:[NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCouldNotLoadImage userInfo:nil] updateMetrics:YES];
+            NSError *error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                                 code:TIPImageFetchErrorCouldNotLoadImage
+                                             userInfo:nil];
+            _background_updateFailureToLoadFinalImage(self, error, YES /*updateMetrics*/);
             return;
         } // else if full loads not OK, but resuming is OK - continue
     }
 
     // Start loading
-    [self _tip_background_extractStorageInfo];
-    const TIPImageLoadSource loadSource = (_networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming != nil) ? TIPImageLoadSourceNetworkResumed : TIPImageLoadSourceNetwork;
-    [self _tip_background_dispatchLoadStartedFromSource:loadSource];
-    _networkContext.imageDownloadContext = [_imagePipeline.downloader fetchImageWithDownloadDelegate:self];
+    _background_extractStorageInfo(self);
+    const TIPImageLoadSource loadSource = (self->_networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming != nil) ? TIPImageLoadSourceNetworkResumed : TIPImageLoadSourceNetwork;
+    _background_dispatchLoadStarted(self, loadSource);
+    self->_networkContext.imageDownloadContext = [self->_imagePipeline.downloader fetchImageWithDownloadDelegate:self];
 }
 
 #pragma mark Update
 
-- (void)_tip_background_updateFailureToLoadFinalImage:(NSError *)error updateMetrics:(BOOL)updateMetrics
+static void _background_updateFailureToLoadFinalImage(SELF_ARG,
+                                                      NSError *error,
+                                                      BOOL updateMetrics)
 {
+    if (!self) {
+        return;
+    }
+
     TIPAssert(error != nil);
-    TIPAssert(_metrics == nil);
-    TIPAssert(_metricsInternal != nil);
-    TIPLogDebug(@"Failed to Load Image: %@", @{ @"id" : self.imageIdentifier ?: @"<null>", @"URL" : self.imageURL ?: @"<null>", @"error" : error ?: @"<null>" });
+    TIPAssert(self->_metrics == nil);
+    TIPAssert(self->_metricsInternal != nil);
+    TIPLogDebug(@"Failed to Load Image: %@", @{ @"id" : self.imageIdentifier ?: @"<null>",
+                                                @"URL" : self.imageURL ?: @"<null>",
+                                                @"error" : error ?: @"<null>" });
 
     self.error = error;
     const BOOL didCancel = ([error.domain isEqualToString:TIPImageFetchErrorDomain] && error.code == TIPImageFetchErrorCodeCancelled);
 
     if (updateMetrics) {
         if (didCancel) {
-            [_metricsInternal cancelSource];
+            [self->_metricsInternal cancelSource];
         } else {
-            [_metricsInternal endSource];
+            [self->_metricsInternal endSource];
         }
     }
-    _metrics = _metricsInternal;
-    _metricsInternal = nil;
-    _finishTime = mach_absolute_time();
+    self->_metrics = self->_metricsInternal;
+    self->_metricsInternal = nil;
+    self->_finishTime = mach_absolute_time();
 
-    [self _tip_background_executeDelegateWork:^(id<TIPImageFetchDelegate> delegate) {
+    _background_executeDelegateWork(self, ^(id<TIPImageFetchDelegate> delegate) {
         if ([delegate respondsToSelector:@selector(tip_imageFetchOperation:didFailToLoadFinalImage:)]) {
             [delegate tip_imageFetchOperation:self didFailToLoadFinalImage:error];
         }
-    }];
-    [self _tip_background_postDidFinish];
-    [self _tip_background_setFinalStateAfterFlushingDelegate:(didCancel) ? TIPImageFetchOperationStateCancelled : TIPImageFetchOperationStateFailed];
+    });
+    _background_postDidFinish(self);
+    _background_setFinalStateAfterFlushingDelegate(self,
+                                                   (didCancel) ? TIPImageFetchOperationStateCancelled : TIPImageFetchOperationStateFailed);
 }
 
-- (void)_tip_background_updateWithFinalImage:(TIPImageContainer *)image imageRenderLatency:(NSTimeInterval)latency URL:(NSURL *)URL source:(TIPImageLoadSource)source networkImageType:(nullable NSString *)imageType networkBytes:(NSUInteger)byteSize placeholder:(BOOL)placeholder
+static void _background_updateFinalImage(SELF_ARG,
+                                         TIPImageContainer *image,
+                                         NSTimeInterval imageRenderLatency,
+                                         NSURL *URL,
+                                         TIPImageLoadSource source,
+                                         NSString * __nullable networkImageType,
+                                         NSUInteger networkByteCount,
+                                         BOOL placeholder)
 {
+    if (!self) {
+        return;
+    }
+
     TIPAssert(image != nil);
-    TIPAssert(_metrics == nil);
-    TIPAssert(_metricsInternal != nil);
-    [self _tip_background_extractTargetInfo];
+    TIPAssert(self->_metrics == nil);
+    TIPAssert(self->_metricsInternal != nil);
+    _background_extractTargetInfo(self);
     self.finalImageContainerRaw = image;
     const uint64_t startMachTime = mach_absolute_time();
     BOOL transformed = NO;
-    TIPImageContainer *finalImageContainer = [self _tip_background_transformAndScaleImageContainer:image progress:1.f transformed:&transformed];
-    _flags.finalImageWasTransformed = transformed;
-    latency += TIPComputeDuration(startMachTime, mach_absolute_time());
-    id<TIPImageFetchResult> finalResult = [TIPImageFetchResultInternal resultWithImageContainer:finalImageContainer identifier:self.imageIdentifier source:source URL:URL originalDimensions:image.dimensions placeholder:placeholder transformed:transformed];
+    TIPImageContainer *finalImageContainer = _background_transformAndScaleImageContainer(self,
+                                                                                         image,
+                                                                                         1.f /*progress*/,
+                                                                                         &transformed);
+    self->_flags.finalImageWasTransformed = transformed;
+    imageRenderLatency += TIPComputeDuration(startMachTime, mach_absolute_time());
+    id<TIPImageFetchResult> finalResult = _CreateFetchResultInternal(finalImageContainer,
+                                                                     self.imageIdentifier,
+                                                                     source,
+                                                                     URL,
+                                                                     image.dimensions,
+                                                                     placeholder,
+                                                                     transformed);
     self.finalResult = finalResult;
     self.progress = 1.0f;
 
-    [_metricsInternal finalWasHit:latency synchronously:NO];
-    [_metricsInternal endSource];
-    _metrics = _metricsInternal;
-    _metricsInternal = nil;
-    _finishTime = mach_absolute_time();
+    [self->_metricsInternal finalWasHit:imageRenderLatency synchronously:NO];
+    [self->_metricsInternal endSource];
+    self->_metrics = self->_metricsInternal;
+    self->_metricsInternal = nil;
+    self->_finishTime = mach_absolute_time();
 
     TIPLogDebug(@"Loaded Final Image: %@", @{
                                              @"id" : self.imageIdentifier,
@@ -1241,112 +1505,155 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
                                              @"originalDimensions" : NSStringFromCGSize(self.finalImageContainerRaw.dimensions),
                                              @"finalDimensions" : NSStringFromCGSize(self.finalResult.imageContainer.dimensions),
                                              @"source" : @(source),
-                                             @"store" : _imagePipeline.identifier,
-                                             @"resumed" : @(_flags.wasResumedDownload),
+                                             @"store" : self->_imagePipeline.identifier,
+                                             @"resumed" : @(self->_flags.wasResumedDownload),
                                              @"frames" : @(self.finalResult.imageContainer.frameCount),
                                              });
 
     const BOOL sourceWasNetwork = TIPImageLoadSourceNetwork == source || TIPImageLoadSourceNetworkResumed == source;
-    if (sourceWasNetwork && byteSize > 0) {
-        [self _tip_background_postDidFinishDownloadingImageType:imageType sizeInBytes:byteSize];
+    if (sourceWasNetwork && networkByteCount > 0) {
+        _background_postDidFinishDownloading(self, networkImageType, networkByteCount);
     }
 
     TIPAssert(finalResult != nil);
     if (!finalResult) {
-        self.error = [NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeUnknown userInfo:nil];
-        [self _tip_background_executeDelegateWork:^(id<TIPImageFetchDelegate> delegate) {
+        self.error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                         code:TIPImageFetchErrorCodeUnknown
+                                     userInfo:nil];
+        _background_executeDelegateWork(self, ^(id<TIPImageFetchDelegate> delegate) {
             if ([delegate respondsToSelector:@selector(tip_imageFetchOperation:didFailToLoadFinalImage:)]) {
                 [delegate tip_imageFetchOperation:self didFailToLoadFinalImage:self.error];
             }
-        }];
-        [self _tip_background_postDidFinish];
-        [self _tip_background_setFinalStateAfterFlushingDelegate:TIPImageFetchOperationStateFailed];
+        });
+        _background_postDidFinish(self);
+        _background_setFinalStateAfterFlushingDelegate(self, TIPImageFetchOperationStateFailed);
         return;
     }
 
-    [self _tip_background_executeDelegateWork:^(id<TIPImageFetchDelegate> delegate){
+    _background_executeDelegateWork(self, ^(id<TIPImageFetchDelegate> delegate){
         if ([delegate respondsToSelector:@selector(tip_imageFetchOperation:didLoadFinalImage:)]) {
             [delegate tip_imageFetchOperation:self didLoadFinalImage:finalResult];
         }
-    }];
+    });
 
-    [self _tip_background_postDidFinish];
-    [self _tip_background_propagateFinalImageFromSource:source];
-    [self _tip_background_setFinalStateAfterFlushingDelegate:TIPImageFetchOperationStateSucceeded];
+    _background_postDidFinish(self);
+    _background_propagateFinalImage(self, source);
+    _background_setFinalStateAfterFlushingDelegate(self, TIPImageFetchOperationStateSucceeded);
 }
 
-- (void)_tip_background_postDidStart
+static void _background_postDidStart(SELF_ARG)
 {
-    for (id<TIPImagePipelineObserver> observer in _observers) {
+    if (!self) {
+        return;
+    }
+
+    for (id<TIPImagePipelineObserver> observer in self->_observers) {
         if ([observer respondsToSelector:@selector(tip_imageFetchOperationDidStart:)]) {
             [observer tip_imageFetchOperationDidStart:self];
         }
     }
 }
 
-- (void)_tip_background_postDidFinish
+static void _background_postDidFinish(SELF_ARG)
 {
-    for (id<TIPImagePipelineObserver> observer in _observers) {
+    if (!self) {
+        return;
+    }
+
+    for (id<TIPImagePipelineObserver> observer in self->_observers) {
         if ([observer respondsToSelector:@selector(tip_imageFetchOperationDidFinish:)]) {
             [observer tip_imageFetchOperationDidFinish:self];
         }
     }
 }
 
-- (void)_tip_background_postDidStartDownload
+static void _background_postDidStartDownload(SELF_ARG)
 {
-    for (id<TIPImagePipelineObserver> observer in _observers) {
+    if (!self) {
+        return;
+    }
+
+    for (id<TIPImagePipelineObserver> observer in self->_observers) {
         if ([observer respondsToSelector:@selector(tip_imageFetchOperation:didStartDownloadingImageAtURL:)]) {
             [observer tip_imageFetchOperation:self didStartDownloadingImageAtURL:self.imageURL];
         }
     }
 }
 
-- (void)_tip_background_postDidFinishDownloadingImageType:(NSString *)imageType sizeInBytes:(NSUInteger)byteSize
+static void _background_postDidFinishDownloading(SELF_ARG,
+                                                 NSString *imageType,
+                                                 NSUInteger sizeInBytes)
 {
-    for (id<TIPImagePipelineObserver> observer in _observers) {
+    if (!self) {
+        return;
+    }
+
+    for (id<TIPImagePipelineObserver> observer in self->_observers) {
         if ([observer respondsToSelector:@selector(tip_imageFetchOperation:didFinishDownloadingImageAtURL:imageType:sizeInBytes:dimensions:wasResumed:)]) {
-            [observer tip_imageFetchOperation:self didFinishDownloadingImageAtURL:self.imageURL imageType:imageType sizeInBytes:byteSize dimensions:self.finalImageContainerRaw.dimensions wasResumed:(self.finalResult.imageSource == TIPImageLoadSourceNetworkResumed)];
+            [observer tip_imageFetchOperation:self
+               didFinishDownloadingImageAtURL:self.imageURL
+                                    imageType:imageType
+                                  sizeInBytes:sizeInBytes
+                                   dimensions:self.finalImageContainerRaw.dimensions
+                                   wasResumed:(self.finalResult.imageSource == TIPImageLoadSourceNetworkResumed)];
         }
     }
 }
 
-- (void)_tip_background_updateWithPreviewImageEntry:(TIPImageCacheEntry *)entry source:(TIPImageLoadSource)source
+static void _background_updatePreviewImage(SELF_ARG,
+                                           TIPImageCacheEntry *cacheEntry,
+                                           TIPImageLoadSource source)
 {
+    if (!self) {
+        return;
+    }
+
     TIPBoolBlock block = ^(BOOL canContinue) {
-        if ([self _tip_background_shouldAbort]) {
+        if (_background_shouldAbort(self)) {
             return;
         } else if (!canContinue) {
-            NSError *error = [NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeCancelledAfterLoadingPreview userInfo:nil];
-            [self _tip_background_updateFailureToLoadFinalImage:error updateMetrics:YES];
-            [self _tip_background_propagatePreviewImageFromSource:source];
+            NSError *error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                                 code:TIPImageFetchErrorCodeCancelledAfterLoadingPreview
+                                             userInfo:nil];
+            _background_updateFailureToLoadFinalImage(self, error, YES /*updateMetrics*/);
+            _background_propagatePreviewImage(self, source);
         } else {
             if (TIPImageLoadSourceMemoryCache == source) {
-                [self _tip_background_updateWithPartialMemoryEntry:(id)entry];
+                _background_handlePartialMemoryEntry(self, (id)cacheEntry);
             } else if (TIPImageLoadSourceDiskCache == source) {
-                [self _tip_background_updateWithPartialDiskEntry:(id)entry tryOtherPipelineDiskCachesIfNeeded:NO];
+                _background_handlePartialDiskEntry(self, (id)cacheEntry, NO /*tryOtherPipelineDiskCachesIfNeeded*/);
             } else {
-                [self _tip_background_loadFromNextSource];
+                _background_loadFromNextSource(self);
             }
         }
     };
 
-    [self _tip_background_extractTargetInfo];
+    _background_extractTargetInfo(self);
 
-    TIPImageContainer *image = entry.completeImage;
+    TIPImageContainer *image = cacheEntry.completeImage;
     TIPAssert(image != nil);
 
     self.previewImageContainerRaw = image;
     const uint64_t startMachTime = mach_absolute_time();
     BOOL transformed = NO;
-    TIPImageContainer *previewImageContainer = [self _tip_background_transformAndScaleImageContainer:image progress:-1.f transformed:&transformed];
-    _flags.previewImageWasTransformed = transformed;
+    TIPImageContainer *previewImageContainer;
+    previewImageContainer = _background_transformAndScaleImageContainer(self,
+                                                                        image,
+                                                                        -1.f /*progress; negative is preview*/,
+                                                                        &transformed);
+    self->_flags.previewImageWasTransformed = transformed;
     const NSTimeInterval latency = TIPComputeDuration(startMachTime, mach_absolute_time());
-    id<TIPImageFetchResult> previewResult = [TIPImageFetchResultInternal resultWithImageContainer:previewImageContainer identifier:self.imageIdentifier source:source URL:entry.completeImageContext.URL originalDimensions:image.dimensions placeholder:entry.completeImageContext.treatAsPlaceholder transformed:transformed];
+    id<TIPImageFetchResult> previewResult = _CreateFetchResultInternal(previewImageContainer,
+                                                                       self.imageIdentifier,
+                                                                       source,
+                                                                       cacheEntry.completeImageContext.URL,
+                                                                       image.dimensions,
+                                                                       cacheEntry.completeImageContext.treatAsPlaceholder,
+                                                                       transformed);
     self.previewResult = previewResult;
     id<TIPImageFetchDelegate> delegate = self.delegate;
 
-    [_metricsInternal previewWasHit:latency];
+    [self->_metricsInternal previewWasHit:latency];
 
     TIPLogDebug(@"Loaded Preview Image: %@", @{
                                                @"id" : self.imageIdentifier,
@@ -1354,32 +1661,42 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
                                                @"originalDimensions" : NSStringFromCGSize(self.previewImageContainerRaw.dimensions),
                                                @"finalDimensions" : NSStringFromCGSize(self.previewResult.imageContainer.dimensions),
                                                @"source" : @(source),
-                                               @"store" : _imagePipeline.identifier,
-                                               @"resumed" : @(_flags.wasResumedDownload),
+                                               @"store" : self->_imagePipeline.identifier,
+                                               @"resumed" : @(self->_flags.wasResumedDownload),
                                                });
 
     TIPAssert(previewResult != nil);
     if (previewResult && [delegate respondsToSelector:@selector(tip_imageFetchOperation:didLoadPreviewImage:completion:)]) {
-        [self _tip_background_executeDelegateWork:^(id<TIPImageFetchDelegate> blockDelegate) {
+        _background_executeDelegateWork(self, ^(id<TIPImageFetchDelegate> blockDelegate) {
             if ([blockDelegate respondsToSelector:@selector(tip_imageFetchOperation:didLoadPreviewImage:completion:)]) {
                 [blockDelegate tip_imageFetchOperation:self didLoadPreviewImage:previewResult completion:^(TIPImageFetchPreviewLoadedBehavior behavior) {
-                    [self _tip_executeBackgroundWork:^{
+                    _executeBackgroundWork(self, ^{
                         block(TIPImageFetchPreviewLoadedBehaviorContinueLoading == behavior);
-                    }];
+                    });
                 }];
             } else {
-                [self _tip_executeBackgroundWork:^{
+                _executeBackgroundWork(self, ^{
                     block(YES);
-                }];
+                });
             }
-        }];
+        });
     } else {
         block(YES);
     }
 }
 
-- (void)_tip_background_updateWithFirstAnimatedImageFrame:(UIImage *)image imageRenderLatency:(NSTimeInterval)latency URL:(NSURL *)URL progress:(float)progress sourcePartialImage:(TIPPartialImage *)partialImage source:(TIPImageLoadSource)source
+static void _background_updateFirstAnimatedImageFrame(SELF_ARG,
+                                                      UIImage *image,
+                                                      NSTimeInterval imageRenderLatency,
+                                                      NSURL *URL,
+                                                      float progress,
+                                                      TIPPartialImage *sourcePartialImage,
+                                                      TIPImageLoadSource source)
 {
+    if (!self) {
+        return;
+    }
+
     id<TIPImageFetchDelegate> delegate = self.delegate;
     if (![delegate respondsToSelector:@selector(tip_imageFetchOperation:didLoadFirstAnimatedImageFrame:progress:)]) {
         return;
@@ -1388,36 +1705,56 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     TIPAssert(!isnan(progress) && !isinf(progress));
     self.progress = progress;
     const uint64_t startMachTime = mach_absolute_time();
-    UIImage *firstAnimatedImage = [image tip_scaledImageWithTargetDimensions:_targetDimensions contentMode:_targetContentMode];
+    UIImage *firstAnimatedImage = [image tip_scaledImageWithTargetDimensions:self->_targetDimensions
+                                                                 contentMode:self->_targetContentMode];
     TIPImageContainer *firstAnimatedImageFrameContainer = (firstAnimatedImage) ? [[TIPImageContainer alloc] initWithImage:firstAnimatedImage] : nil;
-    latency += TIPComputeDuration(startMachTime, mach_absolute_time());
-    id<TIPImageFetchResult> progressiveResult = [TIPImageFetchResultInternal resultWithImageContainer:firstAnimatedImageFrameContainer identifier:self.imageIdentifier source:source URL:URL originalDimensions:[image tip_dimensions] placeholder:NO transformed:NO];
+    imageRenderLatency += TIPComputeDuration(startMachTime, mach_absolute_time());
+    id<TIPImageFetchResult> progressiveResult = _CreateFetchResultInternal(firstAnimatedImageFrameContainer,
+                                                                           self.imageIdentifier,
+                                                                           source,
+                                                                           URL,
+                                                                           [image tip_dimensions],
+                                                                           NO /*placeholder*/,
+                                                                           NO /*transformed*/);
     self.progressiveResult = progressiveResult;
 
-    [_metricsInternal progressiveFrameWasHit:latency];
+    [self->_metricsInternal progressiveFrameWasHit:imageRenderLatency];
 
     TIPLogDebug(@"Loaded First Animated Image Frame: %@", @{
                                                             @"id" : self.imageIdentifier,
                                                             @"URL" : self.imageURL,
-                                                            @"originalDimensions" : NSStringFromCGSize(partialImage.dimensions),
+                                                            @"originalDimensions" : NSStringFromCGSize(sourcePartialImage.dimensions),
                                                             @"finalDimensions" : NSStringFromCGSize([firstAnimatedImageFrameContainer dimensions]),
-                                                            @"source" : @(_flags.wasResumedDownload ? TIPImageLoadSourceNetworkResumed : TIPImageLoadSourceNetwork),
-                                                            @"store" : _imagePipeline.identifier,
-                                                            @"resumed" : @(_flags.wasResumedDownload),
+                                                            @"source" : @(self->_flags.wasResumedDownload ? TIPImageLoadSourceNetworkResumed : TIPImageLoadSourceNetwork),
+                                                            @"store" : self->_imagePipeline.identifier,
+                                                            @"resumed" : @(self->_flags.wasResumedDownload),
                                                             });
 
     TIPAssert(progressiveResult != nil);
     if (progressiveResult) {
-        [self _tip_background_executeDelegateWork:^(id<TIPImageFetchDelegate> blockDelegate) {
+        _background_executeDelegateWork(self, ^(id<TIPImageFetchDelegate> blockDelegate) {
             if ([blockDelegate respondsToSelector:@selector(tip_imageFetchOperation:didLoadFirstAnimatedImageFrame:progress:)]) {
-                [blockDelegate tip_imageFetchOperation:self didLoadFirstAnimatedImageFrame:progressiveResult progress:progress];
+                [blockDelegate tip_imageFetchOperation:self
+                        didLoadFirstAnimatedImageFrame:progressiveResult
+                                              progress:progress];
             }
-        }];
+        });
     }
 }
 
-- (void)_tip_background_updateWithProgressiveImage:(UIImage *)image transformed:(BOOL)transformed imageRenderLatency:(NSTimeInterval)latency URL:(NSURL *)URL progress:(float)progress sourcePartialImage:(TIPPartialImage *)partialImage source:(TIPImageLoadSource)source
+static void _background_updateProgressiveImage(SELF_ARG,
+                                               UIImage *image,
+                                               BOOL transformed,
+                                               NSTimeInterval imageRenderLatency,
+                                               NSURL *URL,
+                                               float progress,
+                                               TIPPartialImage *sourcePartialImage,
+                                               TIPImageLoadSource source)
 {
+    if (!self) {
+        return;
+    }
+
     id<TIPImageFetchDelegate> delegate = self.delegate;
     if (![delegate respondsToSelector:@selector(tip_imageFetchOperation:didUpdateProgressiveImage:progress:)]) {
         return;
@@ -1427,49 +1764,67 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     self.progress = progress;
 
     TIPAssert(image != nil);
-    _flags.progressiveImageWasTransformed = transformed;
+    self->_flags.progressiveImageWasTransformed = transformed;
     TIPImageContainer *progressContainer = (image) ? [[TIPImageContainer alloc] initWithImage:image] : nil;
-    id<TIPImageFetchResult> progressiveResult = [TIPImageFetchResultInternal resultWithImageContainer:progressContainer identifier:self.imageIdentifier source:source URL:URL originalDimensions:[image tip_dimensions] placeholder:NO transformed:transformed];
+    id<TIPImageFetchResult> progressiveResult = _CreateFetchResultInternal(progressContainer,
+                                                                           self.imageIdentifier,
+                                                                           source,
+                                                                           URL,
+                                                                           [image tip_dimensions],
+                                                                           NO /*placeholder*/,
+                                                                           transformed);
     self.progressiveResult = progressiveResult;
 
-    [_metricsInternal progressiveFrameWasHit:latency];
+    [self->_metricsInternal progressiveFrameWasHit:imageRenderLatency];
 
     TIPLogDebug(@"Loaded Progressive Image: %@", @{
                                                    @"progress" : @(progress),
                                                    @"id" : self.imageIdentifier,
                                                    @"URL" : URL,
-                                                   @"originalDimensions" : NSStringFromCGSize(partialImage.dimensions),
+                                                   @"originalDimensions" : NSStringFromCGSize(sourcePartialImage.dimensions),
                                                    @"finalDimensions" : NSStringFromCGSize([self.progressiveResult.imageContainer dimensions]),
                                                    @"source" : @(source),
-                                                   @"store" : _imagePipeline.identifier,
-                                                   @"resumed" : @(_flags.wasResumedDownload),
+                                                   @"store" : self->_imagePipeline.identifier,
+                                                   @"resumed" : @(self->_flags.wasResumedDownload),
                                                    });
 
     TIPAssert(progressiveResult != nil);
     if (progressiveResult) {
-        [self _tip_background_executeDelegateWork:^(id<TIPImageFetchDelegate> blockDelegate) {
+        _background_executeDelegateWork(self, ^(id<TIPImageFetchDelegate> blockDelegate) {
             if ([blockDelegate respondsToSelector:@selector(tip_imageFetchOperation:didUpdateProgressiveImage:progress:)]) {
-                [blockDelegate tip_imageFetchOperation:self didUpdateProgressiveImage:progressiveResult progress:progress];
+                [blockDelegate tip_imageFetchOperation:self
+                             didUpdateProgressiveImage:progressiveResult
+                                              progress:progress];
             }
-        }];
+        });
     }
 }
 
-- (void)_tip_background_updateWithProgress:(float)progress
+static void _background_updateProgress(SELF_ARG,
+                                       float progress)
 {
+    if (!self) {
+        return;
+    }
+
     TIPAssert(!isnan(progress) && !isinf(progress));
     self.progress = progress;
 
-    [self _tip_background_executeDelegateWork:^(id<TIPImageFetchDelegate> delegate) {
+    _background_executeDelegateWork(self, ^(id<TIPImageFetchDelegate> delegate) {
         if ([delegate respondsToSelector:@selector(tip_imageFetchOperation:didUpdateProgress:)]) {
             [delegate tip_imageFetchOperation:self didUpdateProgress:progress];
         }
-    }];
+    });
 }
 
-- (void)_tip_background_updateWithCompletedMemoryEntry:(TIPImageMemoryCacheEntry *)entry
+static void _background_handleCompletedMemoryEntry(SELF_ARG,
+                                                   TIPImageMemoryCacheEntry *entry)
 {
-    if ([self _tip_background_shouldAbort]) {
+    if (!self) {
+        return;
+    }
+
+    if (_background_shouldAbort(self)) {
         return;
     }
 
@@ -1479,23 +1834,35 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
         const BOOL isFinalImage = [completeImageURL isEqual:self.imageURL];
 
         if (isFinalImage) {
-            [self _tip_background_updateWithFinalImage:image imageRenderLatency:0.0 URL:completeImageURL source:TIPImageLoadSourceMemoryCache networkImageType:nil networkBytes:0 placeholder:entry.completeImageContext.treatAsPlaceholder];
+            _background_updateFinalImage(self,
+                                         image,
+                                         0 /*imageRenderLatency*/,
+                                         completeImageURL,
+                                         TIPImageLoadSourceMemoryCache,
+                                         nil /*networkImageType*/,
+                                         0 /*networkByteCount*/,
+                                         entry.completeImageContext.treatAsPlaceholder);
             return;
         }
 
         if (!self.previewResult) {
-            [self _tip_background_updateWithPreviewImageEntry:entry source:TIPImageLoadSourceMemoryCache];
+            _background_updatePreviewImage(self, entry, TIPImageLoadSourceMemoryCache);
             return;
         }
     }
 
     // continue
-    [self _tip_background_updateWithPartialMemoryEntry:entry];
+    _background_handlePartialMemoryEntry(self, entry);
 }
 
-- (void)_tip_background_updateWithPartialMemoryEntry:(TIPImageMemoryCacheEntry *)entry
+static void _background_handlePartialMemoryEntry(SELF_ARG,
+                                                 TIPImageMemoryCacheEntry *entry)
 {
-    if ([self _tip_background_shouldAbort]) {
+    if (!self) {
+        return;
+    }
+
+    if (_background_shouldAbort(self)) {
         return;
     }
 
@@ -1505,33 +1872,44 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
         if (isFinalImage) {
             TIPPartialImageEntryContext * const partialImageContext = entry.partialImageContext;
             NSString * const entryIdentifier = entry.identifier;
-            _networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming = partialImage;
-            _networkContext.imageDownloadRequest.imageDownloadLastModified = partialImageContext.lastModified;
+            self->_networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming = partialImage;
+            self->_networkContext.imageDownloadRequest.imageDownloadLastModified = partialImageContext.lastModified;
 
-            TIPImageDiskCache * const diskCache = _imagePipeline.diskCache;
+            TIPImageDiskCache * const diskCache = self->_imagePipeline.diskCache;
             if (diskCache) {
-                TIPImageDiskCacheEntry * const diskEntry = [diskCache imageEntryForIdentifier:entryIdentifier options:TIPImageDiskCacheFetchOptionTemporaryFile decoderConfigMap:_decoderConfigMap];
+                TIPImageDiskCacheEntry *diskEntry;
+                diskEntry = [diskCache imageEntryForIdentifier:entryIdentifier
+                                                       options:TIPImageDiskCacheFetchOptionTemporaryFile
+                                              decoderConfigMap:self->_decoderConfigMap];
                 TIPImageDiskCacheTemporaryFile *diskTempFile = diskEntry.tempFile;
                 if (!diskTempFile) {
-                    diskTempFile = [_imagePipeline.diskCache openTemporaryFileForImageIdentifier:entry.identifier];
+                    diskTempFile = [self->_imagePipeline.diskCache openTemporaryFileForImageIdentifier:entry.identifier];
                     [diskTempFile appendData:partialImage.data];
                 }
-                _networkContext.imageDownloadRequest.imageDownloadTemporaryFileForResuming = diskTempFile;
+                self->_networkContext.imageDownloadRequest.imageDownloadTemporaryFileForResuming = diskTempFile;
             }
 
-            [self _tip_background_processContinuedPartialEntry:partialImage forURL:partialImageContext.URL source:TIPImageLoadSourceMemoryCache];
+            _background_processContinuedPartialEntry(self,
+                                                     partialImage,
+                                                     partialImageContext.URL,
+                                                     TIPImageLoadSourceMemoryCache);
 
-            _flags.shouldJumpToResumingDownload = 1;
+            self->_flags.shouldJumpToResumingDownload = 1;
         }
     }
 
     // continue
-    [self _tip_background_loadFromNextSource];
+    _background_loadFromNextSource(self);
 }
 
-- (void)_tip_background_updateWithCompletedDiskEntry:(TIPImageDiskCacheEntry *)entry
+static void _background_handleCompletedDiskEntry(SELF_ARG,
+                                                 TIPImageDiskCacheEntry *entry)
 {
-    if ([self _tip_background_shouldAbort]) {
+    if (!self) {
+        return;
+    }
+
+    if (_background_shouldAbort(self)) {
         return;
     }
 
@@ -1542,17 +1920,26 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
         const BOOL isFinal = [completeImageURL isEqual:self.imageURL];
         if (isFinal || (dimensions.width * dimensions.height > currentDimensions.width * currentDimensions.height)) {
             // Metadata checks out, load the actual complete image
-            entry = [_imagePipeline.diskCache imageEntryForIdentifier:entry.identifier options:TIPImageDiskCacheFetchOptionCompleteImage decoderConfigMap:_decoderConfigMap];
+            entry = [self->_imagePipeline.diskCache imageEntryForIdentifier:entry.identifier
+                                                                    options:TIPImageDiskCacheFetchOptionCompleteImage
+                                                           decoderConfigMap:self->_decoderConfigMap];
             if ([completeImageURL isEqual:entry.completeImageContext.URL]) {
                 TIPImageContainer *image = entry.completeImage;
                 if (image) {
                     if (isFinal) {
-                        [self _tip_background_updateWithFinalImage:image imageRenderLatency:0.0 URL:completeImageURL source:TIPImageLoadSourceDiskCache networkImageType:nil networkBytes:0 placeholder:entry.completeImageContext.treatAsPlaceholder];
+                        _background_updateFinalImage(self,
+                                                     image,
+                                                     0 /*imageRenderLatency*/,
+                                                     completeImageURL,
+                                                     TIPImageLoadSourceDiskCache,
+                                                     nil /*networkImageType*/,
+                                                     0 /*networkByteCount*/,
+                                                     entry.completeImageContext.treatAsPlaceholder);
                         return;
                     }
 
                     if (!self.previewResult) {
-                        [self _tip_background_updateWithPreviewImageEntry:entry source:TIPImageLoadSourceDiskCache];
+                        _background_updatePreviewImage(self, entry, TIPImageLoadSourceDiskCache);
                         return;
                     }
                 }
@@ -1560,12 +1947,18 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
         }
     }
 
-    [self _tip_background_updateWithPartialDiskEntry:entry tryOtherPipelineDiskCachesIfNeeded:YES];
+    _background_handlePartialDiskEntry(self, entry, YES /*tryOtherPipelineDiskCachesIfNeeded*/);
 }
 
-- (void)_tip_background_updateWithPartialDiskEntry:(TIPImageDiskCacheEntry *)entry tryOtherPipelineDiskCachesIfNeeded:(BOOL)tryOtherPipelines
+static void _background_handlePartialDiskEntry(SELF_ARG,
+                                               TIPImageDiskCacheEntry *entry,
+                                               BOOL tryOtherPipelineDiskCachesIfNeeded)
 {
-    if ([self _tip_background_shouldAbort]) {
+    if (!self) {
+        return;
+    }
+
+    if (_background_shouldAbort(self)) {
         return;
     }
 
@@ -1573,104 +1966,162 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
         const CGSize dimensions = entry.completeImageContext.dimensions;
         const BOOL isFinal = [self.imageURL isEqual:entry.partialImageContext.URL];
         BOOL isReasonableDataRemainingAndLarger = NO;
-        [self _tip_background_extractTargetInfo];
-        if (!isFinal && TIPSizeGreaterThanZero(_targetDimensions) && (dimensions.width * dimensions.height > _targetDimensions.width * _targetDimensions.height)) {
-            double ratio = (dimensions.width * dimensions.height) / (_targetDimensions.width * _targetDimensions.height);
-            NSUInteger remainingBytes = (entry.partialImageContext.expectedContentLength > entry.partialFileSize) ? entry.partialImageContext.expectedContentLength - entry.partialFileSize : NSUIntegerMax;
+        _background_extractTargetInfo(self);
+        const BOOL couldBeReasonableDataRemainingAndLarger =
+                        !isFinal &&
+                        TIPSizeGreaterThanZero(self->_targetDimensions) &&
+                        ((dimensions.width * dimensions.height) > (self->_targetDimensions.width * self->_targetDimensions.height));
+        if (couldBeReasonableDataRemainingAndLarger) {
+            const double ratio = (dimensions.width * dimensions.height) / (self->_targetDimensions.width * self->_targetDimensions.height);
+            const NSUInteger remainingBytes = (entry.partialImageContext.expectedContentLength > entry.partialFileSize) ? entry.partialImageContext.expectedContentLength - entry.partialFileSize : NSUIntegerMax;
             NSUInteger hypotheticalBytes = (entry.partialImageContext.expectedContentLength) ?: 0;
             hypotheticalBytes = (NSUInteger)((double)hypotheticalBytes / ratio);
             isReasonableDataRemainingAndLarger = remainingBytes < hypotheticalBytes;
         }
         if (isFinal || isReasonableDataRemainingAndLarger) {
             // meta-data checks out, load the actual partial image
-            entry = [_imagePipeline.diskCache imageEntryForIdentifier:entry.identifier options:(TIPImageDiskCacheFetchOptionPartialImage | TIPImageDiskCacheFetchOptionTemporaryFile) decoderConfigMap:_decoderConfigMap];
+            entry = [self->_imagePipeline.diskCache imageEntryForIdentifier:entry.identifier
+                                                                    options:(TIPImageDiskCacheFetchOptionPartialImage | TIPImageDiskCacheFetchOptionTemporaryFile)
+                                                           decoderConfigMap:self->_decoderConfigMap];
             if ([self.imageURL isEqual:entry.partialImageContext.URL] && entry.partialImage && entry.tempFile) {
-                _networkContext.imageDownloadRequest.imageDownloadLastModified = entry.partialImageContext.lastModified;
-                _networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming = entry.partialImage;
-                _networkContext.imageDownloadRequest.imageDownloadTemporaryFileForResuming = entry.tempFile;
+                self->_networkContext.imageDownloadRequest.imageDownloadLastModified = entry.partialImageContext.lastModified;
+                self->_networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming = entry.partialImage;
+                self->_networkContext.imageDownloadRequest.imageDownloadTemporaryFileForResuming = entry.tempFile;
 
-                [self _tip_background_processContinuedPartialEntry:entry.partialImage forURL:entry.partialImageContext.URL source:TIPImageLoadSourceDiskCache];
+                _background_processContinuedPartialEntry(self,
+                                                         entry.partialImage,
+                                                         entry.partialImageContext.URL,
+                                                         TIPImageLoadSourceDiskCache);
 
-                _flags.shouldJumpToResumingDownload = 1;
+                self->_flags.shouldJumpToResumingDownload = 1;
             }
         }
     }
 
-    if (tryOtherPipelines) {
-        [self _tip_background_loadFromOtherPipelineDisk];
+    if (tryOtherPipelineDiskCachesIfNeeded) {
+        _background_loadFromOtherPipelineDisk(self);
     } else {
-        [self _tip_background_loadFromNextSource];
+        _background_loadFromNextSource(self);
     }
 }
 
 #pragma mark Render Progress
 
-- (TIPImageContainer *)_tip_background_transformAndScaleImageContainer:(TIPImageContainer *)image progress:(float)progress transformed:(BOOL *)transformed
+static TIPImageContainer *_background_transformAndScaleImageContainer(SELF_ARG,
+                                                                      TIPImageContainer *imageContainer,
+                                                                      float progress,
+                                                                      BOOL *transformedOut)
 {
+    TIPAssert(self);
+    if (!self) {
+        return nil;
+    }
+
     TIPImageContainer *outputImage;
-    if (image.isAnimated) {
-        outputImage = [image scaleToTargetDimensions:_targetDimensions contentMode:_targetContentMode] ?: image;
-        *transformed = NO;
+    if (imageContainer.isAnimated) {
+        outputImage = [imageContainer scaleToTargetDimensions:self->_targetDimensions
+                                                  contentMode:self->_targetContentMode] ?: imageContainer;
+        *transformedOut = NO;
     } else {
-        UIImage *scaledImage = [self _tip_background_transformAndScaleImage:image.image progress:progress transformed:transformed];
+        UIImage *scaledImage = _background_transformAndScaleImage(self,
+                                                                  imageContainer.image,
+                                                                  progress,
+                                                                  transformedOut);
         outputImage = [[TIPImageContainer alloc] initWithImage:scaledImage];
     }
     return outputImage;
 }
 
-- (UIImage *)_tip_background_transformAndScaleImage:(UIImage *)image progress:(float)progress transformed:(BOOL *)transformed
+static UIImage *_background_transformAndScaleImage(SELF_ARG,
+                                                   UIImage *image,
+                                                   float progress,
+                                                   BOOL *transformedOut)
 {
-    *transformed = NO;
-    [self _tip_background_extractTargetInfo];
-    if (_transformer) {
-        UIImage *transformedImage = [_transformer tip_transformImage:image withProgress:progress hintTargetDimensions:_targetDimensions hintTargetContentMode:_targetContentMode forImageFetchOperation:self];
+    TIPAssert(self);
+    if (!self) {
+        return nil;
+    }
+
+    *transformedOut = NO;
+    _background_extractTargetInfo(self);
+    if (self->_transformer) {
+        UIImage *transformedImage = [self->_transformer tip_transformImage:image
+                                                              withProgress:progress
+                                                      hintTargetDimensions:self->_targetDimensions
+                                                     hintTargetContentMode:self->_targetContentMode
+                                                    forImageFetchOperation:self];
         if (transformedImage) {
             image = transformedImage;
-            *transformed = YES;
+            *transformedOut = YES;
         }
     }
-    image = [image tip_scaledImageWithTargetDimensions:_targetDimensions contentMode:_targetContentMode];
+    image = [image tip_scaledImageWithTargetDimensions:self->_targetDimensions
+                                           contentMode:self->_targetContentMode];
     TIPAssert(image != nil);
     return image;
 }
 
-- (void)_tip_background_processContinuedPartialEntry:(TIPPartialImage *)partialImage forURL:(NSURL *)URL source:(TIPImageLoadSource)source
+static void _background_processContinuedPartialEntry(SELF_ARG,
+                                                     TIPPartialImage *partialImage,
+                                                     NSURL *URL,
+                                                     TIPImageLoadSource source)
 {
-    [self _tip_background_validateProgressiveSupport:partialImage];
+    if (!self) {
+        return;
+    }
+
+    _background_validateProgressiveSupport(self, partialImage);
 
     // If we have a partial image with enough progress to display, let's decode it and use it as a progress image
-    if (_flags.permitsProgressiveLoading && partialImage.frameCount > 0 && [self.delegate respondsToSelector:@selector(tip_imageFetchOperation:didLoadPreviewImage:completion:)]) {
+    if (self->_flags.permitsProgressiveLoading && partialImage.frameCount > 0 && [self.delegate respondsToSelector:@selector(tip_imageFetchOperation:didLoadPreviewImage:completion:)]) {
         const uint64_t startMachTime = mach_absolute_time();
-        UIImage *progressImage = [self _tip_background_progressiveImageGivenAppendResult:TIPImageDecoderAppendResultDidLoadFrame partialImage:partialImage renderCount:0];
+        const TIPImageDecoderAppendResult givenResult = TIPImageDecoderAppendResultDidLoadFrame;
+        UIImage *progressImage = _background_getNextProgressiveImage(self, givenResult, partialImage, 0 /*renderCount*/);
         if (progressImage) {
             const float progress = partialImage.progress;
             BOOL transformed = NO;
-            progressImage = [self _tip_background_transformAndScaleImage:progressImage progress:progress transformed:&transformed];
+            progressImage = _background_transformAndScaleImage(self,
+                                                               progressImage,
+                                                               progress,
+                                                               &transformed);
             const NSTimeInterval latency = TIPComputeDuration(startMachTime, mach_absolute_time());
-            [self _tip_background_updateWithProgressiveImage:progressImage transformed:transformed imageRenderLatency:latency URL:URL progress:progress sourcePartialImage:partialImage source:source];
+            _background_updateProgressiveImage(self, progressImage, transformed, latency, URL, progress, partialImage, source);
         }
     }
 }
 
-- (nullable UIImage *)_tip_background_progressiveImageGivenAppendResult:(TIPImageDecoderAppendResult)result partialImage:(TIPPartialImage *)partialImage renderCount:(NSUInteger)renderCount
+static UIImage * __nullable _background_getNextProgressiveImage(SELF_ARG,
+                                                                TIPImageDecoderAppendResult appendResult,
+                                                                TIPPartialImage *partialImage,
+                                                                NSUInteger renderCount)
 {
-    [self _tip_background_validateProgressiveSupport:partialImage];
+    if (!self) {
+        return nil;
+    }
+
+    _background_validateProgressiveSupport(self, partialImage);
 
     BOOL shouldRender = NO;
     TIPImageDecoderRenderMode mode = TIPImageDecoderRenderModeCompleteImage;
     if (partialImage.state > TIPPartialImageStateLoadingHeaders) {
         shouldRender = YES;
-        if (_flags.permitsProgressiveLoading) {
+        if (self->_flags.permitsProgressiveLoading) {
 
             TIPImageFetchProgress fetchProgress = TIPImageFetchProgressNone;
-            if (TIPImageDecoderAppendResultDidLoadFrame == result) {
+            if (TIPImageDecoderAppendResultDidLoadFrame == appendResult) {
                 fetchProgress = TIPImageFetchProgressFullFrame;
             } else if (partialImage.state > TIPPartialImageStateLoadingHeaders) {
                 fetchProgress = TIPImageFetchProgressPartialFrame;
             }
             TIPImageFetchProgressUpdateBehavior behavior = TIPImageFetchProgressUpdateBehaviorNone;
-            if (_progressiveLoadingPolicy) {
-                behavior = [_progressiveLoadingPolicy tip_imageFetchOperation:self behaviorForProgress:fetchProgress frameCount:partialImage.frameCount progress:partialImage.progress type:partialImage.type dimensions:partialImage.dimensions renderCount:renderCount];
+            if (self->_progressiveLoadingPolicy) {
+                behavior = [self->_progressiveLoadingPolicy tip_imageFetchOperation:self
+                                                                behaviorForProgress:fetchProgress
+                                                                         frameCount:partialImage.frameCount
+                                                                           progress:partialImage.progress
+                                                                               type:partialImage.type
+                                                                         dimensions:partialImage.dimensions
+                                                                        renderCount:renderCount];
             }
 
             switch (behavior) {
@@ -1691,14 +2142,19 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     return image.image;
 }
 
-- (nullable UIImage *)_tip_background_firstFrameOfAnimatedImageIfNotYetProvidedFromPartialImage:(TIPPartialImage *)partialImage
+static UIImage * __nullable _background_getFirstFrameOfAnimatedImageIfNotYetProvided(SELF_ARG,
+                                                                                     TIPPartialImage *partialImage)
 {
-    if (partialImage.isAnimated && partialImage.frameCount >= 1 && !_flags.didReceiveFirstAnimatedFrame) {
+    if (!self) {
+        return nil;
+    }
+
+    if (partialImage.isAnimated && partialImage.frameCount >= 1 && !self->_flags.didReceiveFirstAnimatedFrame) {
         if ([self.delegate respondsToSelector:@selector(tip_imageFetchOperation:didLoadFirstAnimatedImageFrame:progress:)]) {
             TIPImageContainer *imageContainer = [partialImage renderImageWithMode:TIPImageDecoderRenderModeFullFrameProgress decoded:NO];
             if (imageContainer && !imageContainer.isAnimated) {
                 // Provide the first frame if requested
-                _flags.didReceiveFirstAnimatedFrame = 1;
+                self->_flags.didReceiveFirstAnimatedFrame = 1;
                 return imageContainer.image;
             }
         }
@@ -1709,13 +2165,20 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
 #pragma mark Create Cache Entry
 
-- (nullable TIPImageCacheEntry *)_tip_background_createCacheEntryFromRaw:(BOOL)useRawImage permitPreviewFallback:(BOOL)previewFallback didFallbackToPreview:(out BOOL * __nullable)didFallbackToPreviewOut
+static TIPImageCacheEntry * __nullable _background_createCacheEntry(SELF_ARG,
+                                                                    BOOL useRawImage,
+                                                                    BOOL permitPreviewFallback,
+                                                                    BOOL * __nullable didFallbackToPreviewOut)
 {
+    if (!self) {
+        return nil;
+    }
+
     TIPImageCacheEntry *entry = nil;
     TIPImageContainer *image = (useRawImage) ? self.finalImageContainerRaw : self.finalResult.imageContainer;
     NSURL *imageURL = self.finalResult.imageURL;
     BOOL isPlaceholder = self.finalResult.imageIsTreatedAsPlaceholder;
-    if (!image && previewFallback) {
+    if (!image && permitPreviewFallback) {
         image = (useRawImage) ? self.previewImageContainerRaw : self.previewResult.imageContainer;
         imageURL = self.previewResult.imageURL;
         isPlaceholder = self.previewResult.imageIsTreatedAsPlaceholder;
@@ -1734,7 +2197,7 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
         entry.completeImageContext = completeContext;
         entry.completeImage = image;
         context = completeContext;
-        [self _tip_helper_hydrateNewContext:context imageURL:imageURL placeholder:isPlaceholder];
+        _hydrateNewContext(self, context, imageURL, isPlaceholder);
 
         entry.identifier = self.imageIdentifier;
     }
@@ -1742,72 +2205,91 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     return entry;
 }
 
-- (nullable TIPImageCacheEntry *)_tip_background_createCacheEntryFromPartialImage:(TIPPartialImage *)partialImage lastModified:(NSString *)lastModified URL:(NSURL *)imageURL
+static TIPImageCacheEntry * __nullable _background_createCacheEntryFromPartialImage(SELF_ARG,
+                                                                                    TIPPartialImage *partialImage,
+                                                                                    NSString *lastModified,
+                                                                                    NSURL *imageURL)
 {
-    TIPImageCacheEntry *entry = nil;
-    if (partialImage && lastModified && partialImage.state > TIPPartialImageStateLoadingHeaders && TIP_BITMASK_EXCLUDES_FLAGS(_networkContext.imageDownloadRequest.imageDownloadOptions, TIPImageFetchTreatAsPlaceholder)) {
-        entry = [[TIPImageCacheEntry alloc] init];
-        TIPImageCacheEntryContext *context = nil;
-
-        TIPPartialImageEntryContext *partialContext = [[TIPPartialImageEntryContext alloc] init];
-        partialContext.dimensions = partialImage.dimensions;
-        partialContext.expectedContentLength = partialImage.expectedContentLength;
-        partialContext.lastModified = lastModified;
-        partialContext.animated = partialImage.isAnimated;
-
-        entry.partialImageContext = partialContext;
-        entry.partialImage = partialImage;
-        context = partialContext;
-        [self _tip_helper_hydrateNewContext:context imageURL:imageURL placeholder:NO];
-
-        entry.identifier = self.imageIdentifier;
+    if (!self) {
+        return nil;
     }
+
+    if (!partialImage) {
+        return nil;
+    }
+
+    if (!lastModified) {
+        return nil;
+    }
+
+    if (partialImage.state <= TIPPartialImageStateLoadingHeaders) {
+        return nil;
+    }
+
+    if (TIP_BITMASK_HAS_SUBSET_FLAGS(self->_networkContext.imageDownloadRequest.imageDownloadOptions, TIPImageFetchTreatAsPlaceholder)) {
+        return nil;
+    }
+
+    TIPImageCacheEntry *entry = [[TIPImageCacheEntry alloc] init];
+    TIPImageCacheEntryContext *context = nil;
+
+    TIPPartialImageEntryContext *partialContext = [[TIPPartialImageEntryContext alloc] init];
+    partialContext.dimensions = partialImage.dimensions;
+    partialContext.expectedContentLength = partialImage.expectedContentLength;
+    partialContext.lastModified = lastModified;
+    partialContext.animated = partialImage.isAnimated;
+
+    entry.partialImageContext = partialContext;
+    entry.partialImage = partialImage;
+    context = partialContext;
+    _hydrateNewContext(self, context, imageURL, NO /*placeholder*/);
+
+    entry.identifier = self.imageIdentifier;
 
     return entry;
-}
-
-- (void)_tip_helper_hydrateNewContext:(TIPImageCacheEntryContext *)context imageURL:(NSURL *)imageURL placeholder:(BOOL)placeholder
-{
-    if (!imageURL) {
-        imageURL = self.imageURL;
-    }
-
-    const TIPImageFetchOptions options = _networkContext.imageDownloadRequest.imageDownloadOptions;
-    context.updateExpiryOnAccess = TIP_BITMASK_EXCLUDES_FLAGS(options, TIPImageFetchDoNotResetExpiryOnAccess);
-    context.treatAsPlaceholder = placeholder;
-    context.TTL = _networkContext.imageDownloadRequest.imageDownloadTTL;
-    context.URL = imageURL;
-    context.lastAccess = [NSDate date];
-    if (context.TTL <= 0.0) {
-        context.TTL = TIPTimeToLiveDefault;
-    }
 }
 
 #pragma mark Cache propagation
 
-- (void)_tip_background_propagatePartialImageFromNetwork:(TIPPartialImage *)partialImage lastModified:(NSString *)lastModified
+static void _background_propagatePartialImage(SELF_ARG,
+                                              TIPPartialImage *partialImage,
+                                              NSString *lastModified,
+                                              BOOL wasResumed)
 {
-    [self _tip_background_extractStorageInfo];
-
-    if (!_flags.didReceiveFirstByte || self.finalImageContainerRaw) {
+    if (!self) {
         return;
     }
 
-    TIPImageCacheEntry *entry = [self _tip_background_createCacheEntryFromPartialImage:partialImage lastModified:lastModified URL:self.progressiveResult.imageURL];
+    _background_extractStorageInfo(self);
+
+    if (!self->_flags.didReceiveFirstByte || self.finalImageContainerRaw) {
+        return;
+    }
+
+    TIPImageCacheEntry *entry = _background_createCacheEntryFromPartialImage(self,
+                                                                             partialImage,
+                                                                             lastModified,
+                                                                             self.progressiveResult.imageURL);
     TIPAssert(!entry || (entry.partialImage && entry.partialImageContext));
     if (entry) {
-        [_imagePipeline.memoryCache updateImageEntry:entry forciblyReplaceExisting:NO];
+        [self->_imagePipeline.memoryCache updateImageEntry:entry
+                                   forciblyReplaceExisting:NO];
     }
 }
 
-- (void)_tip_background_propagatePreviewImageFromSource:(TIPImageLoadSource)source
+static void _background_propagatePreviewImage(SELF_ARG,
+                                              TIPImageLoadSource source)
 {
+    if (!self) {
+        return;
+    }
+
     if (TIPImageLoadSourceMemoryCache != source && TIPImageLoadSourceDiskCache != source) {
         // only memory/disk sources supported
         return;
     }
 
-    [self _tip_background_extractStorageInfo];
+    _background_extractStorageInfo(self);
 
     if (!self.previewImageContainerRaw || self.finalImageContainerRaw) {
         return;
@@ -1817,42 +2299,63 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 
     // First, the memory cache (if coming from disk)
     if (TIPImageLoadSourceDiskCache == source) {
-        entry = [self _tip_background_createCacheEntryFromRaw:YES permitPreviewFallback:YES didFallbackToPreview:NULL];
+        entry = _background_createCacheEntry(self,
+                                             YES /*useRawImage*/,
+                                             YES /*permitPreviewFallback*/,
+                                             NULL /*didFallbackToPreviewOut; we don't care*/);
         TIPAssert(!entry || (entry.completeImage && entry.completeImageContext));
         if (entry) {
-            [_imagePipeline.memoryCache updateImageEntry:entry forciblyReplaceExisting:NO];
+            [self->_imagePipeline.memoryCache updateImageEntry:entry
+                                       forciblyReplaceExisting:NO];
         }
     }
 
     // Second, the rendered cache (always)
     BOOL didFallbackToPreview = NO;
-    entry = [self _tip_background_createCacheEntryFromRaw:NO permitPreviewFallback:YES didFallbackToPreview:&didFallbackToPreview];
+    entry = _background_createCacheEntry(self,
+                                         NO /*useRawImage*/,
+                                         YES /*permitPreviewFallback*/,
+                                         &didFallbackToPreview);
     TIPAssert(!entry || (entry.completeImage && entry.completeImageContext));
     if (entry) {
-        const CGSize rawSize = (didFallbackToPreview) ? self.previewImageContainerRaw.dimensions : self.finalImageContainerRaw.dimensions;
-        const BOOL wasTransformed = (didFallbackToPreview) ? _flags.previewImageWasTransformed : _flags.finalImageWasTransformed;
-        if (!wasTransformed || _transfomerIdentifier) {
-            [_imagePipeline.renderedCache storeImageEntry:entry transformerIdentifier:(wasTransformed) ? _transfomerIdentifier : nil sourceImageDimensions:rawSize];
+        const CGSize rawSize = (didFallbackToPreview) ?
+                                    self.previewImageContainerRaw.dimensions :
+                                    self.finalImageContainerRaw.dimensions;
+        const BOOL wasTransformed = (didFallbackToPreview) ?
+                                        self->_flags.previewImageWasTransformed :
+                                        self->_flags.finalImageWasTransformed;
+        if (!wasTransformed || self->_transfomerIdentifier) {
+            [self->_imagePipeline.renderedCache storeImageEntry:entry
+                                          transformerIdentifier:(wasTransformed) ? self->_transfomerIdentifier : nil
+                                          sourceImageDimensions:rawSize];
         }
     }
 }
 
-- (void)_tip_background_propagateFinalImageFromSource:(TIPImageLoadSource)source
+static void _background_propagateFinalImage(SELF_ARG,
+                                            TIPImageLoadSource source)
 {
-    [self _tip_background_extractStorageInfo];
+    if (!self) {
+        return;
+    }
+
+    _background_extractStorageInfo(self);
 
     if (!self.finalImageContainerRaw) {
         return;
     }
 
-    TIPImageCacheEntry *entry = [self _tip_background_createCacheEntryFromRaw:YES permitPreviewFallback:NO didFallbackToPreview:NULL];
+    TIPImageCacheEntry *entry = _background_createCacheEntry(self,
+                                                             YES /*useRawImage*/,
+                                                             NO /*permitPreviewFallback*/,
+                                                             NULL /*didFallbackToPreviewOut*/);
     TIPAssert(!entry || (entry.completeImage && entry.completeImageContext));
 
     if (entry) {
         switch (source) {
             case TIPImageLoadSourceMemoryCache:
             {
-                [_imagePipeline.diskCache updateImageEntry:entry forciblyReplaceExisting:NO];
+                [self->_imagePipeline.diskCache updateImageEntry:entry forciblyReplaceExisting:NO];
                 break;
             }
             case TIPImageLoadSourceDiskCache:
@@ -1860,9 +2363,9 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
             case TIPImageLoadSourceNetworkResumed:
             case TIPImageLoadSourceAdditionalCache:
             {
-                [_imagePipeline.memoryCache updateImageEntry:entry forciblyReplaceExisting:NO];
+                [self->_imagePipeline.memoryCache updateImageEntry:entry forciblyReplaceExisting:NO];
                 if (TIPImageLoadSourceNetwork == source || TIPImageLoadSourceNetworkResumed == source) {
-                    [_imagePipeline postCompletedEntry:entry manual:NO];
+                    [self->_imagePipeline postCompletedEntry:entry manual:NO];
                     // the network will have already transitioned the disk entry to the disk cache
                     // so there'se no need to update the image entry of the disk cache
                 }
@@ -1874,36 +2377,186 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     }
 
     // Always try to update the rendered cache
-    [self _tip_background_propagateFinalRenderedImageFromSource:source];
+    _background_propagateFinalRenderedImage(self, source);
 }
 
-- (void)_tip_background_propagateFinalRenderedImageFromSource:(TIPImageLoadSource)source
+static void _background_propagateFinalRenderedImage(SELF_ARG,
+                                                    TIPImageLoadSource source)
 {
-    if (_flags.finalImageWasTransformed && !_transfomerIdentifier) {
+    if (!self) {
         return;
     }
 
-    TIPImageCacheEntry *entry = [self _tip_background_createCacheEntryFromRaw:NO permitPreviewFallback:NO didFallbackToPreview:NULL];
+    if (self->_flags.finalImageWasTransformed && !self->_transfomerIdentifier) {
+        return;
+    }
+
+    TIPImageCacheEntry *entry = _background_createCacheEntry(self,
+                                                             NO /*useRawImage*/,
+                                                             NO /*permitPreviewFallback*/,
+                                                             NULL /*didFallbackToPreviewOut*/);
     TIPAssert(!entry || (entry.completeImage && entry.completeImageContext));
     if (entry) {
         const CGSize rawSize = self.finalImageContainerRaw.dimensions;
-        [_imagePipeline.renderedCache storeImageEntry:entry transformerIdentifier:(_flags.finalImageWasTransformed) ? _transfomerIdentifier : nil sourceImageDimensions:rawSize];
+        NSString *transformerIdentifier = (self->_flags.finalImageWasTransformed) ? self->_transfomerIdentifier : nil;
+        [self->_imagePipeline.renderedCache storeImageEntry:entry
+                                      transformerIdentifier:transformerIdentifier
+                                      sourceImageDimensions:rawSize];
     }
 }
 
 #pragma mark Execute
 
-- (void)_tip_background_executeDelegateWork:(TIPImageFetchDelegateWorkBlock)block
+static void _background_executeDelegateWork(SELF_ARG,
+                                            TIPImageFetchDelegateWorkBlock block)
 {
+    if (!self) {
+        return;
+    }
+
     id<TIPImageFetchDelegate> delegate = self.delegate;
     dispatch_async(dispatch_get_main_queue(), ^{
         block(delegate);
     });
 }
 
-- (void)_tip_executeBackgroundWork:(dispatch_block_t)block
+static void _executeBackgroundWork(SELF_ARG,
+                                   dispatch_block_t block)
 {
-    dispatch_async(_backgroundQueue, block);
+    if (!self) {
+        return;
+    }
+
+    dispatch_async(self->_backgroundQueue, block);
+}
+
+@end
+
+@implementation TIPImageFetchOperation (DiskCache)
+
+static void _diskCache_loadFromOtherPipelines(SELF_ARG,
+                                              NSArray<TIPImagePipeline *> *pipelines,
+                                              uint64_t startMachTime)
+{
+    if (!self) {
+        return;
+    }
+
+    for (TIPImagePipeline *nextPipeline in pipelines) {
+        // look in the pipeline's disk cache
+        if (_diskCache_attemptLoadFromOtherPipelineDisk(self, nextPipeline, startMachTime)) {
+            // success!
+            return;
+        }
+    }
+
+    // Ran out of "next" pipelines, load from next source
+    _diskCache_completeLoadFromOtherPipelineDisk(self,
+                                                 nil /*imageContainer*/,
+                                                 nil /*URL*/,
+                                                 TIPComputeDuration(startMachTime, mach_absolute_time()),
+                                                 NO /*placeholder*/);
+}
+
+static BOOL _diskCache_attemptLoadFromOtherPipelineDisk(SELF_ARG,
+                                                        TIPImagePipeline *nextPipeline,
+                                                        uint64_t startMachTime)
+{
+    if (!self) {
+        return NO;
+    }
+
+    TIPImageDiskCache *nextDiskCache = nextPipeline.diskCache;
+    if (nextDiskCache) {
+
+        // pull out the on disk path to the desired entry if available
+        TIPCompleteImageEntryContext *context = nil;
+        NSString *filePath = [nextDiskCache diskCache_imageEntryFilePathForIdentifier:self.imageIdentifier
+                                                             hitShouldMoveEntryToHead:NO
+                                                                              context:&context];
+
+        // only accept an exact match (URLs are equal)
+        if (filePath && [context.URL isEqual:self.imageURL]) {
+
+            // pull out our pipeline's disk cache
+            TIPImageDiskCache *thisDiskCache = self->_imagePipeline.diskCache;
+
+            // override fetch values
+            const TIPImageFetchOptions options = self->_networkContext.imageDownloadRequest.imageDownloadOptions;
+            context.updateExpiryOnAccess = TIP_BITMASK_EXCLUDES_FLAGS(options, TIPImageFetchDoNotResetExpiryOnAccess);
+            context.TTL = self->_networkContext.imageDownloadRequest.imageDownloadTTL;
+            context.lastAccess = [NSDate date];
+            if (context.TTL <= 0.0) {
+                context.TTL = TIPTimeToLiveDefault;
+            }
+            // leave context.treatAsPlaceholder as-is
+
+            // create an entry
+            TIPImageCacheEntry *entry = [[TIPImageCacheEntry alloc] init];
+            entry.identifier = self.imageIdentifier;
+            entry.completeImageContext = context;
+            entry.completeImageFilePath = filePath;
+
+            // store the entry (via file path) to disk cache
+            [thisDiskCache diskCache_updateImageEntry:entry
+                              forciblyReplaceExisting:!context.treatAsPlaceholder];
+
+            // complete the loop by retrieving entry (with UIImage) from disk cache
+            entry = [thisDiskCache diskCache_imageEntryForIdentifier:entry.identifier
+                                                             options:TIPImageDiskCacheFetchOptionCompleteImage
+                                                    decoderConfigMap:self->_decoderConfigMap];
+
+            // did we get an image?
+            TIPImageContainer *image = entry.completeImage;
+            if (image) {
+
+                // complete
+                _diskCache_completeLoadFromOtherPipelineDisk(self,
+                                                             image,
+                                                             context.URL,
+                                                             TIPComputeDuration(startMachTime, mach_absolute_time()),
+                                                             context.treatAsPlaceholder);
+
+                // success!
+                return YES;
+            }
+        }
+    }
+
+    // didn't succeed
+    return NO;
+}
+
+static void _diskCache_completeLoadFromOtherPipelineDisk(SELF_ARG,
+                                                         TIPImageContainer * __nullable imageContainer,
+                                                         NSURL * __nullable URL,
+                                                         NSTimeInterval latency,
+                                                         BOOL placeholder)
+{
+    if (!self) {
+        return;
+    }
+
+    if (latency > 0.150) {
+        TIPLogWarning(@"Other Pipeline Duration (%@): %.3fs", (imageContainer != nil) ? @"HIT" : @"MISS", latency);
+    } else if (imageContainer) {
+        TIPLogDebug(@"Other Pipeline Duration (HIT): %.3fs", latency);
+    }
+
+    _executeBackgroundWork(self, ^{
+        if (imageContainer && URL) {
+            _background_updateFinalImage(self,
+                                         imageContainer,
+                                         0 /*imageRenderLatency*/,
+                                         URL,
+                                         TIPImageLoadSourceDiskCache,
+                                         nil /*networkImageType*/,
+                                         0 /*networkByteCount*/,
+                                         placeholder);
+        } else {
+            _background_loadFromNextSource(self);
+        }
+    });
 }
 
 @end
@@ -1923,7 +2576,8 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     Class _delegateClass;
 }
 
-- (instancetype)initWithFetchOperation:(TIPImageFetchOperation *)operation delegate:(id<TIPImageFetchDelegate>)delegate
+- (instancetype)initWithFetchOperation:(TIPImageFetchOperation *)operation
+                              delegate:(id<TIPImageFetchDelegate>)delegate
 {
     if (self = [super init]) {
         _operation = operation;
@@ -1975,16 +2629,35 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
 @synthesize imageWasTransformed = _imageWasTransformed;
 @synthesize imageIdentifier = _imageIdentifier;
 
-+ (nullable instancetype)resultWithImageContainer:(nullable TIPImageContainer *)imageContainer identifier:(nullable NSString *)identifier source:(TIPImageLoadSource)source URL:(nullable NSURL *)URL originalDimensions:(CGSize)originalDimensions placeholder:(BOOL)placeholder transformed:(BOOL)transformed
+static TIPImageFetchResultInternal * __nullable
+_CreateFetchResultInternal(TIPImageContainer * __nullable imageContainer,
+                           NSString * __nullable identifier,
+                           TIPImageLoadSource source,
+                           NSURL * __nullable URL,
+                           CGSize originalDimensions,
+                           BOOL placeholder,
+                           BOOL transformed)
 {
     if (!imageContainer || !URL || !identifier) {
         return nil;
     }
 
-    return [[self alloc] initWithImageContainer:imageContainer identifier:identifier source:source URL:URL originalDimensions:originalDimensions placeholder:placeholder transformed:transformed];
+    return [[TIPImageFetchResultInternal alloc] initWithImageContainer:imageContainer
+                                                            identifier:identifier
+                                                                source:source
+                                                                   URL:URL
+                                                    originalDimensions:originalDimensions
+                                                           placeholder:placeholder
+                                                           transformed:transformed];
 }
 
-- (instancetype)initWithImageContainer:(TIPImageContainer *)imageContainer identifier:(NSString *)identifier source:(TIPImageLoadSource)source URL:(NSURL *)URL originalDimensions:(CGSize)originalDimensions placeholder:(BOOL)placeholder transformed:(BOOL)transformed
+- (instancetype)initWithImageContainer:(TIPImageContainer *)imageContainer
+                            identifier:(NSString *)identifier
+                                source:(TIPImageLoadSource)source
+                                   URL:(NSURL *)URL
+                    originalDimensions:(CGSize)originalDimensions
+                           placeholder:(BOOL)placeholder
+                           transformed:(BOOL)transformed
 {
     if (self = [super init]) {
         _imageContainer = imageContainer;

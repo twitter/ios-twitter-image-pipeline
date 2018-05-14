@@ -2,11 +2,13 @@
 //  TIPSafeOperation.h
 //  TwitterImagePipeline
 //
-//  Created by Nolan O'Brien on 6/1/17.
+//  Created on 6/1/17
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
-#import <Foundation/NSOperation.h>
+#import <Foundation/Foundation.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  `TIPSafeOperation` works to encapsulate fixes for `NSOperation`.
@@ -16,3 +18,5 @@
  */
 @interface TIPSafeOperation : NSOperation
 @end
+
+NS_ASSUME_NONNULL_END

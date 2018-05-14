@@ -2,7 +2,7 @@
 //  TIPXMP4Codec.m
 //  TwitterImagePipeline
 //
-//  Created by Nolan O'Brien on 3/16/17.
+//  Created on 3/16/17.
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
@@ -10,6 +10,12 @@
 #import "TIPXMP4Codec.h"
 
 @import AVFoundation;
+
+#ifndef PRIVATE_SELF
+#define PRIVATE_SELF(type) type * __nullable const self
+#endif
+
+NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - Defer support
 
@@ -58,7 +64,7 @@ static const size_t kSignatureDataRequiredToCheck = sizeof(kComplexSignature1) +
 
 #pragma mark - Declarations
 
-static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample) CF_RETURNS_RETAINED;
+static CGImageRef __nullable TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef __nullable sample) CF_RETURNS_RETAINED;
 
 @interface TIPXMP4DecoderConfigInternal : NSObject <TIPXMP4DecoderConfig>
 - (instancetype)initWithMaxDecodableFramesCount:(NSUInteger)max;
@@ -90,7 +96,7 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
     return [self initWithDefaultDecoderConfig:nil];
 }
 
-- (instancetype)initWithDefaultDecoderConfig:(id<TIPXMP4DecoderConfig>)decoderConfig
+- (instancetype)initWithDefaultDecoderConfig:(nullable id<TIPXMP4DecoderConfig>)decoderConfig
 {
     if (self = [super init]) {
         _tip_decoder = [[TIPXMP4Decoder alloc] initWithDefaultDecoderConfig:decoderConfig];
@@ -98,7 +104,7 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
     return self;
 }
 
-- (id<TIPXMP4DecoderConfig>)defaultDecoderConfig
+- (nullable id<TIPXMP4DecoderConfig>)defaultDecoderConfig
 {
     return [(TIPXMP4Decoder *)_tip_decoder defaultDecoderConfig];
 }
@@ -141,7 +147,7 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
     return _frameCount;
 }
 
-- (instancetype)initWithBuffer:(NSMutableData *)buffer config:(id<TIPXMP4DecoderConfig>)config
+- (instancetype)initWithBuffer:(NSMutableData *)buffer config:(nullable id<TIPXMP4DecoderConfig>)config
 {
     if (self = [super init]) {
         _data = buffer;
@@ -154,28 +160,34 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
 
         _temporaryFilePath = [[tmpDir stringByAppendingPathComponent:[NSUUID UUID].UUIDString] stringByAppendingPathExtension:@"mp4"];
         _temporaryFile = fopen(_temporaryFilePath.UTF8String, "w");
-        [self _tipx_writeDataToTemporaryFile:_data];
+        _writeDataToTemporaryFile(self, _data);
     }
     return self;
 }
 
 - (void)dealloc
 {
-    [self _tipx_clear];
+    _clear(self);
 }
 
-- (BOOL)_tipx_writeDataToTemporaryFile:(NSData *)data
+static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
+                                      NSData *data)
 {
-    if (_temporaryFile) {
+    if (!self) {
+        return NO;
+    }
+
+    if (self->_temporaryFile) {
         const size_t byteCount = data.length;
         if (byteCount) {
-            const size_t byteOut = fwrite(data.bytes, sizeof(char), byteCount, _temporaryFile);
+            const size_t byteOut = fwrite(data.bytes, sizeof(char), byteCount, self->_temporaryFile);
             if (byteCount == byteOut) {
                 return YES;
             } else {
-                fclose(_temporaryFile);
-                _temporaryFile = NULL;
-                [[NSFileManager defaultManager] removeItemAtPath:_temporaryFilePath error:NULL];
+                fclose(self->_temporaryFile);
+                self->_temporaryFile = NULL;
+                [[NSFileManager defaultManager] removeItemAtPath:self->_temporaryFilePath
+                                                           error:NULL];
             }
         }
     }
@@ -190,7 +202,7 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
             _frameCount = 1; // seed the frames
         }
         [_data appendData:data];
-        [self _tipx_writeDataToTemporaryFile:data];
+        _writeDataToTemporaryFile(self, data);
     }
 
     return TIPImageDecoderAppendResultDidProgress;
@@ -203,9 +215,13 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
             @autoreleasepool {
                 AVAsset *asset = [AVAsset assetWithURL:[NSURL fileURLWithPath:self->_temporaryFilePath]];
                 AVAssetImageGenerator* imageGenerator = [AVAssetImageGenerator assetImageGeneratorWithAsset:asset];
-                CGImageRef imageRef = [imageGenerator copyCGImageAtTime:CMTimeMake(0, 1) actualTime:nil error:nil];
+                CGImageRef imageRef = [imageGenerator copyCGImageAtTime:CMTimeMake(0, 1)
+                                                             actualTime:nil
+                                                                  error:nil];
                 if (imageRef) {
-                    UIImage* image = [UIImage imageWithCGImage:imageRef scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+                    UIImage* image = [UIImage imageWithCGImage:imageRef
+                                                         scale:[UIScreen mainScreen].scale
+                                                   orientation:UIImageOrientationUp];
                     CFRelease(imageRef);
                     if (image) {
                         self->_firstFrame = image;
@@ -218,7 +234,7 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
     return _firstFrame ? [[TIPImageContainer alloc] initWithImage:_firstFrame] : nil;
 }
 
-- (TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode
+- (nullable TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode
 {
     if (_cachedContainer) {
         return _cachedContainer;
@@ -296,7 +312,8 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
 
         TIPImageContainer *container = nil;
         if (self->_frameCount > 1) {
-            UIImage *animatedImage = [UIImage animatedImageWithImages:images duration:CMTimeGetSeconds(self->_avAsset.duration)];
+            UIImage *animatedImage = [UIImage animatedImageWithImages:images
+                                                             duration:CMTimeGetSeconds(self->_avAsset.duration)];
             container = [[TIPImageContainer alloc] initWithImage:animatedImage];
         } else if (self->_frameCount == 1) {
             container = [[TIPImageContainer alloc] initWithImage:images.firstObject];
@@ -305,7 +322,7 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
         self->_cachedContainer = container;
     });
 
-    [self _tipx_clear];
+    _clear(self);
     return _cachedContainer;
 }
 
@@ -344,18 +361,23 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
     }
 }
 
-- (void)_tipx_clear
+static void _clear(PRIVATE_SELF(TIPXMP4DecoderContext))
 {
-    _avTrack = nil;
-    _avAsset = nil;
-    if (_temporaryFile) {
-        fflush(_temporaryFile);
-        fclose(_temporaryFile);
-        _temporaryFile = NULL;
+    if (!self) {
+        return;
     }
-    if (_temporaryFilePath) {
-        [[NSFileManager defaultManager] removeItemAtPath:_temporaryFilePath error:NULL];
-        _temporaryFilePath = nil;
+
+    self->_avTrack = nil;
+    self->_avAsset = nil;
+    if (self->_temporaryFile) {
+        fflush(self->_temporaryFile);
+        fclose(self->_temporaryFile);
+        self->_temporaryFile = NULL;
+    }
+    if (self->_temporaryFilePath) {
+        [[NSFileManager defaultManager] removeItemAtPath:self->_temporaryFilePath
+                                                   error:NULL];
+        self->_temporaryFilePath = nil;
     }
 }
 
@@ -373,7 +395,8 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
     return self;
 }
 
-- (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data earlyGuessImageType:(NSString *)imageType
+- (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data
+                                      earlyGuessImageType:(nullable NSString *)imageType
 {
     if (data.length < kSignatureDataRequiredToCheck) {
         return TIPImageDecoderDetectionResultNeedMoreData;
@@ -389,7 +412,9 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
     return TIPImageDecoderDetectionResultNoMatch;
 }
 
-- (TIPXMP4DecoderContext *)tip_initiateDecoding:(nullable id)config expectedDataLength:(NSUInteger)expectedDataLength buffer:(nullable NSMutableData *)buffer
+- (TIPXMP4DecoderContext *)tip_initiateDecoding:(nullable id)config
+                             expectedDataLength:(NSUInteger)expectedDataLength
+                                         buffer:(nullable NSMutableData *)buffer
 {
     id<TIPXMP4DecoderConfig> decoderConfig = nil;
     if ([config respondsToSelector:@selector(maxDecodableFramesCount)]) {
@@ -398,15 +423,18 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
     if (!decoderConfig) {
         decoderConfig = self.defaultDecoderConfig;
     }
-    return [[TIPXMP4DecoderContext alloc] initWithBuffer:buffer ?: [[NSMutableData alloc] initWithCapacity:expectedDataLength] config:decoderConfig];
+    return [[TIPXMP4DecoderContext alloc] initWithBuffer:buffer ?: [[NSMutableData alloc] initWithCapacity:expectedDataLength]
+                                                  config:decoderConfig];
 }
 
-- (TIPImageDecoderAppendResult)tip_append:(TIPXMP4DecoderContext *)context data:(NSData *)data
+- (TIPImageDecoderAppendResult)tip_append:(TIPXMP4DecoderContext *)context
+                                     data:(NSData *)data
 {
     return [context appendData:data];
 }
 
-- (TIPImageContainer *)tip_renderImage:(TIPXMP4DecoderContext *)context mode:(TIPImageDecoderRenderMode)mode
+- (nullable TIPImageContainer *)tip_renderImage:(TIPXMP4DecoderContext *)context
+                                           mode:(TIPImageDecoderRenderMode)mode
 {
     return [context renderImageWithMode:mode];
 }
@@ -432,7 +460,7 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sample)
 
 @end
 
-static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sampleBuffer)
+static CGImageRef __nullable TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef __nullable sampleBuffer)
 {
     CVImageBufferRef imageBuffer = sampleBuffer ? CMSampleBufferGetImageBuffer(sampleBuffer) : NULL;
     if (!imageBuffer) {
@@ -468,3 +496,5 @@ static CGImageRef TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef sampleB
 
     return CGBitmapContextCreateImage(newContext);
 }
+
+NS_ASSUME_NONNULL_END
