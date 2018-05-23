@@ -421,8 +421,15 @@ static UIImage * __nullable _TIPRenderImageModern(UIImage * __nullable sourceIma
         if (sourceImage) {
             format = sourceImage.imageRendererFormat;
             size = sourceImage.size;
-        } else if (@available(iOS 11.0, *)) {
+        } else if (@available(iOS 11.0.1, *)) {
             format = [UIGraphicsImageRendererFormat preferredFormat];
+        } else if (@available(iOS 11.0.0, *)) {
+            // iOS 11.0.0 GM does have `preferredFormat`, but iOS 11 betas did not (argh!)
+            if ([UIGraphicsImageRenderer respondsToSelector:@selector(preferredFormat)]) {
+                format = [UIGraphicsImageRendererFormat preferredFormat];
+            } else {
+                format = [UIGraphicsImageRendererFormat defaultFormat];
+            }
         } else {
             format = [UIGraphicsImageRendererFormat defaultFormat];
         }
