@@ -157,8 +157,8 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
 
 #pragma mark Transform Methods
 
-- (nullable UIImage *)tip_imageWithRenderFormatting:(nullable TIPImageRenderFormattingBlock)formatBlock
-                                             render:(nonnull TIPImageRenderBlock)renderBlock
+- (nullable UIImage *)tip_imageWithRenderFormatting:(nullable __attribute__((noescape)) TIPImageRenderFormattingBlock)formatBlock
+                                             render:(nonnull __attribute__((noescape)) TIPImageRenderBlock)renderBlock
 {
     return TIPRenderImage(self, formatBlock, renderBlock);
 }
