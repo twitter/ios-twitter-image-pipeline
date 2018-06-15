@@ -95,8 +95,8 @@ NS_ASSUME_NONNULL_BEGIN
  @return The rendered `UIImage`
  @note a target that is an animation will yield `nil`
  */
-- (nullable UIImage *)tip_imageWithRenderFormatting:(nullable __attribute__((noescape))  TIPImageRenderFormattingBlock)formatBlock
-                                             render:(__attribute__((noescape)) TIPImageRenderBlock)renderBlock;
+- (nullable UIImage *)tip_imageWithRenderFormatting:(nullable TIPImageRenderFormattingBlock NS_NOESCAPE)formatBlock
+                                             render:(TIPImageRenderBlock NS_NOESCAPE)renderBlock;
 
 /**
  Return a copy of the image scaled

@@ -100,6 +100,7 @@ static void _ImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInter
                                                            id<TIPImageFetchDownload> __nullable download)
 {
     TIPAssertDownloaderQueue();
+    TIPAssert(context);
 
     NSString *cancelDescription = nil;
     switch (code) {
@@ -126,9 +127,9 @@ static void _ImageDownloadSetProgressStateFailureAndCancel(TIPImageDownloadInter
             break;
     }
 
-    context.progressStateError = [NSError errorWithDomain:TIPImageFetchErrorDomain
-                                                     code:code
-                                                 userInfo:nil];
+    context->_progressStateError = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                                       code:code
+                                                   userInfo:nil];
     [download cancelWithDescription:[NSString stringWithFormat:@"TIP: %@ %@", download, cancelDescription]];
 }
 
@@ -222,7 +223,7 @@ static void _background_removeDelegate(SELF_ARG,
         return;
     }
 
-    dispatch_async(_downloaderQueue, ^{
+    tip_dispatch_async_autoreleasing(_downloaderQueue, ^{
         _background_removeDelegate(self, delegate, (id<TIPImageFetchDownload>)context);
     });
 }
@@ -233,7 +234,7 @@ static void _background_removeDelegate(SELF_ARG,
         return;
     }
 
-    dispatch_async(_downloaderQueue, ^{
+    tip_dispatch_async_autoreleasing(_downloaderQueue, ^{
         _background_updatePriorityOfDownload(self, (id<TIPImageFetchDownload>)context);
     });
 }
@@ -245,11 +246,16 @@ static void _background_removeDelegate(SELF_ARG,
     TIPAssertDownloaderQueue();
 
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
-    if (context.didStart) {
+    TIPAssert(context);
+    if (!context) {
+        return;
+    }
+
+    if (context->_flags.didStart) {
         _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadEncounteredToStartMoreThanOnce, download);
         return;
     }
-    context.didStart = YES;
+    context->_flags.didStart = YES;
 
 #if TIP_LOG_DOWNLOAD_PROGRESS
     TIPLogDebug(@"(%@)[%p] - starting", context.originalRequest.URL, download);
@@ -267,41 +273,46 @@ static void _background_removeDelegate(SELF_ARG,
     TIPAssertDownloaderQueue();
 
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
-    if (context.didReceiveResponse) {
+    TIPAssert(context);
+    if (!context) {
+        return;
+    }
+
+    if (context->_flags.didReceiveResponse) {
         _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadReceivedResponseMoreThanOnce, download);
         return;
     }
-    context.didReceiveResponse = YES;
+    context->_flags.didReceiveResponse = YES;
 
-    context.response = response;
-    context.contentLength = (NSUInteger)MAX(0LL, _ExpectedResponseBodySize(response));
+    context->_response = response;
+    context->_contentLength = (NSUInteger)MAX(0LL, _ExpectedResponseBodySize(response));
 
-    if (!context.didRequestHydration) {
+    if (!context->_flags.didRequestHydration) {
         _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadNeverAttemptedToHydrateRequest, download);
         return;
     }
     TIPAssert(context.hydratedRequest);
 
-    if (200 /* OK */ == context.response.statusCode) {
-        TIPPartialImage *partialImage = context.partialImage;
+    if (200 /* OK */ == context->_response.statusCode) {
+        TIPPartialImage *partialImage = context->_partialImage;
         // reset the resuming info
-        context.partialImage = nil;
-        context.temporaryFile = nil;
-        context.lastModified = nil;
+        context->_partialImage = nil;
+        context->_temporaryFile = nil;
+        context->_lastModified = nil;
         [context executePerDelegateSuspendingQueue:_downloaderQueue
                                              block:^(id<TIPImageDownloadDelegate> delegate) {
             [delegate imageDownload:(id)download didResetFromPartialImage:partialImage];
         }];
-    } else if (206 /* Partial Content */ == context.response.statusCode) {
+    } else if (206 /* Partial Content */ == context->_response.statusCode) {
         TIPLogDebug(@"Did resume download of image at URL: %@", context.originalRequest.URL);
-        if ((context.contentLength + context.partialImage.byteCount) != context.partialImage.expectedContentLength) {
-            TIPLogWarning(@"Continued partial image expected Content-Lenght (%tu) does not match recalculated expected Content-Length (%tu)", context.partialImage.expectedContentLength, context.contentLength + context.partialImage.byteCount);
+        if ((context->_contentLength + context->_partialImage.byteCount) != context->_partialImage.expectedContentLength) {
+            TIPLogWarning(@"Continued partial image expected Content-Lenght (%tu) does not match recalculated expected Content-Length (%tu)", context->_partialImage.expectedContentLength, context->_contentLength + context->_partialImage.byteCount);
         }
-        context.contentLength = context.partialImage.expectedContentLength;
+        context->_contentLength = context->_partialImage.expectedContentLength;
     } else {
         // Don't bother downloading any further if our status code is not going to have image bytes
-        context.responseStatusCodeIsFailure = YES;
-        [download cancelWithDescription:[NSString stringWithFormat:@"TIP: Encountered HTTP Status Code (%ti)", context.response.statusCode]];
+        context->_flags.responseStatusCodeIsFailure = YES;
+        [download cancelWithDescription:[NSString stringWithFormat:@"TIP: Encountered HTTP Status Code (%ti)", context->_response.statusCode]];
     }
 
 #if TIP_LOG_DOWNLOAD_PROGRESS
@@ -309,11 +320,16 @@ static void _background_removeDelegate(SELF_ARG,
 #endif
 }
 
-- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download didReceiveData:(NSData *)data
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
+            didReceiveData:(NSData *)data
 {
     TIPAssertDownloaderQueue();
 
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
+    TIPAssert(context);
+    if (!context) {
+        return;
+    }
 
     TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
     const NSUInteger byteCount = data.length;
@@ -322,40 +338,40 @@ static void _background_removeDelegate(SELF_ARG,
     TIPLogDebug(@"(%@)[%p] - downloaded %tu bytes", context.originalRequest.URL, download, byteCount);
 #endif
 
-    if (!context.didReceiveResponse) {
+    if (!context->_flags.didReceiveResponse) {
         _ImageDownloadSetProgressStateFailureAndCancel(context,
                                                          TIPImageFetchErrorCodeDownloadNeverReceivedResponse,
                                                          download);
         return;
     }
 
-    if (context.responseStatusCodeIsFailure) {
+    if (context->_flags.responseStatusCodeIsFailure) {
         // will be cancelled async, need to return early
         return;
     }
 
     // Prep
-    if (!context.didReceiveData) {
-        context.didReceiveData = YES;
-        if (!context.temporaryFile) {
-            context.temporaryFile = [context.firstDelegate regenerateImageDownloadTemporaryFileForImageDownload:(id)download];
+    if (!context->_flags.didReceiveData) {
+        context->_flags.didReceiveData = YES;
+        if (!context->_temporaryFile) {
+            context->_temporaryFile = [context.firstDelegate regenerateImageDownloadTemporaryFileForImageDownload:(id)download];
         }
     }
-    if (!context.partialImage) {
-        context.partialImage = [[TIPPartialImage alloc] initWithExpectedContentLength:context.contentLength];
-        if (context.decoderConfigMap) {
-            [context.partialImage updateDecoderConfigMap:context.decoderConfigMap];
+    if (!context->_partialImage) {
+        context->_partialImage = [[TIPPartialImage alloc] initWithExpectedContentLength:context->_contentLength];
+        if (context->_decoderConfigMap) {
+            [context->_partialImage updateDecoderConfigMap:context->_decoderConfigMap];
         }
     }
 
     // Update partial image
-    result = [context.partialImage appendData:data final:NO];
+    result = [context->_partialImage appendData:data final:NO];
 
     // Update temporary file
-    [context.temporaryFile appendData:data];
+    [context->_temporaryFile appendData:data];
 
     if (context.delegateCount > 0) {
-        TIPPartialImage *partialImage = context.partialImage;
+        TIPPartialImage *partialImage = context->_partialImage;
         [context executePerDelegateSuspendingQueue:_downloaderQueue
                                              block:^(id<TIPImageDownloadDelegate> delegate) {
             [delegate imageDownload:(id)download
@@ -377,13 +393,19 @@ static void _background_removeDelegate(SELF_ARG,
     TIPAssertDownloaderQueue();
 
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
-    if (context.didRequestHydration) {
+    TIPAssert(context);
+    if (!context) {
+        complete(nil);
+        return;
+    }
+
+    if (context->_flags.didRequestHydration) {
         _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadAttemptedToHydrateRequestMoreThanOnce, download);
         return;
     }
-    context.didRequestHydration = YES;
+    context->_flags.didRequestHydration = YES;
 
-    if (!context.didStart) {
+    if (!context->_flags.didStart) {
         _ImageDownloadSetProgressStateFailureAndCancel(context,
                                                          TIPImageFetchErrorCodeDownloadNeverStarted,
                                                          download);
@@ -406,8 +428,8 @@ static void _background_removeDelegate(SELF_ARG,
     };
 
     // Pull out contextual values since accessing the context object from another thread is unsafe
-    NSUInteger partialImageByteCount = context.partialImage.byteCount;
-    NSString *lastModified = context.lastModified;
+    NSUInteger partialImageByteCount = context->_partialImage.byteCount;
+    NSString *lastModified = context->_lastModified;
     TIPImageFetchHydrationCompletionBlock hydrateBlock = ^(NSURLRequest *hydratedRequest, NSError *error) {
         if (error) {
             complete(error);
@@ -444,7 +466,7 @@ static void _background_removeDelegate(SELF_ARG,
     TIPImageFetchHydrationBlock hydrationBlock = delegate.imageDownloadRequest.imageDownloadHydrationBlock;
     if (hydrationBlock) {
         if (delegateQueue) {
-            dispatch_async(delegateQueue, ^{
+            tip_dispatch_async_autoreleasing(delegateQueue, ^{
                 hydrationBlock(request, context, hydrateBlock);
             });
         } else {
@@ -461,54 +483,59 @@ static void _background_removeDelegate(SELF_ARG,
     TIPAssertDownloaderQueue();
 
     TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
-    if (context.didComplete) {
+    TIPAssert(context);
+    if (!context) {
+        return;
+    }
+
+    if (context->_flags.didComplete) {
         TIPAssertMessage(NO, @"%@ completed more than once", download);
         return;
     }
-    context.didComplete = YES;
+    context->_flags.didComplete = YES;
 
     _background_clearDownload(self, download);
-    context.download = nil;
+    context->_download = nil;
     [download discardContext];
 
 #if TIP_LOG_DOWNLOAD_PROGRESS
     TIPLogDebug(@"(%@)[%p] - finished %@", context.originalRequest.URL, download, error ?: @(context.response.statusCode));
 #endif
 
-    if (!error && !context.progressStateError && !context.didReceiveData) {
+    if (!error && !context->_progressStateError && !context->_flags.didReceiveData) {
         _ImageDownloadSetProgressStateFailureAndCancel(context,
                                                          TIPImageFetchErrorCodeDownloadNeverReceivedResponse,
                                                          nil /* don't cancel */);
     }
     if (!error) {
-        error = context.progressStateError;
+        error = context->_progressStateError;
     }
 
-    const BOOL isComplete = _ImageDownloadIsComplete(context.response, error);
-    [context.partialImage appendData:nil final:isComplete];
-    const BOOL didReadHeaders = (context.partialImage.state > TIPPartialImageStateLoadingHeaders);
+    const BOOL isComplete = _ImageDownloadIsComplete(context->_response, error);
+    [context->_partialImage appendData:nil final:isComplete];
+    const BOOL didReadHeaders = (context->_partialImage.state > TIPPartialImageStateLoadingHeaders);
     const BOOL complete = isComplete && didReadHeaders;
-    context.lastModified = _ImageDownloadLastModifiedString(context.response, error);
-    NSUInteger totalBytes = context.partialImage.byteCount;
-    NSString *imageType = context.partialImage.type;
+    context->_lastModified = _ImageDownloadLastModifiedString(context->_response, error);
+    NSUInteger totalBytes = context->_partialImage.byteCount;
+    NSString *imageType = context->_partialImage.type;
     id<TIPImageDownloadDelegate> firstDelegate = context.firstDelegate;
 
-    if (!didReadHeaders || (!complete && !context.lastModified && !context.partialImage.progressive)) {
+    if (!didReadHeaders || (!complete && !context->_lastModified && !context->_partialImage.progressive)) {
         // Abandon the partial image
-        context.partialImage = nil;
-        context.lastModified = nil;
+        context->_partialImage = nil;
+        context->_lastModified = nil;
     }
 
     NSTimeInterval imageRenderLatency = 0.0;
     TIPImageContainer *image = nil;
     if (complete && firstDelegate != nil) {
         const uint64_t startMachTime = mach_absolute_time();
-        image = [context.partialImage renderImageWithMode:TIPImageDecoderRenderModeFullFrameProgress decoded:NO];
+        image = [context->_partialImage renderImageWithMode:TIPImageDecoderRenderModeFullFrameProgress decoded:NO];
         imageRenderLatency = TIPComputeDuration(startMachTime, mach_absolute_time());
     }
 
-    if (context.temporaryFile) {
-        if (context.partialImage) {
+    if (context->_temporaryFile) {
+        if (context->_partialImage) {
 
             TIPImageCacheEntryContext *imageContext = nil;
             if (complete) {
@@ -516,10 +543,10 @@ static void _background_removeDelegate(SELF_ARG,
             } else {
                 imageContext = [[TIPPartialImageEntryContext alloc] init];
                 TIPPartialImageEntryContext *partialContext = (id)imageContext;
-                partialContext.lastModified = context.lastModified;
-                partialContext.expectedContentLength = context.partialImage.expectedContentLength;
+                partialContext.lastModified = context->_lastModified;
+                partialContext.expectedContentLength = context->_partialImage.expectedContentLength;
             }
-            imageContext.animated = context.partialImage.animated;
+            imageContext.animated = context->_partialImage.animated;
 
             id<TIPImageDownloadRequest> firstDelegateRequest = firstDelegate.imageDownloadRequest;
             if (firstDelegateRequest != nil) {
@@ -540,7 +567,7 @@ static void _background_removeDelegate(SELF_ARG,
                 imageContext.TTL = TIPTimeToLiveDefault;
             }
 
-            imageContext.dimensions = context.partialImage.dimensions;
+            imageContext.dimensions = context->_partialImage.dimensions;
             if (TIPSizeEqualToZero(imageContext.dimensions) && image) {
                 imageContext.dimensions = image.dimensions;
             }
@@ -551,7 +578,7 @@ static void _background_removeDelegate(SELF_ARG,
                 if (!firstDelegate) {
                     // OK
                 } else {
-                    NSString *contextTempIdentifier = context.temporaryFile.imageIdentifier;
+                    NSString *contextTempIdentifier = context->_temporaryFile.imageIdentifier;
                     NSString *delegateDownloadIdentifier = firstDelegateRequest.imageDownloadIdentifier;
                     if (!contextTempIdentifier || !delegateDownloadIdentifier) {
                         // Not OK!  Need to have identifiers!
@@ -564,12 +591,12 @@ static void _background_removeDelegate(SELF_ARG,
                     }
                 }
             }
-            [context.temporaryFile finalizeWithContext:imageContext];
+            [context->_temporaryFile finalizeWithContext:imageContext];
         }
 
-        context.temporaryFile = nil;
+        context->_temporaryFile = nil;
         if (complete) {
-            context.partialImage = nil;
+            context->_partialImage = nil;
         }
     }
 
@@ -579,16 +606,16 @@ static void _background_removeDelegate(SELF_ARG,
     }
 
     if (!error && !image) {
-        if (200 != ((context.response.statusCode / 100) * 100)) {
+        if (200 != ((context->_response.statusCode / 100) * 100)) {
             error = [NSError errorWithDomain:TIPImageFetchErrorDomain
                                         code:TIPImageFetchErrorCodeHTTPTransactionError
-                                    userInfo:@{ TIPErrorUserInfoHTTPStatusCodeKey : @(context.response.statusCode) }];
+                                    userInfo:@{ TIPErrorUserInfoHTTPStatusCodeKey : @(context->_response.statusCode) }];
         } else if (isComplete) {
 
             NSMutableDictionary *userInfo = [[NSMutableDictionary alloc] init];
             id value = nil;
 
-            value = context.temporaryFile.imageIdentifier;
+            value = context->_temporaryFile.imageIdentifier;
             if (value) {
                 userInfo[TIPProblemInfoKeyImageIdentifier] = value;
             }
@@ -600,7 +627,7 @@ static void _background_removeDelegate(SELF_ARG,
             if (value) {
                 userInfo[@"finalRequest"] = value;
             }
-            value = context.response;
+            value = context->_response;
             if (value) {
                 userInfo[@"response"] = value;
             }
@@ -626,9 +653,9 @@ static void _background_removeDelegate(SELF_ARG,
     TIPAssert((error == nil) ^ (image == nil));
 
     // Pull out contextual values since accessing the context object from another thread is unsafe
-    TIPPartialImage *partialImage = context.partialImage;
-    NSString *lastModified = context.lastModified;
-    const NSInteger statusCode = context.response.statusCode;
+    TIPPartialImage *partialImage = context->_partialImage;
+    NSString *lastModified = context->_lastModified;
+    const NSInteger statusCode = context->_response.statusCode;
     [context executePerDelegateSuspendingQueue:NULL block:^(id<TIPImageDownloadDelegate> delegateInner) {
         // only the first delegate is granted the honor of caching the partial image
         const BOOL isFirstDelegate = (delegateInner == firstDelegate);
@@ -773,21 +800,21 @@ static id<TIPImageFetchDownload> _background_getOrCreateDownload(SELF_ARG,
             download = existingDownload;
 
             [context addDelegate:delegate];
-            if (context.partialImage) {
+            if (context->_partialImage) {
                 // Prepopulate with progress (if available/possible)
 
                 TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
-                if (context.partialImage.frameCount > 0) {
+                if (context->_partialImage.frameCount > 0) {
                     result = TIPImageDecoderAppendResultDidLoadFrame;
-                } else if (context.partialImage.state > TIPPartialImageStateLoadingHeaders) {
+                } else if (context->_partialImage.state > TIPPartialImageStateLoadingHeaders) {
                     result = TIPImageDecoderAppendResultDidLoadHeaders;
                 }
 
                 // Pull out contextual values since accessing the context object from another thread is unsafe
-                TIPPartialImage *partialImage = context.partialImage;
-                const BOOL didStart = context.didStart;
-                const BOOL didReceiveFirstByte = context.didReceiveData;
-                NSInteger statusCode = context.response.statusCode;
+                TIPPartialImage *partialImage = context->_partialImage;
+                const BOOL didStart = context->_flags.didStart;
+                const BOOL didReceiveFirstByte = context->_flags.didReceiveData;
+                NSInteger statusCode = context->_response.statusCode;
                 [TIPImageDownloadInternalContext executeDelegate:delegate
                                                  suspendingQueue:self->_downloaderQueue
                                                            block:^(id<TIPImageDownloadDelegate> blockDelegate) {
@@ -819,10 +846,10 @@ static id<TIPImageFetchDownload> _background_getOrCreateDownload(SELF_ARG,
     // Create a new operation if necessary
     if (!download) {
         TIPImageDownloadInternalContext *context = [[TIPImageDownloadInternalContext alloc] init];
-        context.lastModified = request.imageDownloadLastModified;
-        context.partialImage = request.imageDownloadPartialImageForResuming;
-        context.temporaryFile = request.imageDownloadTemporaryFileForResuming;
-        context.decoderConfigMap = request.decoderConfigMap;
+        context->_lastModified = request.imageDownloadLastModified;
+        context->_partialImage = request.imageDownloadPartialImageForResuming;
+        context->_temporaryFile = request.imageDownloadTemporaryFileForResuming;
+        context->_decoderConfigMap = request.decoderConfigMap;
 
         [context addDelegate:delegate];
 
@@ -834,7 +861,7 @@ static id<TIPImageFetchDownload> _background_getOrCreateDownload(SELF_ARG,
         context.client = self;
 
         download = [[TIPGlobalConfiguration sharedInstance] createImageFetchDownloadWithContext:context];
-        context.download = download;
+        context->_download = download;
 
         if (!constructedDownloads) {
             constructedDownloads = [[NSMutableArray alloc] init];

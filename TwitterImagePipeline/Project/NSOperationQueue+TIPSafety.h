@@ -20,10 +20,10 @@ NS_ASSUME_NONNULL_BEGIN
  Same as `[NSOperationQueue addOperation:]` but with added safety.
  If _op_ returns `YES` for `isAsynchronous`, the operation will be retained for a period that
  extends beyond the lifetime of the operation executing to avoid a crash.
+ If called on an OS version that doesn't have the bug, will just pass through to `addOperation:`
  */
 - (void)tip_safeAddOperation:(NSOperation *)op;
 
 @end
 
 NS_ASSUME_NONNULL_END
-

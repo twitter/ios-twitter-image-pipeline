@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 #define SELF_ARG PRIVATE_SELF(TIPImageFetchMetrics)
 
 @interface TIPImageFetchMetricInfo ()
+// Concrete properties for `NetworkSourceInfo` category
 @property (nonatomic, readonly, nullable) id networkMetrics;
 @property (nonatomic, readonly, nullable) NSURLRequest *networkRequest;
 @property (nonatomic, readonly) NSTimeInterval totalNetworkLoadDuration;
@@ -25,7 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSString *networkImageType;
 @property (nonatomic, readonly) CGSize networkImageDimensions;
 @property (nonatomic, readonly) float networkImagePixelsPerByte;
-@property (nonatomic, readonly, nullable) NSException *exceptionLoadingOverNetwork;
 @end
 
 @implementation TIPImageFetchMetrics

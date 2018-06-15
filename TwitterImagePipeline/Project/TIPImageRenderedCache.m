@@ -128,10 +128,8 @@ sourceImageDimensions:(CGSize)sourceDims;
         TIPLRUCache *oldManifest = _manifest;
         const SInt16 totalCount = (SInt16)oldManifest.numberOfEntries;
         _manifest = [[TIPLRUCache alloc] initWithEntries:nil delegate:self];
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
-            @autoreleasepool {
-                [oldManifest clearAllEntries];
-            }
+        tip_dispatch_async_autoreleasing(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+            [oldManifest clearAllEntries];
         });
 
         _updateByteCounts(self, 0 /*bytesAdded*/, (UInt64)self.atomicTotalCost /*bytesRemoved*/);
@@ -188,7 +186,7 @@ sourceImageDimensions:(CGSize)sourceDims;
     }
 
     if (![NSThread isMainThread]) {
-        dispatch_async(dispatch_get_main_queue(), ^{
+        tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
             [self storeImageEntry:entry
             transformerIdentifier:transformerIdentifier
             sourceImageDimensions:sourceDims];

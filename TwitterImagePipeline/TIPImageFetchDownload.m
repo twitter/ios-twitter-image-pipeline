@@ -29,8 +29,9 @@ static float ConvertNSOperationQueuePriorityToNSURLSessionTaskPriority(NSOperati
 
 @interface TIPImageFetchDownloadInternal ()
 
-@property (nonatomic, nullable, readonly) NSURLSessionDataTask *task;
 @property (nonatomic, nullable) id downloadMetrics;
+
+@property (nonatomic, nullable, readonly) NSURLSessionDataTask *task;
 @property (nonatomic, readonly) dispatch_queue_t contextQueue;
 
 static void _PrepareGlobalState(void);
@@ -111,8 +112,11 @@ static void _PrepareGlobalState(void);
     if (_task) {
         [_task cancel];
     } else if (_context) {
-        dispatch_async(self.contextQueue, ^{
-            [self.context.client imageFetchDownload:self didCompleteWithError:[NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil]];
+        tip_dispatch_async_autoreleasing(self.contextQueue, ^{
+            [self.context.client imageFetchDownload:self
+                               didCompleteWithError:[NSError errorWithDomain:NSURLErrorDomain
+                                                                        code:NSURLErrorCancelled
+                                                                    userInfo:nil]];
         });
     }
 }
@@ -208,8 +212,9 @@ didReceiveResponse:(NSURLResponse *)response
 {
     TIPImageFetchDownloadInternal *download = [_downloadContexts objectForKey:@(dataTask.taskIdentifier)];
     if (download) {
-        dispatch_async(download.contextQueue, ^{
-            [download.context.client imageFetchDownload:download didReceiveURLResponse:(NSHTTPURLResponse *)response];
+        tip_dispatch_async_autoreleasing(download.contextQueue, ^{
+            [download.context.client imageFetchDownload:download
+                                  didReceiveURLResponse:(NSHTTPURLResponse *)response];
         });
     }
     completionHandler(NSURLSessionResponseAllow);
@@ -221,8 +226,9 @@ didReceiveResponse:(NSURLResponse *)response
 {
     TIPImageFetchDownloadInternal *download = [_downloadContexts objectForKey:@(dataTask.taskIdentifier)];
     if (download) {
-        dispatch_async(download.contextQueue, ^{
-            [download.context.client imageFetchDownload:download didReceiveData:data];
+        tip_dispatch_async_autoreleasing(download.contextQueue, ^{
+            [download.context.client imageFetchDownload:download
+                                         didReceiveData:data];
         });
     }
 }
@@ -233,8 +239,9 @@ didReceiveResponse:(NSURLResponse *)response
 {
     TIPImageFetchDownloadInternal *download = [_downloadContexts objectForKey:@(task.taskIdentifier)];
     if (download) {
-        dispatch_async(download.contextQueue, ^{
-            [download.context.client imageFetchDownload:download didCompleteWithError:error];
+        tip_dispatch_async_autoreleasing(download.contextQueue, ^{
+            [download.context.client imageFetchDownload:download
+                                   didCompleteWithError:error];
         });
         [_downloadContexts removeObjectForKey:@(task.taskIdentifier)];
     }
@@ -242,11 +249,11 @@ didReceiveResponse:(NSURLResponse *)response
 
 - (void)URLSession:(NSURLSession *)session
         task:(NSURLSessionTask *)task
-        didFinishCollectingMetrics:(NSURLSessionTaskMetrics *)metrics;
+        didFinishCollectingMetrics:(NSURLSessionTaskMetrics *)metrics
 {
     TIPImageFetchDownloadInternal *download = [_downloadContexts objectForKey:@(task.taskIdentifier)];
     if (download) {
-        dispatch_async(download.contextQueue, ^{
+        tip_dispatch_async_autoreleasing(download.contextQueue, ^{
             download.downloadMetrics = metrics;
         });
     }

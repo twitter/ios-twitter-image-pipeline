@@ -138,6 +138,16 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
        fromFetchHelper:(nullable TIPImageViewFetchHelper *)fromHelper
          toFetchHelper:(nullable TIPImageViewFetchHelper *)toHelper;
 
+#pragma mark Global Methods
+
+/**
+ Call this method to trigger all `TIPImageFetchHelpers` that failed
+ to load an image to retry.
+ For example, when the network conditions change, calling this method
+ could yield a successful load with the network returning.
+ */
++ (void)notifyAllFetchHelpersToRetryFailedLoads;
+
 @end
 
 //! Notification that the debug info visibility for `TIPImageView` changed

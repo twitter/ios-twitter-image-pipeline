@@ -78,7 +78,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSDictionary<NSString *, id<TIPImageCodec>> *)allCodecs
 {
     __block NSDictionary<NSString *, id<TIPImageCodec>> * allCodecs;
-    dispatch_sync(_codecQueue, ^{
+    tip_dispatch_sync_autoreleasing(_codecQueue, ^{
         allCodecs = [self->_codecs copy];
     });
     return allCodecs;
@@ -114,7 +114,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable id<TIPImageCodec>)codecForImageType:(NSString *)imageType
 {
     __block id<TIPImageCodec> codec;
-    dispatch_sync(_codecQueue, ^{
+    tip_dispatch_sync_autoreleasing(_codecQueue, ^{
         codec = self->_codecs[imageType];
     });
     return codec;
@@ -166,7 +166,7 @@ NS_ASSUME_NONNULL_BEGIN
 {
     __block id<TIPImageCodec> codec = nil;
     if (type) {
-        dispatch_sync(_codecQueue, ^{
+        tip_dispatch_sync_autoreleasing(_codecQueue, ^{
             codec = self->_codecs[type];
         });
     }

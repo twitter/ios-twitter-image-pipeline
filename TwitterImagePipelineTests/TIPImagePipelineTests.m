@@ -23,6 +23,8 @@
 
 @import MobileCoreServices;
 
+static const uint64_t kKiloBits = 1024 * 8;
+static const uint64_t kMegaBits = 1024 * kKiloBits;
 static const CGSize kCarnivalImageDimensions = { (CGFloat)1880.f, (CGFloat)1253.f };
 static const CGSize kFireworksImageDimensions = { (CGFloat)480.f, (CGFloat)320.f };
 static const NSUInteger kFireworksFrameCount = 10;
@@ -462,31 +464,31 @@ static TIPImagePipeline *sPipeline = nil;
 
 - (void)testFetchingPNG
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypePNG, NO, NO, NO, 3 * 1024 * 1024 * 8 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypePNG, NO, NO, NO, 3 * kMegaBits };
     [self _runFetching:imageStruct];
 }
 
 - (void)testFetchingJPEG
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, NO, NO, NO, 2 * 1024 * 1024 * 8 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, NO, NO, NO, 2 * kMegaBits };
     [self _runFetching:imageStruct];
 }
 
 - (void)testFetchingPJPEG_notProgressive
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, YES, NO, NO, 1 * 1024 * 1024 * 8 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, YES, NO, NO, 1 * kMegaBits };
     [self _runFetching:imageStruct];
 }
 
 - (void)testFetchingPJPEG_isProgressive
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, YES, YES, NO, 1 * 1024 * 1024 * 8 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG, YES, YES, NO, 1 * kMegaBits };
     [self _runFetching:imageStruct];
 }
 
 - (void)testFetchingJPEG2000
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG2000, YES, NO, NO, 256 * 1024 * 8 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG2000, YES, NO, NO, 256 * kKiloBits };
     if (@available(iOS 11.1, *)) {
         NSLog(@"iOS 11.1 regressed JPEG2000 so that the image cannot be parsed until fully downloading thus breaking most expectations TIP unit tests have.  Radars have been filed but please file another radar against Apple if you care about JPEG2000 support.");
     } else {
@@ -496,7 +498,7 @@ static TIPImagePipeline *sPipeline = nil;
 
 - (void)testFetchingPJPEG2000
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG2000, YES, YES, NO, 256 * 1024 * 8 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG2000, YES, YES, NO, 256 * kKiloBits };
     if ([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:imageStruct.type]) {
         [self _runFetching:imageStruct];
     } else {
@@ -506,7 +508,7 @@ static TIPImagePipeline *sPipeline = nil;
 
 - (void)testFetchingGIF
 {
-    TIPImageFetchTestStruct imageStruct = { TIPImageTypeGIF, NO, NO, YES, 160 * 1024 * 8 };
+    TIPImageFetchTestStruct imageStruct = { TIPImageTypeGIF, NO, NO, YES, 160 * kKiloBits };
     [self _runFetching:imageStruct];
 }
 
@@ -529,7 +531,7 @@ static TIPImagePipeline *sPipeline = nil;
         TIPImageFetchOperation *op = nil;
         TIPImagePipelineTestContext *context = nil;
 
-        [self _stubRequest:request bitrate:64 * 1024 * 8 resumable:YES];
+        [self _stubRequest:request bitrate:64 * kKiloBits resumable:YES];
 
         // Network Load
         context = [[TIPImagePipelineTestContext alloc] init];
@@ -544,7 +546,7 @@ static TIPImagePipeline *sPipeline = nil;
 
 - (void)testFillingTheCaches
 {
-    [self _runFillingTheCaches:sPipeline bps:1024 * 1024 * 1024 * 8 testCacheHits:YES];
+    [self _runFillingTheCaches:sPipeline bps:1024 * kMegaBits testCacheHits:YES];
 }
 
 - (void)testFillingMultipeCaches
@@ -569,7 +571,7 @@ static TIPImagePipeline *sPipeline = nil;
         [sPipeline clearDiskCache];
         TIPImagePipeline *temporaryPipeline = [[TIPImagePipeline alloc] initWithIdentifier:tmpPipelineIdentifier];
 
-        [self _runFillingTheCaches:sPipeline bps:1024 * 1024 * 1024 * 8 testCacheHits:NO];
+        [self _runFillingTheCaches:sPipeline bps:1024 * kMegaBits testCacheHits:NO];
 
         TIPGlobalConfiguration *globalConfig = [TIPGlobalConfiguration sharedInstance];
 
@@ -581,7 +583,7 @@ static TIPImagePipeline *sPipeline = nil;
             XCTAssertGreaterThan(sPipeline.diskCache.manifest.numberOfEntries, (NSUInteger)0);
         });
 
-        [self _runFillingTheCaches:temporaryPipeline bps:1024 * 1024 * 1024 * 8 testCacheHits:NO];
+        [self _runFillingTheCaches:temporaryPipeline bps:1024 * kMegaBits testCacheHits:NO];
         XCTAssertGreaterThan(temporaryPipeline.renderedCache.manifest.numberOfEntries, (NSUInteger)0);
         XCTAssertEqual(sPipeline.renderedCache.manifest.numberOfEntries, (NSUInteger)0);
         dispatch_sync(globalConfig.queueForMemoryCaches, ^{
@@ -827,7 +829,7 @@ static TIPImagePipeline *sPipeline = nil;
     request.targetDimensions = kCarnivalImageDimensions;
     request.targetContentMode = UIViewContentModeScaleAspectFit;
 
-    [self _stubRequest:request bitrate:2 * 1024 * 1024 * 8 resumable:YES];
+    [self _stubRequest:request bitrate:2 * kMegaBits resumable:YES];
 
     TIPImageFetchOperation *op1 = nil;
     TIPImageFetchOperation *op2 = nil;
@@ -924,7 +926,7 @@ static TIPImagePipeline *sPipeline = nil;
         });
     };
 
-    [self _stubRequest:request bitrate:1024 * 1024 * 1024 * 8 resumable:YES];
+    [self _stubRequest:request bitrate:1024 * kMegaBits resumable:YES];
 
     // Attempt with empty caches
 
@@ -1170,7 +1172,7 @@ static TIPImagePipeline *sPipeline = nil;
     request.targetContentMode = UIViewContentModeScaleAspectFit;
     request.cannedImageFilePath = [request.cannedImageFilePath stringByAppendingPathExtension:@"dne"];
 
-    [self _stubRequest:request bitrate:1 * 1024 * 1024 * 8 resumable:YES];
+    [self _stubRequest:request bitrate:1 * kMegaBits resumable:YES];
 
     TIPImageFetchOperation *op = nil;
     TIPImagePipelineTestContext *context = nil;

@@ -157,8 +157,8 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
 
 #pragma mark Transform Methods
 
-- (nullable UIImage *)tip_imageWithRenderFormatting:(nullable TIPImageRenderFormattingBlock)formatBlock
-                                             render:(nonnull TIPImageRenderBlock)renderBlock
+- (nullable UIImage *)tip_imageWithRenderFormatting:(nullable TIPImageRenderFormattingBlock NS_NOESCAPE)formatBlock
+                                             render:(nonnull TIPImageRenderBlock NS_NOESCAPE)renderBlock
 {
     return TIPRenderImage(self, formatBlock, renderBlock);
 }
@@ -313,7 +313,7 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
     return outImage;
 }
 
-- (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions contentMode:(UIViewContentMode)targetContentMode;
+- (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions contentMode:(UIViewContentMode)targetContentMode
 {
     const CGSize dimensions = [self tip_dimensions];
     const CGSize scaledTargetDimensions = TIPSizeGreaterThanZero(targetDimensions) ? TIPDimensionsScaledToTargetSizing(dimensions, targetDimensions, targetContentMode) : CGSizeZero;
@@ -457,12 +457,14 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
         // Get the image
         CGImageRef cgImage = CGBitmapContextCreateImage(ctx);
         TIPDeferRelease(cgImage);
-        image = [UIImage imageWithCGImage:cgImage scale:sourceImage.scale orientation:UIImageOrientationUp];
+        image = [UIImage imageWithCGImage:cgImage
+                                    scale:sourceImage.scale
+                              orientation:UIImageOrientationUp];
     });
     return image;
 }
 
-- (nullable UIImage *)tip_CGImageBackedImageAndReturnError:(out NSError * __autoreleasing __nullable * __nullable)error;
+- (nullable UIImage *)tip_CGImageBackedImageAndReturnError:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     __block NSError *outError = nil;
     tip_defer(^{
@@ -487,7 +489,9 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
 
     CIImage *CIImage = self.CIImage;
     if (!CIImage) {
-        outError = [NSError errorWithDomain:TIPErrorDomain code:TIPErrorCodeMissingCIImage userInfo:nil];
+        outError = [NSError errorWithDomain:TIPErrorDomain
+                                       code:TIPErrorCodeMissingCIImage
+                                   userInfo:nil];
         return nil;
     }
 
@@ -497,12 +501,16 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
         CGImageRef cgImage = [context createCGImage:CIImage fromRect:CIImage.extent];
         TIPDeferRelease(cgImage);
         if (cgImage) {
-            image = [UIImage imageWithCGImage:cgImage scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp];
+            image = [UIImage imageWithCGImage:cgImage
+                                        scale:[UIScreen mainScreen].scale
+                                  orientation:UIImageOrientationUp];
         }
     });
 
     if (!image) {
-        outError = [NSError errorWithDomain:TIPErrorDomain code:TIPErrorCodeUnknown userInfo:nil];
+        outError = [NSError errorWithDomain:TIPErrorDomain
+                                       code:TIPErrorCodeUnknown
+                                   userInfo:nil];
         return nil;
     }
 
@@ -524,10 +532,16 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
 
 - (nullable UIImage *)tip_blurredImageWithRadius:(CGFloat)blurRadius
 {
-    return [self tip_imageWithBlurWithRadius:blurRadius tintColor:nil saturationDeltaFactor:1.0 maskImage:nil];
+    return [self tip_imageWithBlurWithRadius:blurRadius
+                                   tintColor:nil
+                       saturationDeltaFactor:1.0
+                                   maskImage:nil];
 }
 
-- (nullable UIImage *)tip_imageWithBlurWithRadius:(CGFloat)blurRadius tintColor:(nullable UIColor *)tintColor saturationDeltaFactor:(CGFloat)saturationDeltaFactor maskImage:(nullable UIImage *)maskImage
+- (nullable UIImage *)tip_imageWithBlurWithRadius:(CGFloat)blurRadius
+                                        tintColor:(nullable UIColor *)tintColor
+                            saturationDeltaFactor:(CGFloat)saturationDeltaFactor
+                                        maskImage:(nullable UIImage *)maskImage
 {
     UIImage *image = self;
 

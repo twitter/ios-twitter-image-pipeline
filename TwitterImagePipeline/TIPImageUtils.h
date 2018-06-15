@@ -227,7 +227,7 @@ FOUNDATION_EXTERN UIImageOrientation TIPUIImageOrientationFromCGImageOrientation
  When `[TIPGlobalConfiguration serializeCGContextAccess]` is `YES`, this function will serialize
  execution across threads.
  */
-FOUNDATION_EXTERN void TIPExecuteCGContextBlock(dispatch_block_t block);
+FOUNDATION_EXTERN void TIPExecuteCGContextBlock(dispatch_block_t __attribute__((noescape)) block);
 
 /**
  Render to a `UIImage` (using the `TIPExecuteCGContextBlock` call under the hood)

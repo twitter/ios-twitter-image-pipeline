@@ -1,14 +1,19 @@
-# Twitter Logging Service Change Log
+# Twitter Image Pipeline Change Log
 
 ## Info
 
-**Document version:** 2.9.2
+**Document version:** 2.9.3
 
-**Last updated:** 04/27/2018
+**Last updated:** 05/16/2018
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.9.3
+
+- Add `notifyAllFetchHelpersToRetryFailedLoads` class method to `TIPImageViewFetchHelper`
+  - This will offer an easy way for consuming apps to trigger a reload of failed image fetches when the network conditions change 
 
 ### 2.9.2
 

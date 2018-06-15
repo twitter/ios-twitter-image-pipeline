@@ -14,30 +14,38 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface TIPImageDownloadInternalContext : NSObject <TIPImageFetchOperationUnderlyingContext, TIPImageFetchDownloadContext>
+{
+@public
 
-@property (nonatomic, assign, nullable) id<TIPImageFetchDownload> download;
+    __unsafe_unretained id<TIPImageFetchDownload> __nullable _download;
+    TIPImageDiskCacheTemporaryFile * __nullable _temporaryFile;
+    TIPPartialImage * __nullable _partialImage;
+    NSString * __nullable _lastModified;
+    NSDictionary<NSString *, id> * __nullable _decoderConfigMap;
+    NSError * __nullable _progressStateError;
+    NSHTTPURLResponse * __nullable _response;
+    NSUInteger _contentLength;
+
+    struct {
+        BOOL didRequestHydration:1;
+        BOOL didStart:1;
+        BOOL didReceiveResponse:1;
+        BOOL responseStatusCodeIsFailure:1;
+        BOOL didReceiveData:1;
+        BOOL didComplete:1;
+    } _flags;
+
+@private
+
+    NSMutableArray<id<TIPImageDownloadDelegate>> * __nonnull _delegates;
+}
+
+@property (nonatomic, copy, nullable) NSURLRequest *originalRequest;
 @property (nonatomic, copy, nullable) NSURLRequest *hydratedRequest;
 @property (nonatomic, nullable) id<TIPImageFetchDownloadClient> client;
 @property (nonatomic, nullable) dispatch_queue_t downloadQueue;
 
-@property (nonatomic, copy, nullable) NSURLRequest *originalRequest;
-@property (nonatomic, nullable) TIPImageDiskCacheTemporaryFile *temporaryFile;
-@property (nonatomic, nullable) TIPPartialImage *partialImage;
-@property (nonatomic, copy, nullable) NSString *lastModified;
-@property (nonatomic, copy, nullable) NSDictionary<NSString *, id> *decoderConfigMap;
-
-@property (nonatomic, nullable) NSError *progressStateError;
-
-@property (nonatomic) BOOL didRequestHydration;
-@property (nonatomic) BOOL didStart;
-@property (nonatomic) BOOL didReceiveResponse;
-@property (nonatomic) BOOL responseStatusCodeIsFailure;
-@property (nonatomic) BOOL didReceiveData;
-@property (nonatomic) BOOL didComplete;
-
-@property (nonatomic, nullable) NSHTTPURLResponse *response;
-@property (nonatomic) NSUInteger contentLength;
-@property (nonatomic, readonly) NSUInteger delegateCount;
+@property (nonatomic, readonly) NSUInteger delegateCount; // computed property
 
 - (NSOperationQueuePriority)downloadPriority;
 - (nullable id<TIPImageDownloadDelegate>)firstDelegate;

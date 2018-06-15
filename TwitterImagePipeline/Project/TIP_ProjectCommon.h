@@ -178,7 +178,7 @@ NS_INLINE void tip_dispatch_async_autoreleasing(dispatch_queue_t queue, dispatch
     });
 }
 
-NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t queue, dispatch_block_t block)
+NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t queue, dispatch_block_t __attribute__((noescape)) block)
 {
     dispatch_sync(queue, ^{
         @autoreleasepool {

@@ -2415,7 +2415,7 @@ static void _background_executeDelegateWork(SELF_ARG,
     }
 
     id<TIPImageFetchDelegate> delegate = self.delegate;
-    dispatch_async(dispatch_get_main_queue(), ^{
+    tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
         block(delegate);
     });
 }
@@ -2427,7 +2427,7 @@ static void _executeBackgroundWork(SELF_ARG,
         return;
     }
 
-    dispatch_async(self->_backgroundQueue, block);
+    tip_dispatch_async_autoreleasing(self->_backgroundQueue, block);
 }
 
 @end

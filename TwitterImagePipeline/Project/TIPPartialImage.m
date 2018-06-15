@@ -121,7 +121,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
 
 - (void)updateDecoderConfigMap:(nullable NSDictionary<NSString *, id> *)configMap
 {
-    dispatch_async(_renderQueue, ^{
+    tip_dispatch_async_autoreleasing(_renderQueue, ^{
         self->_decoderConfigMap = [configMap copy];
     });
 }
@@ -130,10 +130,8 @@ static const float kUnfinishedImageProgressCap = 0.999f;
 {
     __block TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
 
-    dispatch_sync(_renderQueue, ^{
-        @autoreleasepool {
-            result = _appendData(self, data, final);
-        }
+    tip_dispatch_sync_autoreleasing(_renderQueue, ^{
+        result = _appendData(self, data, final);
     });
 
     return result;
@@ -143,12 +141,10 @@ static const float kUnfinishedImageProgressCap = 0.999f;
 {
     __block TIPImageContainer *image = nil;
 
-    dispatch_sync(_renderQueue, ^{
-        @autoreleasepool {
-            image = [self->_decoder tip_renderImage:self->_decoderContext mode:mode];
-            if (image && decode) {
-                [image decode];
-            }
+    tip_dispatch_sync_autoreleasing(_renderQueue, ^{
+        image = [self->_decoder tip_renderImage:self->_decoderContext mode:mode];
+        if (image && decode) {
+            [image decode];
         }
     });
 

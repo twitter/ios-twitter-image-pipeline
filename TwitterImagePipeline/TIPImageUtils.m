@@ -323,7 +323,7 @@ BOOL TIPScreenSupportsWideColorGamut(UIScreen *screen)
     return NO;
 }
 
-void TIPExecuteCGContextBlock(dispatch_block_t block)
+void TIPExecuteCGContextBlock(dispatch_block_t __attribute__((noescape)) block)
 {
     /*
 

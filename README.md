@@ -360,3 +360,12 @@ Inspecting pipelines is asynchronously done on background threads before the ins
 called on the main thread.  This can provide very useful debugging info.  As an example, Twitter has
 built in UI and tools that use the inspection support of *TIP* for internal builds.
 
+# License
+
+Copyright 2015-2018 Twitter, Inc.
+
+Licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+# Security Issues?
+
+Please report sensitive security issues via Twitter's bug-bounty program (https://hackerone.com/twitter) rather than GitHub.

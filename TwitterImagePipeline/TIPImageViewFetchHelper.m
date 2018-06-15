@@ -28,6 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
 NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotification = @"TIPImageViewDidUpdateDebugInfoVisibility";
 NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotificationKeyVisible = @"visible";
 
+static NSString * const kRetryFailedLoadsNotification = @"tip.retry.fetchHelpers";
+
 #define kDEBUG_HIGHLIGHT_COLOR_DEFAULT  [UIColor colorWithWhite:(CGFloat)0.3 alpha:(CGFloat)0.55]
 #define kDEBUG_TEXT_COLOR_DEFAULT       [UIColor whiteColor]
 
@@ -814,6 +816,9 @@ static void _tearDown(SELF_ARG)
     [nc removeObserver:self
                   name:TIPImageViewDidUpdateDebugInfoVisibilityNotification
                 object:nil];
+    [nc removeObserver:self
+                  name:kRetryFailedLoadsNotification
+                object:nil];
     [self->_debugInfoView removeFromSuperview];
 }
 
@@ -823,10 +828,15 @@ static void _prep(SELF_ARG)
         return;
     }
 
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(_tip_didUpdateDebugVisibility)
-                                                 name:TIPImageViewDidUpdateDebugInfoVisibilityNotification
-                                               object:nil];
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc addObserver:self
+           selector:@selector(_tip_didUpdateDebugVisibility)
+               name:TIPImageViewDidUpdateDebugInfoVisibilityNotification
+             object:nil];
+    [nc addObserver:self
+           selector:@selector(_tip_retryFailedLoadsNotification:)
+               name:kRetryFailedLoadsNotification
+             object:nil];
     [self _tip_didUpdateDebugVisibility];
     self->_fetchDisappearanceBehavior = TIPImageViewDisappearanceBehaviorCancelImageFetch;
     _resetImage(self, nil /*image*/);
@@ -1107,7 +1117,7 @@ static void _startObservingImagePipeline(SELF_ARG,
                 _cancelFetch(self);
                 _startObservingImagePipeline(self, nil /*image pipeline*/);
                 self->_flags.isLoadedImageFinal = 0;
-                dispatch_async(dispatch_get_main_queue(), ^{
+                tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
                     // clear the render cache, but async so other render cache stores can complete first
                     [[TIPGlobalConfiguration sharedInstance] clearAllRenderedMemoryCacheImagesWithIdentifier:identifier];
                     _refetch(self, nil /*peeked request*/);
@@ -1173,6 +1183,24 @@ static NSString *_getDebugInfoString(SELF_ARG,
     NSString *debugInfoString = [infos componentsJoinedByString:@"\n"];
     *lineCount = (NSInteger)infos.count;
     return debugInfoString;
+}
+
+#pragma mark Retry Event
+
++ (void)notifyAllFetchHelpersToRetryFailedLoads
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[NSNotificationCenter defaultCenter] postNotificationName:kRetryFailedLoadsNotification
+                                                            object:nil
+                                                          userInfo:nil];
+    });
+}
+
+- (void)_tip_retryFailedLoadsNotification:(NSNotification *)note
+{
+    if (self.fetchError != nil && !self.isLoading) {
+        _refetch(self, nil);
+    }
 }
 
 @end

@@ -128,7 +128,7 @@ static void TIPFireFetchCompletionBlock(TIPImagePipelineFetchCompletionBlock __n
             }
         }
 
-        dispatch_async(dispatch_get_main_queue(), ^{
+        tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
             callback(identifiers);
         });
     });
@@ -377,7 +377,7 @@ static void _background_copyDiskCacheFile(PRIVATE_SELF(TIPImagePipeline),
         return;
     }
 
-    dispatch_async(dispatch_get_main_queue(), ^{
+    tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
         NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithCapacity:6];
         if (entry.completeImage) {
             userInfo[TIPImagePipelineImageContainerNotificationKey] = entry.completeImage;
@@ -439,7 +439,7 @@ static void _background_copyDiskCacheFile(PRIVATE_SELF(TIPImagePipeline),
             [self.diskCache inspect:^(NSArray *diskCacheCompletedEntries, NSArray *diskCachePartialEntries) {
                 [result addEntries:diskCacheCompletedEntries];
                 [result addEntries:diskCachePartialEntries];
-                dispatch_async(dispatch_get_main_queue(), ^{
+                tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
                     callback(result);
                 });
             }];
@@ -519,7 +519,7 @@ static BOOL TIPRegisterImagePipelineWithIdentifier(TIPImagePipeline *pipeline, N
     } flags;
     flags.didRegister = flags.alreadyRegistered = flags.isInvalidIdentifier = 0;
 
-    dispatch_sync(sRegistrationQueue, ^{
+    tip_dispatch_sync_autoreleasing(sRegistrationQueue, ^{
 
         if (TIPImagePipelineIdentifierIsValid(identifier)) {
 
@@ -554,7 +554,7 @@ static void TIPUnregisterImagePipelineWithIdentifier(NSString *identifier)
 
     TIPEnsureStaticImagePipelineVariables();
 
-    dispatch_async(sRegistrationQueue, ^{
+    tip_dispatch_async_autoreleasing(sRegistrationQueue, ^{
         TIPRegisterAssertMessage([sStrongIdentifierToWeakImagePipelineMap objectForKey:identifier] == nil, @"%@'s identifier (%@) still in use, should not unregister!", NSStringFromClass([TIPImagePipeline class]), identifier);
         TIPLogDebug(@"<%@ '%@'> unregistered!", NSStringFromClass([TIPImagePipeline class]), identifier);
         [sStrongIdentifierToWeakImagePipelineMap removeObjectForKey:identifier];
@@ -589,7 +589,7 @@ static NSString * __nullable TIPOpenImagePipelineWithIdentifier(NSString *identi
 static NSDictionary *TIPCopyAllRegisteredImagePipelines()
 {
     __block NSDictionary *pipelines;
-    dispatch_sync(sRegistrationQueue, ^{
+    tip_dispatch_sync_autoreleasing(sRegistrationQueue, ^{
         pipelines = sStrongIdentifierToWeakImagePipelineMap.dictionaryRepresentation;
     });
     return pipelines;

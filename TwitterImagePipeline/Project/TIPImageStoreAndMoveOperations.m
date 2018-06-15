@@ -137,7 +137,7 @@ static void _asyncStoreMemoryEntry(PRIVATE_SELF(TIPImageStoreOperation),
             TIPImagePipelineOperationCompletionBlock block = self.storeCompletionBlock;
             if (block) {
                 const BOOL success = completedEntry != nil;
-                dispatch_async(dispatch_get_main_queue(), ^{
+                tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
                     block(self, success, completedError);
                 });
             }
@@ -550,7 +550,7 @@ static void _complete(PRIVATE_SELF(TIPImageStoreHydrationOperation),
 
     TIPImagePipelineOperationCompletionBlock completion = _completion;
     if (completion) {
-        dispatch_async(dispatch_get_main_queue(), ^{
+        tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
             completion(self, !error, error);
         });
     }

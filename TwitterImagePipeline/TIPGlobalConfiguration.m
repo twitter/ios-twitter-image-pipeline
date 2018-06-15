@@ -175,7 +175,7 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
         self.internalMaxBytesForAllRenderedCaches = (maxBytes >= 0ll) ? maxBytes : _MaxBytesForAllRenderedCachesDefaultValue();
         [self pruneAllCachesOfType:TIPImageCacheTypeRendered withPriorityCache:nil];
     } else {
-        dispatch_async(dispatch_get_main_queue(), ^{
+        tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
             self.maxBytesForAllRenderedCaches = maxBytes;
         });
     }
@@ -195,7 +195,7 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
         self.internalMaxCountForAllRenderedCaches = (maxCount >= 0) ? maxCount : TIPMaxCountForAllRenderedCachesDefault;
         [self pruneAllCachesOfType:TIPImageCacheTypeRendered withPriorityCache:nil];
     } else {
-        dispatch_async(dispatch_get_main_queue(), ^{
+        tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
             self.maxCountForAllRenderedCaches = maxCount;
         });
     }
@@ -384,7 +384,7 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
 - (NSArray<id<TIPImagePipelineObserver>> *)allImagePipelineObservers
 {
     __block NSArray<id<TIPImagePipelineObserver>> *observers;
-    dispatch_sync(_globalObserversQueue, ^{
+    tip_dispatch_sync_autoreleasing(_globalObserversQueue, ^{
         observers = self->_globalObservers.allObjects;
     });
     return observers;
@@ -643,7 +643,9 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
     TIPAssert(imageFetchDownloadProvider != nil);
     id<TIPImageFetchDownload> download = [imageFetchDownloadProvider imageFetchDownloadWithContext:context];
     if (context != download.context) {
-        @throw [NSException exceptionWithName:TIPImageFetchDownloadConstructorExceptionName reason:@"TIPImageFetchDownload did not adhere to protocol requirements!" userInfo:@{ @"className" : NSStringFromClass([imageFetchDownloadProvider class]) }];
+        @throw [NSException exceptionWithName:TIPImageFetchDownloadConstructorExceptionName
+                                       reason:@"TIPImageFetchDownload did not adhere to protocol requirements!"
+                                     userInfo:@{ @"className" : NSStringFromClass([imageFetchDownloadProvider class]) }];
     }
     return download;
 }
