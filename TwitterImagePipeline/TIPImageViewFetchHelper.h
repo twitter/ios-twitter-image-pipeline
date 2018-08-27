@@ -280,6 +280,8 @@ FOUNDATION_EXTERN NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotif
 - (void)tip_fetchHelper:(TIPImageViewFetchHelper *)helper didFailToLoadFinalImage:(NSError *)error;
 /** fetch did reset */
 - (void)tip_fetchHelperDidReset:(TIPImageViewFetchHelper *)helper;
+/** fetch did start loading from the network */
+- (void)tip_fetchHelperDidStartLoadingFromNetwork:(TIPImageViewFetchHelper *)helper;
 
 @end
 

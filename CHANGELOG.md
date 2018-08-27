@@ -2,13 +2,22 @@
 
 ## Info
 
-**Document version:** 2.9.3
+**Document version:** 2.10.0
 
-**Last updated:** 05/16/2018
+**Last updated:** 08/17/2018
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.10.0
+
+- drop support for iOS 7
+  - the code had already diverged to requiring many iOS 8+ only APIs, this just makes it official
+
+### 2.9.4 - Armand Raynor
+
+- Fix MP4 decoder when decoding anamorphic mp4s into animations
 
 ### 2.9.3
 

@@ -100,7 +100,7 @@ typedef void(^TIPImageFetchDidLoadPreviewCallback)(TIPImageFetchPreviewLoadedBeh
 
 /**
  Called when a progressive image was loaded for images that support it.
- (Currently, just Progressive JPEG on iOS 8+).
+ (Currently, just Progressive JPEG).
 
  @param op The image fetch operation
  @param progressiveResult The progressive image's `TIPImageFetchResult`

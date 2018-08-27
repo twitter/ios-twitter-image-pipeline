@@ -48,9 +48,6 @@ tip_defer(^{ \
     [[TIPImageCodecCatalogue sharedInstance] removeCodecForImageType:TIPXImageTypeMP4]; \
 });
 
-
-static const NSOperatingSystemVersion kIOS11 = { 11, 0, 0 };
-
 @implementation TestParamSet
 
 + (instancetype)floatParamSetWithAlphaInfo:(CGImageAlphaInfo)alphaInfo byteOrder:(uint32_t)byteOrder
@@ -631,7 +628,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testXLoadICNS
 {
-    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(isOperatingSystemAtLeastVersion:)] && [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:kIOS11]) {
+    if (tip_available_ios_11) {
         [self runMeasurement:@"load" format:@"*icns" block:^{
             [self runLoadTestForReadOnlyFormat:@"icns" imageType:TIPImageTypeICNS];
         }];
@@ -850,13 +847,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testTypeSupportsProgressiveLoading
 {
-    NSOperatingSystemVersion osVersion = { 7, 0, 0 };
-    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
-        osVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
-    }
-
     XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypeJPEG2000], NO); // for now
-    XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypeJPEG], osVersion.majorVersion >= 8);
+    XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypeJPEG], YES); // iOS 8+
     XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypePNG], NO); // for now
     XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:nil], NO);
 }
@@ -868,12 +860,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testTypeHasProgressiveVariant
 {
-    NSOperatingSystemVersion version = { 7, 0, 0 };
-    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
-        version = [NSProcessInfo processInfo].operatingSystemVersion;
-    }
-
-    XCTAssertEqual([self _typeHasProgressiveVariant:TIPImageTypeJPEG], version.majorVersion >= 8);
+    XCTAssertEqual([self _typeHasProgressiveVariant:TIPImageTypeJPEG], YES);
     XCTAssertEqual([self _typeHasProgressiveVariant:TIPImageTypeJPEG2000], NO);
     XCTAssertEqual([self _typeHasProgressiveVariant:TIPImageTypePNG], NO);
     XCTAssertEqual([self _typeHasProgressiveVariant:nil], NO);
@@ -931,7 +918,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeQTIF));
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeRAW));
 
-    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(isOperatingSystemAtLeastVersion:)] && [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:kIOS11]) {
+    if (tip_available_ios_11) {
         XCTAssertTrue(TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS));
     } else {
         XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS));
@@ -1384,7 +1371,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
                                      validParamSets:@[
                   PARAM_SET_INT(kCGImageAlphaNone, kCGBitmapByteOrderDefault),
                   PARAM_SET_INT(kCGImageAlphaOnly, kCGBitmapByteOrderDefault),
-#if !TARGET_OS_IPHONE
+#if !TARGET_OS_IPHONE // == !(IOS + WATCHOS + TVOS)
                   [TestParamSet integerParamSetWithAlphaInfo:kCGImageAlphaNone byteOrder:kCGBitmapByteOrderDefault bytesPerComponent:2],
                   PARAM_SET_FLOAT(kCGImageAlphaNone, kCGBitmapByteOrderDefault),
                   PARAM_SET_FLOAT(kCGImageAlphaNone, kCGBitmapByteOrder32Little),
@@ -1406,7 +1393,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
                 PARAM_SET_INT(kCGImageAlphaPremultipliedLast, kCGBitmapByteOrderDefault),
                 PARAM_SET_INT(kCGImageAlphaPremultipliedLast, kCGBitmapByteOrder32Little),
                 PARAM_SET_INT(kCGImageAlphaPremultipliedLast, kCGBitmapByteOrder32Big),
-#if !TARGET_OS_IPHONE
+#if !TARGET_OS_IPHONE // == !(IOS + WATCHOS + TVOS)
                 /* Skipping: 16 bits per pixel, 5 bits per component, kCGImageAlphaNoneSkipFirst */
                 [TestParamSet integerParamSetWithAlphaInfo:kCGImageAlphaPremultipliedLast byteOrder:kCGBitmapByteOrderDefault bytesPerComponent:2],
                 [TestParamSet integerParamSetWithAlphaInfo:kCGImageAlphaPremultipliedLast byteOrder:kCGBitmapByteOrder32Little bytesPerComponent:2],
@@ -1420,16 +1407,16 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
                 [TestParamSet integerParamSetWithAlphaInfo:kCGImageAlphaNoneSkipLast byteOrder:kCGBitmapByteOrder16Big bytesPerComponent:2],
                 PARAM_SET_FLOAT(kCGImageAlphaNoneSkipLast, kCGBitmapByteOrderDefault),
                 PARAM_SET_FLOAT(kCGImageAlphaPremultipliedLast, kCGBitmapByteOrderDefault),
-#endif // !iOS
+#endif // !TARGET_OS_IPHONE
                                                       ]],
 
              [TestColorSpace colorSpaceWithOwnedRef:CGColorSpaceCreateDeviceCMYK()
                                      validParamSets:@[
-#if !TARGET_OS_IPHONE
+#if !TARGET_OS_IPHONE // == !(IOS + WATCHOS + TVOS)
                   PARAM_SET_INT(kCGImageAlphaNone, kCGBitmapByteOrderDefault),
                   [TestParamSet integerParamSetWithAlphaInfo:kCGImageAlphaNone byteOrder:kCGBitmapByteOrderDefault bytesPerComponent:2],
                   PARAM_SET_FLOAT(kCGImageAlphaNone, kCGBitmapByteOrderDefault),
-#endif // !iOS
+#endif // !TARGET_OS_IPHONE
                                                       ]],
          ];
 

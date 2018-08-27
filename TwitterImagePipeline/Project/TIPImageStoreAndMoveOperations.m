@@ -83,7 +83,10 @@ static void _asyncStoreMemoryEntry(PRIVATE_SELF(TIPImageStoreOperation),
     [super doesNotRecognizeSelector:_cmd];
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-implementations"
 - (void)setThreadPriority:(double)threadPriority
+#pragma clang diagnostic pop
 {
     [super doesNotRecognizeSelector:_cmd];
 }

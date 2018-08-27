@@ -23,8 +23,6 @@
 @import MobileCoreServices;
 @import XCTest;
 
-#define IS_IOS_10_OR_GREATER ([NSProcessInfo processInfo].operatingSystemVersion.majorVersion >= 10)
-
 @interface TIPImagePipelineTestFetchRequest : NSObject <TIPImageFetchRequest>
 @property (nonatomic) NSURL *imageURL;
 @property (nonatomic, copy) NSString *cannedImageFilePath;
@@ -166,7 +164,7 @@ static NSString *sProblematicAvatarPath = nil;
     NSDictionary *options = @{ (NSString *)kCGImageSourceShouldCache : @NO };
     CGImageSourceRef imageSourceRef = CGImageSourceCreateIncremental((__bridge CFDictionaryRef)options);
     CGImageSourceUpdateData(imageSourceRef, (__bridge CFDataRef)imageData, NO);
-    if (IS_IOS_10_OR_GREATER) {
+    if (tip_available_ios_10) {
         CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(imageSourceRef, 0, NULL);
         XCTAssertTrue(properties != NULL);
         if (properties) {
@@ -191,13 +189,13 @@ static NSString *sProblematicAvatarPath = nil;
 
     TIPPartialImage *partialImage = [[TIPPartialImage alloc] initWithExpectedContentLength:sProblematicAvatarData.length];
     [partialImage appendData:sProblematicAvatarData final:NO];
-    if (IS_IOS_10_OR_GREATER) {
+    if (tip_available_ios_10) {
         // no exception will have triggered
     } else {
         // exception will have triggered
     }
     image2 = [[partialImage renderImageWithMode:TIPImageDecoderRenderModeFullFrameProgress decoded:YES] image];
-    if (IS_IOS_10_OR_GREATER) {
+    if (tip_available_ios_10) {
         XCTAssertNotNil(image2); // image can render
     } else {
         XCTAssertNil(image2); // image cannot render
@@ -216,7 +214,7 @@ static NSString *sProblematicAvatarPath = nil;
     // On iOS 10, these images will serialize to different bytes...
     // ...specifically an image with scale will have DPI info and PixelsPerMeter info.
     // Recreating an imageWithData: image with a scale will get them to be consistent.
-    if (IS_IOS_10_OR_GREATER) {
+    if (tip_available_ios_10) {
         if (image1.scale != image2.scale) {
             UIImage *roundTrip1 = [UIImage imageWithData:pngData1];
             UIImage *roundTrip2 = [UIImage imageWithData:pngData2];
@@ -244,9 +242,9 @@ static NSString *sProblematicAvatarPath = nil;
     // Prior to iOS 10 (when this issue was fixed) it was possible
     // to have a malformed image trigger an exception (32-bit unit
     // tests won't catch the exception).
+    //
     // TIP adds a protection around ImageIO code (in the codecs) to
     // avoid crashing and salvage the decoding.
-    //
 
     id<TIPImageFetchDownloadProviderWithStubbingSupport> provider = (id<TIPImageFetchDownloadProviderWithStubbingSupport>)[TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider;
 

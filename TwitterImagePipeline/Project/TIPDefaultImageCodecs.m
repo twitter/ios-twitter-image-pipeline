@@ -102,12 +102,7 @@ NS_ASSUME_NONNULL_BEGIN
         decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
         encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:UTType];
     } else {
-        BOOL imageTypeIsRawImage = [imageType isEqualToString:TIPImageTypeICO];
-#if __IPHONE_8_0 <= __IPHONE_OS_VERSION_MIN_REQUIRED
-        imageTypeIsRawImage = imageTypeIsRawImage || [imageType isEqualToString:TIPImageTypeRAW];
-#else
-        imageTypeIsRawImage = imageTypeIsRawImage || ([imageType isEqualToString:TIPImageTypeRAW] && &kUTTypeRawImage);
-#endif
+        const BOOL imageTypeIsRawImage = [imageType isEqualToString:TIPImageTypeICO] || [imageType isEqualToString:TIPImageTypeRAW];
         if (imageTypeIsRawImage) {
             // These cannot be encoded, only decoded
             NSString *UTType = TIPImageTypeToUTType(imageType);
@@ -227,11 +222,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)tip_supportsProgressiveDecoding
 {
-#if __IPHONE_8_0 > __IPHONE_OS_VERSION_MIN_REQUIRED
-    return (&kCGImageDestinationEmbedThumbnail != NULL); // iOS 8+ only;
-#else
     return YES;
-#endif
 }
 
 @end
@@ -650,7 +641,7 @@ static void _attemptToLoadMoreImage(PRIVATE_SELF(TIPCGImageSourceDecoderContext)
     if (self->_tip_isAnimated) {
         _updateImageSource(self, self->_data, complete);
         BOOL canUpdateFrameCount;
-        if (@available(iOS 11.0, *)) {
+        if (tip_available_ios_11) {
             // We want to avoid decoding the animation data here in case it conflicts with
             // the data already being decoded in the UI.
             // On iOS 10, concurrent decoding of the same image (triggered by
@@ -823,7 +814,7 @@ static void _appendAttemptToLoadPropertiesFromHeaders(PRIVATE_SELF(TIPCGImageSou
                     }
                 } else if ([self->_UTType isEqualToString:(NSString *)kUTTypePNG]) {
                     CFDictionaryRef pngProperties = CFDictionaryGetValue(imageProperties, kCGImagePropertyPNGDictionary);
-                    if (pngProperties && [[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)] /* iOS 8+ */) {
+                    if (pngProperties) {
                         if (CFDictionaryGetValue(pngProperties, kCGImagePropertyAPNGDelayTime) != NULL) {
                             self->_tip_isAnimated = YES;
                         }

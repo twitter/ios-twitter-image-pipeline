@@ -44,7 +44,7 @@ BOOL TIPAmIBeingUnitTested(void)
     static BOOL sAmIBeingUnitTested = NO;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        sAmIBeingUnitTested = (NSClassFromString(@"SenTest") != NULL || NSClassFromString(@"XCTest") != NULL);
+        sAmIBeingUnitTested = (NSClassFromString(@"SenTest") != Nil || NSClassFromString(@"XCTest") != Nil);
     });
     return sAmIBeingUnitTested;
 }

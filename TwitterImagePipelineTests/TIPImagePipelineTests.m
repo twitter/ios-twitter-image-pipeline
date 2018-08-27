@@ -247,7 +247,13 @@ static TIPImagePipeline *sPipeline = nil;
     const BOOL progressiveOn = context.shouldSupportProgressiveLoading;
     const BOOL animatedOn = context.shouldSupportAnimatedLoading;
     const BOOL shouldReachFinal = (TIPImageFetchOperationStateSucceeded == state);
-    const BOOL metricsWillBeGathered = [NSProcessInfo processInfo].operatingSystemVersion.majorVersion >= 10 && [[TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider isKindOfClass:[TIPTestImageFetchDownloadProviderInternalWithStubbing class]];
+    BOOL metricsWillBeGathered = NO;
+    if (tip_available_ios_10) {
+        if ([[TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider isKindOfClass:[TIPTestImageFetchDownloadProviderInternalWithStubbing class]]) {
+            metricsWillBeGathered = YES;
+        }
+    }
+
     NSString *type = [(TIPImagePipelineTestFetchRequest*)op.request imageType];
     XCTAssertEqual(context.didStart, YES, @"imageType == %@", type);
     if (shouldReachFinal) {
@@ -310,7 +316,7 @@ static TIPImagePipeline *sPipeline = nil;
     }
     if (animatedOn && TIPImageLoadSourceNetwork == source && [[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsAnimation:type] && context.expectedFrameCount > 1) {
         // only iOS 11 supports progressive animation loading due to a crashing bug in iOS 10
-        if (@available(iOS 11.0, *)) {
+        if (tip_available_ios_11) {
             XCTAssertGreaterThan(context.firstAnimatedFrameProgress, (float)0.0f);
             XCTAssertLessThan(context.firstAnimatedFrameProgress, (float)1.0f);
         } else {
@@ -489,7 +495,7 @@ static TIPImagePipeline *sPipeline = nil;
 - (void)testFetchingJPEG2000
 {
     TIPImageFetchTestStruct imageStruct = { TIPImageTypeJPEG2000, YES, NO, NO, 256 * kKiloBits };
-    if (@available(iOS 11.1, *)) {
+    if (@available(iOS 11.1, tvOS 11.1, macOS 10.13.1, watchOS 4.1, *)) {
         NSLog(@"iOS 11.1 regressed JPEG2000 so that the image cannot be parsed until fully downloading thus breaking most expectations TIP unit tests have.  Radars have been filed but please file another radar against Apple if you care about JPEG2000 support.");
     } else {
         [self _runFetching:imageStruct];

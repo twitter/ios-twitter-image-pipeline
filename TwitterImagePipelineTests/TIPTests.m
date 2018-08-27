@@ -26,6 +26,9 @@ Class TIPTestsImageFetchDownloadProviderOverrideClass()
         }
         if (imageFetchClassName) {
             sImageFetchDownloadProviderClass = NSClassFromString(imageFetchClassName);
+            if (!sImageFetchDownloadProviderClass) {
+                NSLog(@"\n\n********************\n\nFailed to load %@ class!\nNo %@ found!\n\n********************\n", kTIPTestsImageFetchDownloadProviderClassKey, imageFetchClassName);
+            }
         }
         if (!sImageFetchDownloadProviderClass) {
             sImageFetchDownloadProviderClass = [TIPTestImageFetchDownloadProviderInternalWithStubbing class];

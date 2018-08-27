@@ -62,9 +62,15 @@ static const TIPXMP4Signature kSignatures[] = {
 };
 static const size_t kSignatureDataRequiredToCheck = sizeof(kComplexSignature1) + 4;
 
+static const CGFloat kAdjustmentEpsilon = (CGFloat)0.005;
+
 #pragma mark - Declarations
 
 static CGImageRef __nullable TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBufferRef __nullable sample) CF_RETURNS_RETAINED;
+
+static BOOL TIPX_imageNeedsScaling(CGImageRef imageRef, CGSize naturalSize);
+
+static UIImage *TIPX_scaledImage(CGImageRef imageRef, CGSize naturalSize, CIContext *context);
 
 @interface TIPXMP4DecoderConfigInternal : NSObject <TIPXMP4DecoderConfig>
 - (instancetype)initWithMaxDecodableFramesCount:(NSUInteger)max;
@@ -214,15 +220,24 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
         if (_temporaryFile || _finalized) {
             @autoreleasepool {
                 AVAsset *asset = [AVAsset assetWithURL:[NSURL fileURLWithPath:self->_temporaryFilePath]];
-                AVAssetImageGenerator* imageGenerator = [AVAssetImageGenerator assetImageGeneratorWithAsset:asset];
+                AVAssetImageGenerator *imageGenerator = [AVAssetImageGenerator assetImageGeneratorWithAsset:asset];
                 CGImageRef imageRef = [imageGenerator copyCGImageAtTime:CMTimeMake(0, 1)
                                                              actualTime:nil
                                                                   error:nil];
+                TIPXDeferRelease(imageRef);
+
                 if (imageRef) {
-                    UIImage* image = [UIImage imageWithCGImage:imageRef
-                                                         scale:[UIScreen mainScreen].scale
-                                                   orientation:UIImageOrientationUp];
-                    CFRelease(imageRef);
+                    AVAssetTrack *track = [asset tracksWithMediaType:AVMediaTypeVideo].firstObject;
+                    CGSize naturalSize = track.naturalSize;
+                    UIImage *image;
+                    if (track && TIPX_imageNeedsScaling(imageRef, naturalSize)) {
+                        image = TIPX_scaledImage(imageRef, naturalSize, [[CIContext alloc] init]);
+                    }
+                    if (!image) {
+                        image = [UIImage imageWithCGImage:imageRef
+                                                    scale:[UIScreen mainScreen].scale
+                                              orientation:UIImageOrientationUp];
+                    }
                     if (image) {
                         self->_firstFrame = image;
                     }
@@ -267,6 +282,8 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
                                                                      message:error.description];
             return;
         }
+        
+        CGSize naturalSize = self->_avTrack.naturalSize;
 
         NSDictionary *outputSettings = @{
                                          (NSString *)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA)
@@ -288,25 +305,32 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
             mod++;
         }
 
-        CMSampleBufferRef sample = NULL;
-        do {
-            sample = [output copyNextSampleBuffer];
-            TIPXDeferRelease(sample);
+            CIContext *context;
 
-            if (mod > 1 && ((++count % mod) != 1)) {
-                continue;
-            }
+            CMSampleBufferRef sample = NULL;
+            do {
+                sample = [output copyNextSampleBuffer];
+                TIPXDeferRelease(sample);
+                if (mod > 1 && ((++count % mod) != 1)) {
+                    continue;
+                }
 
-            CGImageRef imageRef = TIPX_CGImageCreateFromCMSampleBuffer(sample);
-            TIPXDeferRelease(imageRef);
-
-            if (imageRef) {
-                UIImage *image = [UIImage imageWithCGImage:imageRef];
-                if (image) {
+                CGImageRef imageRef = TIPX_CGImageCreateFromCMSampleBuffer(sample);
+                TIPXDeferRelease(imageRef);
+                if (imageRef) {
+                    UIImage *image = nil;
+                    if (TIPX_imageNeedsScaling(imageRef, naturalSize)) {
+                        if (!context) {
+                            context = [[CIContext alloc] init];
+                        }
+                        image = TIPX_scaledImage(imageRef, naturalSize, context);
+                    }
+                    if (!image) {
+                        image = [[UIImage alloc] initWithCGImage:imageRef];
+                    }
                     [images addObject:image];
                 }
-            }
-        } while (sample != NULL);
+            } while (sample != NULL);
 
         self->_frameCount = images.count;
 
@@ -495,6 +519,46 @@ static CGImageRef __nullable TIPX_CGImageCreateFromCMSampleBuffer(CMSampleBuffer
     });
 
     return CGBitmapContextCreateImage(newContext);
+}
+
+static BOOL TIPX_imageNeedsScaling(CGImageRef imageRef, CGSize naturalSize)
+{
+    if (imageRef && CGImageGetWidth(imageRef) > 0 && CGImageGetHeight(imageRef) > 0) {
+        const CGFloat widthScale = naturalSize.width / CGImageGetWidth(imageRef);
+        const CGFloat heightScale = naturalSize.height / CGImageGetHeight(imageRef);
+
+        if (ABS(widthScale - 1) > kAdjustmentEpsilon || ABS(heightScale - 1) > kAdjustmentEpsilon) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
+static UIImage *TIPX_scaledImage(CGImageRef imageRef, CGSize naturalSize, CIContext *context)
+{
+    CGImageRef finalImageRef = NULL;
+
+    @autoreleasepool {
+        if (imageRef) {
+            const CGFloat widthScale = naturalSize.width / CGImageGetWidth(imageRef);
+            const CGFloat heightScale = naturalSize.height / CGImageGetHeight(imageRef);
+
+            CIImage *ciimage = [CIImage imageWithCGImage:imageRef];
+            ciimage = [ciimage imageByApplyingTransform:CGAffineTransformMakeScale(widthScale, heightScale)];
+            CGImageRef scaledImageRef = [context createCGImage:ciimage fromRect:ciimage.extent];
+            if (scaledImageRef) {
+                finalImageRef = scaledImageRef;
+            }
+        }
+    }
+
+    if (finalImageRef) {
+        TIPXDeferRelease(finalImageRef);
+        return [UIImage imageWithCGImage:finalImageRef];
+    }
+
+    return nil;
 }
 
 NS_ASSUME_NONNULL_END

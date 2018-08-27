@@ -29,7 +29,7 @@ FOUNDATION_EXTERN NSString * const TIPImageTypeJPEG;
 FOUNDATION_EXTERN NSString * const TIPImageTypeJPEG2000;
 /**
  PNG (Portable Network Graphic)
- Animation encoding/decoding _is_ supported by _TIP_ by default (on iOS 8+).
+ Animation encoding/decoding _is_ supported by _TIP_ by default.
  PNG has a way of being encoded progressively (interlaced/Adam7).
  Progressive decoding _is not_ supported by __TIP__ by default,
  a custom `TIPImageCodec` would be required to add progressive decoding support.

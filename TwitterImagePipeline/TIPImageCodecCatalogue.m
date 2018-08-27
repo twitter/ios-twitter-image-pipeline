@@ -194,6 +194,12 @@ NS_ASSUME_NONNULL_BEGIN
                                    decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
                                           imageType:(out NSString * __autoreleasing __nullable * __nullable)imageType
 {
+    __block NSString *localImageType = nil;
+    tip_defer(^{
+        if (imageType) {
+            *imageType = localImageType;
+        }
+    });
     __block TIPImageContainer *container = nil;
     NSDictionary<NSString *, id<TIPImageCodec>> *codecs = self.allCodecs;
     NSString *guessImageType = TIPDetectImageTypeViaMagicNumbers(data);
@@ -205,9 +211,7 @@ NS_ASSUME_NONNULL_BEGIN
         id config = decoderConfigMap[guessImageType];
         container = TIPDecodeImageFromData(guessedCodec, config, data, guessImageType);
         if (container) {
-            if (imageType) {
-                *imageType = guessImageType;
-            }
+            localImageType = guessImageType;
             return container;
         }
     }
@@ -218,9 +222,7 @@ NS_ASSUME_NONNULL_BEGIN
             container = TIPDecodeImageFromData(codec, config, data, guessImageType);
             if (container) {
                 *stop = YES;
-                if (imageType) {
-                    *imageType = codecImageType;
-                }
+                localImageType = codecImageType;
             }
         }
     }];

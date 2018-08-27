@@ -423,7 +423,7 @@ static void _markAsIfPlaceholder(SELF_ARG)
         {
             if (_fetchOperation) {
                 _priorPriority = _fetchOperation.priority;
-                _fetchOperation.priority = NSOperationQueuePriorityVeryLow;
+                _fetchOperation.priority = NSOperationQueuePriorityVeryLow + 2;
                 _flags.didChangePriorityOnDisappear = 1;
             }
             break;
@@ -802,6 +802,21 @@ static void _didReset(SELF_ARG)
     [self setDebugInfoNeedsUpdate];
 }
 
+- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op
+    willAttemptToLoadFromSource:(TIPImageLoadSource)source
+{
+    if (op != _fetchOperation) {
+        return;
+    }
+
+    if (source >= TIPImageLoadSourceNetwork) {
+        id<TIPImageViewFetchHelperDelegate> delegate = self.delegate;
+        if ([delegate respondsToSelector:@selector(tip_fetchHelperDidStartLoadingFromNetwork:)]) {
+            [delegate tip_fetchHelperDidStartLoadingFromNetwork:self];
+        }
+    }
+}
+
 #pragma mark Private
 
 static void _tearDown(SELF_ARG)
@@ -920,12 +935,16 @@ static void _update(SELF_ARG,
     } else {
         self.fetchResultDimensions = CGSizeZero;
     }
+    BOOL didUpdateProgress = NO;
     const float oldProgress = self.fetchProgress;
     if ((progress > oldProgress) || (progress == oldProgress && oldProgress > 0.f) || !self.didLoadAny) {
         self.fetchProgress = progress;
-        _didUpdateProgress(self, progress);
+        didUpdateProgress = YES;
     }
     self.fetchView.tip_fetchedImage = image;
+    if (didUpdateProgress) {
+        _didUpdateProgress(self, progress);
+    }
     if (image) {
         _didUpdateDisplayedImage(self,
                                  image,
