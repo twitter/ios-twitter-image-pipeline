@@ -88,7 +88,7 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
         return NO;
     }
 
-    if (@available(iOS 10.0, *)) {
+    if (tip_available_ios_10) {
         // iOS 10 and above required for using P3 on images
     } else {
         return NO;
@@ -477,13 +477,19 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
         return self;
     }
 
-    if ([NSProcessInfo processInfo].operatingSystemVersion.majorVersion < 9 && !TIPIsExtension()) {
-        // Cannot do GPU work in the background before iOS 9
-        Class UIApplicationClass = NSClassFromString(@"UIApplication");
-        if ([[UIApplicationClass sharedApplication] applicationState] == UIApplicationStateBackground) {
-            // In background, abort
-            outError = [NSError errorWithDomain:TIPErrorDomain code:TIPErrorCodeCannotUseGPUInBackground userInfo:nil];
-            return nil;
+    if (tip_available_ios_9) {
+        // can do GPU work in the background
+    } else {
+        if (!TIPIsExtension()) {
+            // Cannot do GPU work in the background before iOS 9
+            Class UIApplicationClass = NSClassFromString(@"UIApplication");
+            if ([[UIApplicationClass sharedApplication] applicationState] == UIApplicationStateBackground) {
+                // In background, abort
+                outError = [NSError errorWithDomain:TIPErrorDomain
+                                               code:TIPErrorCodeCannotUseGPUInBackground
+                                           userInfo:nil];
+                return nil;
+            }
         }
     }
 
@@ -757,7 +763,7 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
     TIPAssert(type != nil);
     NSString *typeString = TIPImageTypeToUTType(type);
     if (!typeString || !TIPImageTypeCanWriteWithImageIO(type)){
-        theError = [NSError errorWithDomain:TIPErrorDomain code:TIPErrorCodeEncodingUnsupported userInfo:@{ @"imageType" : type }];
+        theError = [NSError errorWithDomain:TIPErrorDomain code:TIPErrorCodeEncodingUnsupported userInfo:(type) ? @{ @"imageType" : type } : nil];
         return NO;
     }
 

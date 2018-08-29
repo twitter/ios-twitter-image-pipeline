@@ -20,6 +20,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 FOUNDATION_EXTERN BOOL TIPIsExtension(void);
 
+#pragma mark - Availability
+
+// macros helpers to match against specific iOS versions and their mapped non-iOS platform versions
+
+#define tip_available_ios_9     @available(iOS 9, tvOS 9, macOS 10.11, watchOS 2, *)
+#define tip_available_ios_10    @available(iOS 10, tvOS 10, macOS 10.12, watchOS 3, *)
+#define tip_available_ios_11    @available(iOS 11, tvOS 11, macOS 10.13, watchOS 4, *)
+#define tip_available_ios_12    @available(iOS 12, tvOS 12, macOS 10.14, watchOS 5, *)
+
 #pragma mark - Bitmask Helpers
 
 /** Does the `mask` have at least 1 of the bits in `flags` set */

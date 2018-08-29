@@ -47,7 +47,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (NSOperationQueuePriority)downloadPriority
 {
-    NSOperationQueuePriority pri = NSOperationQueuePriorityVeryLow;
+    NSOperationQueuePriority pri = NSOperationQueuePriorityVeryLow + 1;
     for (id<TIPImageDownloadDelegate> delegate in _delegates) {
         const NSOperationQueuePriority delegatePriority = delegate.imageDownloadRequest.imageDownloadPriority;
         pri = MAX(pri, delegatePriority);

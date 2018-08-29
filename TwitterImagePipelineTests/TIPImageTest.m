@@ -14,7 +14,9 @@
 #import "TIPImageUtils.h"
 #import "TIPTests.h"
 #import "TIPXMP4Codec.h"
+#if TARGET_OS_IOS
 #import "TIPXWebPCodec.h"
+#endif
 #import "UIImage+TIPAdditions.h"
 
 @import Foundation;
@@ -34,12 +36,14 @@
 #define PARAM_SET_FLOAT(ai, bo) [TestParamSet floatParamSetWithAlphaInfo:(ai) byteOrder:(bo)]
 #define PARAM_SET_INT(ai, bo)   [TestParamSet integerParamSetWithAlphaInfo:(ai) byteOrder:(bo) bytesPerComponent:1]
 
+#if TARGET_OS_IOS
 #define PLUG_IN_WEBP() \
 TIPXWebPCodec *webpCodec = [[TIPXWebPCodec alloc] init]; \
 [[TIPImageCodecCatalogue sharedInstance] setCodec:webpCodec forImageType:TIPXImageTypeWebP]; \
 tip_defer(^{ \
     [[TIPImageCodecCatalogue sharedInstance] removeCodecForImageType:TIPXImageTypeWebP]; \
 });
+#endif
 
 #define PLUG_IN_MP4() \
 TIPXMP4Codec *mp4Codec = [[TIPXMP4Codec alloc] init]; \
@@ -47,9 +51,6 @@ TIPXMP4Codec *mp4Codec = [[TIPXMP4Codec alloc] init]; \
 tip_defer(^{ \
     [[TIPImageCodecCatalogue sharedInstance] removeCodecForImageType:TIPXImageTypeMP4]; \
 });
-
-
-static const NSOperatingSystemVersion kIOS11 = { 11, 0, 0 };
 
 @implementation TestParamSet
 
@@ -124,9 +125,11 @@ static const NSOperatingSystemVersion kIOS11 = { 11, 0, 0 };
 #define JPEG2000_QUALITY_GOOD (kTIPAppleQualityValueRepresentingJFIFQuality85)
 #define JPEG2000_QUALITY_OK (0.15f)
 
+#if TARGET_OS_IOS
 #define WEBP_QUALITY_PERFECT (.99f) /* use .99 because 1. is lossless and slower than molasses in Edmonton in January */
 #define WEBP_QUALITY_GOOD (0.6f)
 #define WEBP_QUALITY_OK (0.3f)
+#endif
 
 #define TEST_IMAGE_WIDTH ((CGFloat)1880.0)
 #define TEST_IMAGE_HEIGHT ((CGFloat)1253.0)
@@ -300,11 +303,13 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     for (NSUInteger i = 0; i < 5; i++) {
         @autoreleasepool {
             float quality = 1.0f - ((i % 10) / 10.0f);
+#if TARGET_OS_IOS
             if (type == TIPXImageTypeWebP && quality > .99f) {
                 // Lossless WebP is super slow,
                 // drop down to 99% in order to give WebP a fighting chance
                 quality = .99f;
             }
+#endif
             NSError *error = nil;
             NSData *data = [catalogue encodeImage:imageContainer withImageType:type quality:quality options:options error:&error];
             XCTAssertGreaterThan(data.length, (NSUInteger)0, @"Write image (q=%f) to data failed: %@", quality, error);
@@ -614,9 +619,13 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testXLoadICO
 {
-    [self runMeasurement:@"load" format:@"*ico" block:^{
-        [self runLoadTestForReadOnlyFormat:@"ico" imageType:TIPImageTypeICO];
-    }];
+    if (TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS)) {
+        [self runMeasurement:@"load" format:@"*ico" block:^{
+            [self runLoadTestForReadOnlyFormat:@"ico" imageType:TIPImageTypeICO];
+        }];
+    } else {
+        [self runLoadTestForUnreadableFormat:@"icns"];
+    }
 }
 
 - (void)testSpeedICO
@@ -631,7 +640,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testXLoadICNS
 {
-    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(isOperatingSystemAtLeastVersion:)] && [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:kIOS11]) {
+    if (TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS)) {
         [self runMeasurement:@"load" format:@"*icns" block:^{
             [self runLoadTestForReadOnlyFormat:@"icns" imageType:TIPImageTypeICNS];
         }];
@@ -652,9 +661,13 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testXLoadRAW
 {
+#if TARGET_OS_IOS
     [self runMeasurement:@"load" format:@"*cr2" block:^{
         [self runLoadTestForReadOnlyFormat:@"cr2" imageType:TIPImageTypeRAW];
     }];
+#else
+    [self runLoadTestForUnreadableFormat:@"cr2"];
+#endif
 }
 
 - (void)testSpeedRAW
@@ -662,6 +675,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     // unsupported with read only format
 }
 
+#if TARGET_OS_IOS
 - (void)testSaveWebP
 {
     XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:TIPXImageTypeWebP]);
@@ -675,7 +689,9 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         [self runSaveTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_OK useAnimatedImage:NO];
     }];
 }
+#endif
 
+#if TARGET_OS_IOS
 - (void)testXLoadWebP
 {
     [self runLoadTestForUnreadableFormat:@"webp"];
@@ -689,7 +705,9 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         [self runLoadTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_OK isAnimated:NO];
     }];
 }
+#endif
 
+#if TARGET_OS_IOS
 - (void)testSpeedWebP
 {
     XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:@"webp"]);
@@ -700,6 +718,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         [self runSpeedTest:TIPXImageTypeWebP options:0];
     }];
 }
+#endif
 
 #pragma mark Animated Formats R+W tests
 
@@ -850,13 +869,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testTypeSupportsProgressiveLoading
 {
-    NSOperatingSystemVersion osVersion = { 7, 0, 0 };
-    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
-        osVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
-    }
-
     XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypeJPEG2000], NO); // for now
-    XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypeJPEG], osVersion.majorVersion >= 8);
+    XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypeJPEG], YES); // iOS 8+
     XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypePNG], NO); // for now
     XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:nil], NO);
 }
@@ -868,12 +882,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testTypeHasProgressiveVariant
 {
-    NSOperatingSystemVersion version = { 7, 0, 0 };
-    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
-        version = [NSProcessInfo processInfo].operatingSystemVersion;
-    }
-
-    XCTAssertEqual([self _typeHasProgressiveVariant:TIPImageTypeJPEG], version.majorVersion >= 8);
+    XCTAssertEqual([self _typeHasProgressiveVariant:TIPImageTypeJPEG], YES);
     XCTAssertEqual([self _typeHasProgressiveVariant:TIPImageTypeJPEG2000], NO);
     XCTAssertEqual([self _typeHasProgressiveVariant:TIPImageTypePNG], NO);
     XCTAssertEqual([self _typeHasProgressiveVariant:nil], NO);
@@ -924,18 +933,27 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     XCTAssertTrue(TIPImageTypeCanReadWithImageIO(TIPImageTypePNG));
     XCTAssertTrue(TIPImageTypeCanReadWithImageIO(TIPImageTypeBMP));
     XCTAssertTrue(TIPImageTypeCanReadWithImageIO(TIPImageTypeTARGA));
-    XCTAssertTrue(TIPImageTypeCanReadWithImageIO(@"com.canon.cr2-raw-image"));
     XCTAssertTrue(TIPImageTypeCanReadWithImageIO(TIPImageTypeICO));
+
+#if TARGET_OS_IOS
+    XCTAssertTrue(TIPImageTypeCanReadWithImageIO(@"com.canon.cr2-raw-image"));
+#else
+    XCTAssertFalse(TIPImageTypeCanReadWithImageIO(@"com.canon.cr2-raw-image"));
+#endif
 
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypePICT));
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeQTIF));
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeRAW));
 
-    if ([[NSProcessInfo processInfo] respondsToSelector:@selector(isOperatingSystemAtLeastVersion:)] && [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:kIOS11]) {
+#if TARGET_OS_IOS
+    if (tip_available_ios_11) {
         XCTAssertTrue(TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS));
     } else {
         XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS));
     }
+#else
+    XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS));
+#endif
 
 
     // write
@@ -977,8 +995,10 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     ASSERT_CATALOGUE_MATCHES_IO(TIPImageTypeTARGA);
     ASSERT_CATALOGUE_MATCHES_IO(TIPImageTypeICO);
 
+#if TARGET_OS_IOS
     XCTAssertNotEqual(TIPImageTypeCanReadWithImageIO(@"com.canon.cr2-raw-image"), [[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsDecoding:@"com.canon.cr2-raw-image"]);
     XCTAssertEqual(TIPImageTypeCanWriteWithImageIO(@"com.canon.cr2-raw-image"), [[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsEncoding:@"com.canon.cr2-raw-image"]);
+#endif
 }
 
 - (void)testMatchesTargetDimensionsAndContentMode
@@ -1384,7 +1404,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
                                      validParamSets:@[
                   PARAM_SET_INT(kCGImageAlphaNone, kCGBitmapByteOrderDefault),
                   PARAM_SET_INT(kCGImageAlphaOnly, kCGBitmapByteOrderDefault),
-#if !TARGET_OS_IPHONE
+#if !TARGET_OS_IPHONE // == !(IOS + WATCHOS + TVOS)
                   [TestParamSet integerParamSetWithAlphaInfo:kCGImageAlphaNone byteOrder:kCGBitmapByteOrderDefault bytesPerComponent:2],
                   PARAM_SET_FLOAT(kCGImageAlphaNone, kCGBitmapByteOrderDefault),
                   PARAM_SET_FLOAT(kCGImageAlphaNone, kCGBitmapByteOrder32Little),
@@ -1406,7 +1426,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
                 PARAM_SET_INT(kCGImageAlphaPremultipliedLast, kCGBitmapByteOrderDefault),
                 PARAM_SET_INT(kCGImageAlphaPremultipliedLast, kCGBitmapByteOrder32Little),
                 PARAM_SET_INT(kCGImageAlphaPremultipliedLast, kCGBitmapByteOrder32Big),
-#if !TARGET_OS_IPHONE
+#if !TARGET_OS_IPHONE // == !(IOS + WATCHOS + TVOS)
                 /* Skipping: 16 bits per pixel, 5 bits per component, kCGImageAlphaNoneSkipFirst */
                 [TestParamSet integerParamSetWithAlphaInfo:kCGImageAlphaPremultipliedLast byteOrder:kCGBitmapByteOrderDefault bytesPerComponent:2],
                 [TestParamSet integerParamSetWithAlphaInfo:kCGImageAlphaPremultipliedLast byteOrder:kCGBitmapByteOrder32Little bytesPerComponent:2],
@@ -1420,16 +1440,16 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
                 [TestParamSet integerParamSetWithAlphaInfo:kCGImageAlphaNoneSkipLast byteOrder:kCGBitmapByteOrder16Big bytesPerComponent:2],
                 PARAM_SET_FLOAT(kCGImageAlphaNoneSkipLast, kCGBitmapByteOrderDefault),
                 PARAM_SET_FLOAT(kCGImageAlphaPremultipliedLast, kCGBitmapByteOrderDefault),
-#endif // !iOS
+#endif // !TARGET_OS_IPHONE
                                                       ]],
 
              [TestColorSpace colorSpaceWithOwnedRef:CGColorSpaceCreateDeviceCMYK()
                                      validParamSets:@[
-#if !TARGET_OS_IPHONE
+#if !TARGET_OS_IPHONE // == !(IOS + WATCHOS + TVOS)
                   PARAM_SET_INT(kCGImageAlphaNone, kCGBitmapByteOrderDefault),
                   [TestParamSet integerParamSetWithAlphaInfo:kCGImageAlphaNone byteOrder:kCGBitmapByteOrderDefault bytesPerComponent:2],
                   PARAM_SET_FLOAT(kCGImageAlphaNone, kCGBitmapByteOrderDefault),
-#endif // !iOS
+#endif // !TARGET_OS_IPHONE
                                                       ]],
          ];
 

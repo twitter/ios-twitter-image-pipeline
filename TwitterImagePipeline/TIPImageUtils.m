@@ -304,10 +304,6 @@ BOOL TIPMainScreenSupportsWideColorGamut()
 
 BOOL TIPScreenSupportsWideColorGamut(UIScreen *screen)
 {
-    if (![screen respondsToSelector:@selector(traitCollection)]) {
-        return NO;
-    }
-
     UITraitCollection *traits = [screen traitCollection];
     if (![traits respondsToSelector:@selector(displayGamut)]) {
         return NO;
@@ -408,7 +404,7 @@ static UIImage * __nullable _TIPRenderImageModern(UIImage * __nullable sourceIma
                                                   TIPImageRenderFormattingBlock __nullable __attribute__((noescape)) formatBlock,
                                                   TIPImageRenderBlock __attribute__((noescape)) renderBlock)
 {
-    if ([UIGraphicsImageRenderer class] == Nil) {
+    if (Nil == [UIGraphicsImageRenderer class]) {
         return nil;
     }
 
@@ -421,9 +417,7 @@ static UIImage * __nullable _TIPRenderImageModern(UIImage * __nullable sourceIma
         if (sourceImage) {
             format = sourceImage.imageRendererFormat;
             size = sourceImage.size;
-        } else if (@available(iOS 11.0.1, *)) {
-            format = [UIGraphicsImageRendererFormat preferredFormat];
-        } else if (@available(iOS 11.0.0, *)) {
+        } else if (tip_available_ios_11) {
             // iOS 11.0.0 GM does have `preferredFormat`, but iOS 11 betas did not (argh!)
             if ([UIGraphicsImageRenderer respondsToSelector:@selector(preferredFormat)]) {
                 format = [UIGraphicsImageRendererFormat preferredFormat];

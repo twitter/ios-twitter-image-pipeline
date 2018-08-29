@@ -90,31 +90,68 @@ NS_ASSUME_NONNULL_BEGIN
         // JPEG has a special decoder
         decoder = [[TIPJPEGCGImageSourceDecoder alloc] init];
         encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:(NSString *)kUTTypeJPEG];
+        TIPAssert(TIPImageTypeCanReadWithImageIO(imageType));
+        TIPAssert(TIPImageTypeCanWriteWithImageIO(imageType));
     } else if ([imageType isEqualToString:TIPImageTypeGIF] || [imageType isEqualToString:TIPImageTypePNG]) {
         // GIF & APNG can be animated
         NSString *UTType = TIPImageTypeToUTType(imageType);
         decoder = [[TIPAnimatedCGImageSourceDecoder alloc] initWithUTType:UTType];
         encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:UTType];
         animated = YES;
-    } else if ([imageType isEqualToString:TIPImageTypeJPEG2000] || [imageType isEqualToString:TIPImageTypeTIFF] || [imageType isEqualToString:TIPImageTypeBMP] || [imageType isEqualToString:TIPImageTypeTARGA]) {
-        // These are all normal
+        TIPAssert(TIPImageTypeCanReadWithImageIO(imageType));
+        TIPAssert(TIPImageTypeCanWriteWithImageIO(imageType));
+    } else if ([imageType isEqualToString:TIPImageTypeICO]) {
+        // ICO only has a decoder
         NSString *UTType = TIPImageTypeToUTType(imageType);
         decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
-        encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:UTType];
-    } else {
-        BOOL imageTypeIsRawImage = [imageType isEqualToString:TIPImageTypeICO];
-#if __IPHONE_8_0 <= __IPHONE_OS_VERSION_MIN_REQUIRED
-        imageTypeIsRawImage = imageTypeIsRawImage || [imageType isEqualToString:TIPImageTypeRAW];
+        TIPAssert(TIPImageTypeCanReadWithImageIO(imageType));
+        TIPAssert(!TIPImageTypeCanWriteWithImageIO(imageType));
+    } else if ([imageType isEqualToString:TIPImageTypeRAW]) {
+#if TARGET_OS_IOS
+        // RAW only has a decoder on iOS
+        NSString *UTType = TIPImageTypeToUTType(imageType);
+        decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
+        TIPAssert(!TIPImageTypeCanWriteWithImageIO(imageType));
 #else
-        imageTypeIsRawImage = imageTypeIsRawImage || ([imageType isEqualToString:TIPImageTypeRAW] && &kUTTypeRawImage);
+        TIPAssert(!TIPImageTypeCanReadWithImageIO(imageType));
+        TIPAssert(!TIPImageTypeCanWriteWithImageIO(imageType));
 #endif
-        if (imageTypeIsRawImage) {
-            // These cannot be encoded, only decoded
-            NSString *UTType = TIPImageTypeToUTType(imageType);
-            decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
+    } else {
+        // other types, pull out their ImageIO based decoders/encoders
+        NSString *UTType = TIPImageTypeToUTType(imageType);
+        if (UTType) {
+            if (TIPImageTypeCanReadWithImageIO(UTType)) {
+                decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
+            }
+            if (TIPImageTypeCanWriteWithImageIO(imageType)) {
+                encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:UTType];
+            }
+        }
+
+        // some assertions to preserve the state of our assumptions
+        if (gTwitterImagePipelineAssertEnabled) {
+            const BOOL wellKnownType = [imageType isEqualToString:TIPImageTypeJPEG2000] ||
+                                       [imageType isEqualToString:TIPImageTypeTIFF] ||
+                                       [imageType isEqualToString:TIPImageTypeBMP] ||
+                                       [imageType isEqualToString:TIPImageTypeTARGA];
+            if (wellKnownType) {
+                TIPAssert(decoder != nil);
+                TIPAssert(encoder != nil);
+            } else if ([imageType isEqualToString:TIPImageTypeICO]) {
+                TIPAssert(decoder != nil);
+                TIPAssert(nil == encoder);
+            } else if ([imageType isEqualToString:TIPImageTypeICNS]) {
+#if TARGET_OS_IOS
+                TIPAssert(decoder != nil);
+#else
+                TIPAssert(nil == decoder);
+#endif
+                TIPAssert(nil == encoder);
+            }
         }
     }
 
+    // Decoder?  No decoder, then don't bother even if there is an encoder
     if (!decoder) {
         return nil;
     }
@@ -227,11 +264,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)tip_supportsProgressiveDecoding
 {
-#if __IPHONE_8_0 > __IPHONE_OS_VERSION_MIN_REQUIRED
-    return (&kCGImageDestinationEmbedThumbnail != NULL); // iOS 8+ only;
-#else
     return YES;
-#endif
 }
 
 @end
@@ -650,7 +683,7 @@ static void _attemptToLoadMoreImage(PRIVATE_SELF(TIPCGImageSourceDecoderContext)
     if (self->_tip_isAnimated) {
         _updateImageSource(self, self->_data, complete);
         BOOL canUpdateFrameCount;
-        if (@available(iOS 11.0, *)) {
+        if (tip_available_ios_11) {
             // We want to avoid decoding the animation data here in case it conflicts with
             // the data already being decoded in the UI.
             // On iOS 10, concurrent decoding of the same image (triggered by
@@ -823,7 +856,7 @@ static void _appendAttemptToLoadPropertiesFromHeaders(PRIVATE_SELF(TIPCGImageSou
                     }
                 } else if ([self->_UTType isEqualToString:(NSString *)kUTTypePNG]) {
                     CFDictionaryRef pngProperties = CFDictionaryGetValue(imageProperties, kCGImagePropertyPNGDictionary);
-                    if (pngProperties && [[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)] /* iOS 8+ */) {
+                    if (pngProperties) {
                         if (CFDictionaryGetValue(pngProperties, kCGImagePropertyAPNGDelayTime) != NULL) {
                             self->_tip_isAnimated = YES;
                         }

@@ -154,6 +154,7 @@ static void _PrepareGlobalState(void)
         dispatch_queue_t queue = dispatch_queue_create("TIPImageFetchDownloadInternal.queue", DISPATCH_QUEUE_SERIAL);
         sTIPImageFetchDownloadInternalOperationQueue = [[NSOperationQueue alloc] init];
         sTIPImageFetchDownloadInternalOperationQueue.maxConcurrentOperationCount = 1;
+        sTIPImageFetchDownloadInternalOperationQueue.qualityOfService = NSQualityOfServiceUtility;
         sTIPImageFetchDownloadInternalOperationQueue.underlyingQueue = queue;
 
         sTIPImageFetchDownloadInternalURLSessionDelegate = [[TIPImageFetchDownloadInternalURLSessionDelegate alloc] init];
@@ -165,13 +166,15 @@ static void _PrepareGlobalState(void)
         config.URLCache = nil;
         config.timeoutIntervalForResource = 60 * 3;
 
-        sTIPImageFetchDownloadInternalURLSession = [NSURLSession sessionWithConfiguration:config delegate:sTIPImageFetchDownloadInternalURLSessionDelegate delegateQueue:sTIPImageFetchDownloadInternalOperationQueue];
+        sTIPImageFetchDownloadInternalURLSession = [NSURLSession sessionWithConfiguration:config
+                                                                                 delegate:sTIPImageFetchDownloadInternalURLSessionDelegate
+                                                                            delegateQueue:sTIPImageFetchDownloadInternalOperationQueue];
     });
 }
 
 - (NSURLSession *)URLSession
 {
-    if ((__bridge void *)sTIPImageFetchDownloadInternalURLSession == nil) {
+    if (nil == (__bridge void *)sTIPImageFetchDownloadInternalURLSession) {
         _PrepareGlobalState();
     }
 

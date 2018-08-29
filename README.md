@@ -109,7 +109,7 @@ for a smaller image than the image in cache, no need to hit the network :)
 
 A great value that the _image pipeline_ offers is the ability to stream progressive scans of an
 image, if it is PJPEG, as the image is loaded from the Network.  This progressive rendering is
-natively supported by iOS 8+, but will not be supported in iOS 7 (the minimum OS for *TIP*).
+natively supported by iOS 8+, the same minimum OS for *TIP*.
 Progressive support is opt-in and also configurable in how scans should load.
 
 ### Resuming Image Downloads
@@ -153,6 +153,7 @@ image pipeline works.
         - Image response "Accept-Ranges" must be "bytes" and have "Last-Modified" header
         - Uses "Range" and "If-Range" headers to specify continuation
     - Pluggable networking (use your own network layer)
+        - Check out how to integrate [Twitter Network Layer](https://github.com/twitter/ios-twitter-network-layer) as your pluggable downloader with this [gist](https://gist.github.com/NSProgrammer/6e4c93ca9b9518178c9cbc7d950efd9c)
     - Custom hydration (useful for authenticated fetches)
 - Detailed insights
     - Global pipeline observability

@@ -650,7 +650,7 @@ static void _background_removeDelegate(SELF_ARG,
         }
     }
 
-    TIPAssert((error == nil) ^ (image == nil));
+    TIPAssert((nil == error) ^ (nil == image));
 
     // Pull out contextual values since accessing the context object from another thread is unsafe
     TIPPartialImage *partialImage = context->_partialImage;

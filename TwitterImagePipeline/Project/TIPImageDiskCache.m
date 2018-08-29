@@ -1796,6 +1796,7 @@ static NSOperationQueue *_ImageDiskCacheManifestCacheQueue()
         sQueue = [[NSOperationQueue alloc] init];
         sQueue.name = @"com.twitter.tip.disk.manifest.cache.queue";
         sQueue.maxConcurrentOperationCount = 1;
+        sQueue.qualityOfService = NSQualityOfServiceUtility;
     });
     return sQueue;
 }
@@ -1808,6 +1809,7 @@ static NSOperationQueue *_ImageDiskCacheManifestIOQueue()
         sQueue = [[NSOperationQueue alloc] init];
         sQueue.name = @"com.twitter.tip.disk.manifest.io.queue";
         sQueue.maxConcurrentOperationCount = 4; // parallelized
+        sQueue.qualityOfService = NSQualityOfServiceUtility;
     });
     return sQueue;
 }

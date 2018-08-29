@@ -567,21 +567,15 @@ static void _extractBasicRequestInfo(SELF_ARG)
     if (_networkContext.imageDownloadRequest.imageDownloadPriority != priority) {
 
         const BOOL wasEnqueued = _flags.wasEnqueued; // cannot modify other NSOperation priorities if we've already been enqueued
-        BOOL qos = NO;
         if (!wasEnqueued) {
-            qos = [self respondsToSelector:@selector(setQualityOfService:)];
             [self willChangeValueForKey:@"queuePriority"];
-            if (qos) {
-                [self willChangeValueForKey:@"qualityOfService"];
-            }
+            [self willChangeValueForKey:@"qualityOfService"];
         }
 
         _networkContext.imageDownloadRequest.imageDownloadPriority = priority;
 
         if (!wasEnqueued) {
-            if (qos) {
-                [self didChangeValueForKey:@"qualityOfService"];
-            }
+            [self didChangeValueForKey:@"qualityOfService"];
             [self didChangeValueForKey:@"queuePriority"];
         }
 

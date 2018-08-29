@@ -133,6 +133,7 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
 
         _sharedImagePipelineQueue = [[NSOperationQueue alloc] init];
         _sharedImagePipelineQueue.name = @"tip.global.image.pipeline.operation.queue";
+        _sharedImagePipelineQueue.qualityOfService = NSQualityOfServiceUtility;
 
         // Don't let TIP get overwhelmed with fetch requests
 #if __LP64__
@@ -775,7 +776,7 @@ static void _Inspect(NSMutableDictionary<NSString *, TIPImagePipeline *> *remain
  */
 + (void)tip_fixTraitCollectionContructorIfNeeded
 {
-    if (![[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)] || ([NSProcessInfo processInfo].operatingSystemVersion.majorVersion >= 10)) {
+    if (tip_available_ios_10) {
         return;
     }
 

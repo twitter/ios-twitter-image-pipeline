@@ -43,7 +43,7 @@ NSString * const TIPProblemInfoKeyImageIsAnimated = @"animated";
 
 NSString *TIPVersion()
 {
-    return @"2.9";
+    return @"2.10";
 }
 
 void TIPSwizzle(Class cls, SEL originalSelector, SEL swizzledSelector)
@@ -136,8 +136,9 @@ NSString *TIPSafeFromRaw(NSString *raw)
 
 NSString *TIPRawFromSafe(NSString *safe)
 {
+    TIPAssert(safe != 0);
     NSString *raw = TIPURLDecodeString(safe, NO);
-    TIPAssert(raw);
+    TIPAssert(raw != 0);
     return raw;
 }
 
