@@ -69,7 +69,7 @@ FOUNDATION_EXTERN NSString * const TIPImageTypeICO;
 /**
  RAW (Raw image data)
  Only decoding is supported by __TIP__ by default.
- @note requires iOS 8+
+ @note requires iOS 8+ (tvOS support not enabled for now)
  */
 FOUNDATION_EXTERN NSString * const TIPImageTypeRAW;
 /**

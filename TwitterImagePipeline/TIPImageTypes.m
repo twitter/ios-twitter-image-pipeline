@@ -57,8 +57,8 @@ static NSSet<NSString *> *TIPReadableImageTypes()
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         CFArrayRef typeIds = CGImageSourceCopyTypeIdentifiers();
+        TIPDeferRelease(typeIds);
         sReadableImageTypes = [NSSet setWithArray:(__bridge NSArray *)typeIds];
-        CFRelease(typeIds);
     });
     return sReadableImageTypes;
 }
@@ -69,6 +69,7 @@ static NSSet<NSString *> *TIPWriteableImageTypes()
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         CFArrayRef typeIds = CGImageDestinationCopyTypeIdentifiers();
+        TIPDeferRelease(typeIds);
         NSMutableSet<NSString *> *set = [NSMutableSet setWithArray:(__bridge NSArray *)typeIds];
 
         // forcibly remove formats that are too restrictive for write support
@@ -76,7 +77,6 @@ static NSSet<NSString *> *TIPWriteableImageTypes()
         [set removeObject:TIPImageTypeICNS];
 
         sWriteableImageTypes = [set copy];
-        CFRelease(typeIds);
     });
     return sWriteableImageTypes;
 }

@@ -90,26 +90,68 @@ NS_ASSUME_NONNULL_BEGIN
         // JPEG has a special decoder
         decoder = [[TIPJPEGCGImageSourceDecoder alloc] init];
         encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:(NSString *)kUTTypeJPEG];
+        TIPAssert(TIPImageTypeCanReadWithImageIO(imageType));
+        TIPAssert(TIPImageTypeCanWriteWithImageIO(imageType));
     } else if ([imageType isEqualToString:TIPImageTypeGIF] || [imageType isEqualToString:TIPImageTypePNG]) {
         // GIF & APNG can be animated
         NSString *UTType = TIPImageTypeToUTType(imageType);
         decoder = [[TIPAnimatedCGImageSourceDecoder alloc] initWithUTType:UTType];
         encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:UTType];
         animated = YES;
-    } else if ([imageType isEqualToString:TIPImageTypeJPEG2000] || [imageType isEqualToString:TIPImageTypeTIFF] || [imageType isEqualToString:TIPImageTypeBMP] || [imageType isEqualToString:TIPImageTypeTARGA]) {
-        // These are all normal
+        TIPAssert(TIPImageTypeCanReadWithImageIO(imageType));
+        TIPAssert(TIPImageTypeCanWriteWithImageIO(imageType));
+    } else if ([imageType isEqualToString:TIPImageTypeICO]) {
+        // ICO only has a decoder
         NSString *UTType = TIPImageTypeToUTType(imageType);
         decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
-        encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:UTType];
+        TIPAssert(TIPImageTypeCanReadWithImageIO(imageType));
+        TIPAssert(!TIPImageTypeCanWriteWithImageIO(imageType));
+    } else if ([imageType isEqualToString:TIPImageTypeRAW]) {
+#if TARGET_OS_IOS
+        // RAW only has a decoder on iOS
+        NSString *UTType = TIPImageTypeToUTType(imageType);
+        decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
+        TIPAssert(!TIPImageTypeCanWriteWithImageIO(imageType));
+#else
+        TIPAssert(!TIPImageTypeCanReadWithImageIO(imageType));
+        TIPAssert(!TIPImageTypeCanWriteWithImageIO(imageType));
+#endif
     } else {
-        const BOOL imageTypeIsRawImage = [imageType isEqualToString:TIPImageTypeICO] || [imageType isEqualToString:TIPImageTypeRAW];
-        if (imageTypeIsRawImage) {
-            // These cannot be encoded, only decoded
-            NSString *UTType = TIPImageTypeToUTType(imageType);
-            decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
+        // other types, pull out their ImageIO based decoders/encoders
+        NSString *UTType = TIPImageTypeToUTType(imageType);
+        if (UTType) {
+            if (TIPImageTypeCanReadWithImageIO(UTType)) {
+                decoder = [[TIPBasicCGImageSourceDecoder alloc] initWithUTType:UTType];
+            }
+            if (TIPImageTypeCanWriteWithImageIO(imageType)) {
+                encoder = [[TIPBasicCGImageSourceEncoder alloc] initWithUTType:UTType];
+            }
+        }
+
+        // some assertions to preserve the state of our assumptions
+        if (gTwitterImagePipelineAssertEnabled) {
+            const BOOL wellKnownType = [imageType isEqualToString:TIPImageTypeJPEG2000] ||
+                                       [imageType isEqualToString:TIPImageTypeTIFF] ||
+                                       [imageType isEqualToString:TIPImageTypeBMP] ||
+                                       [imageType isEqualToString:TIPImageTypeTARGA];
+            if (wellKnownType) {
+                TIPAssert(decoder != nil);
+                TIPAssert(encoder != nil);
+            } else if ([imageType isEqualToString:TIPImageTypeICO]) {
+                TIPAssert(decoder != nil);
+                TIPAssert(nil == encoder);
+            } else if ([imageType isEqualToString:TIPImageTypeICNS]) {
+#if TARGET_OS_IOS
+                TIPAssert(decoder != nil);
+#else
+                TIPAssert(nil == decoder);
+#endif
+                TIPAssert(nil == encoder);
+            }
         }
     }
 
+    // Decoder?  No decoder, then don't bother even if there is an encoder
     if (!decoder) {
         return nil;
     }
