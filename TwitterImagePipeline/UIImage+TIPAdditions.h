@@ -102,10 +102,15 @@ NS_ASSUME_NONNULL_BEGIN
  Return a copy of the image scaled
  @param targetDimensions the target size in pixels to scale to.
  @param targetContentMode the target `UIViewContentMode` used to confine the scaling
+ @param decode decode the image to memory, default is `YES`
  @note only _targetContentMode_ values that have `UIViewContentModeScale*` will be scaled (others are just positional and do not scale)
  @warning there is a bug in Apple's frameworks that can yield a `nil` image when scaling.  The issue is years old and there are many radars against it (for example #33057552 and #22097047).  Rather than expose a pain point of this method potentially returning `nil`, this method will just return `self` in the case that the bug is triggered.
  */
-- (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions contentMode:(UIViewContentMode)targetContentMode;
+- (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions
+                                     contentMode:(UIViewContentMode)targetContentMode
+                                          decode:(BOOL)decode;
+- (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions
+                                     contentMode:(UIViewContentMode)targetContentMode;
 
 /**
  Return a copy of the `UIImage` but transformed such that its `imageOrientation` is
@@ -113,6 +118,13 @@ NS_ASSUME_NONNULL_BEGIN
  If the `UIImage` is already oriented _Up_, returns `self`.
  */
 - (UIImage *)tip_orientationAdjustedImage;
+
+/**
+ Return a copy of the `UIImage` with the `size` and `scale` adjusted to a new _scale_ while
+ preserving the `tip_dimensions`.
+ If _scale_ and `scale` match, returns `self`
+ */
+- (UIImage *)tip_imageByUpdatingScale:(CGFloat)scale;
 
 /**
  Return a copy of the image backed by a `CGImage` (instead of a `CIImage`)
@@ -171,6 +183,15 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable UIImage *)tip_imageWithAnimatedImageFile:(NSString *)filePath
                                            durations:(out NSArray<NSNumber *> * __nullable * __nullable)durationsOut
                                            loopCount:(out NSUInteger * __nullable)loopCountOut;
+
+/**
+ Construct an image without RAM impact of loading the full image before scaling
+ @param fileURL the file path as an `NSURL` to load the image with
+ @param thumbnailMaximumDimension the dimension limitation to scale the image down to (but not up!)
+ @return an `UIImage` or `nil` if there was an error
+ */
++ (nullable UIImage *)tip_thumbnailImageWithFileURL:(NSURL *)fileURL
+                          thumbnailMaximumDimension:(CGFloat)thumbnailMaximumDimension;
 
 #pragma mark Encode Methods
 

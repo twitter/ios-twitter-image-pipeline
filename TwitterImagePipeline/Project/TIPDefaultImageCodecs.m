@@ -142,7 +142,11 @@ NS_ASSUME_NONNULL_BEGIN
                 TIPAssert(nil == encoder);
             } else if ([imageType isEqualToString:TIPImageTypeICNS]) {
 #if TARGET_OS_IOS
-                TIPAssert(decoder != nil);
+                if (@available(iOS 11, *)) {
+                    TIPAssert(decoder != nil);
+                } else {
+                    TIPAssert(nil == decoder);
+                }
 #else
                 TIPAssert(nil == decoder);
 #endif

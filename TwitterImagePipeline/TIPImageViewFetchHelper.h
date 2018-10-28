@@ -102,10 +102,14 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 
 /** set the image, as if it was loaded from a fetch */
 - (void)setImageAsIfLoaded:(UIImage *)image;
+/** set the image container, as if it was loaded from a fetch */
+- (void)setImageContainerAsIfLoaded:(TIPImageContainer *)imageContainer;
 /** mark the image as loaded from a fetch */
 - (void)markAsIfLoaded;
 /** set the image, as if it was a placeholder image */
 - (void)setImageAsIfPlaceholder:(UIImage *)image;
+/** set the image container, as if it was a placeholder image */
+- (void)setImageContainerAsIfPlaceholder:(TIPImageContainer *)imageContainer;
 /** mark the image as a placeholder */
 - (void)markAsIfPlaceholder;
 
@@ -179,7 +183,7 @@ FOUNDATION_EXTERN NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotif
 /**
  Data source protocol for `TIPImageViewFetchHelper`
  Selection order:
-    1. TIPImageContainer (TODO)
+    1. TIPImageContainer
     2. UIImage
     3. TIPImageFetchRequest
     4. NSURL
@@ -190,6 +194,9 @@ FOUNDATION_EXTERN NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotif
 @optional
 
 // Chosen in order
+
+/** load from a static `TIPImageContainer` */
+- (nullable TIPImageContainer *)tip_imageContainerForFetchHelper:(TIPImageViewFetchHelper *)helper;
 
 /** load from a static `UIImage` */
 - (nullable UIImage *)tip_imageForFetchHelper:(TIPImageViewFetchHelper *)helper;
@@ -258,7 +265,7 @@ FOUNDATION_EXTERN NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotif
  Has automatic/default behavior, call super to utilize auto behavior
  */
 - (BOOL)tip_fetchHelper:(TIPImageViewFetchHelper *)helper
-        shouldReloadAfterDifferentFetchCompletedWithImage:(UIImage *)image
+        shouldReloadAfterDifferentFetchCompletedWithImageContainer:(TIPImageContainer *)imageContainer
         dimensions:(CGSize)dimensions
         identifier:(NSString *)identifier
         URL:(NSURL *)URL
@@ -272,8 +279,8 @@ FOUNDATION_EXTERN NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotif
 - (void)tip_fetchHelperDidStartLoading:(TIPImageViewFetchHelper *)helper;
 /** fetch did update progress */
 - (void)tip_fetchHelper:(TIPImageViewFetchHelper *)helper didUpdateProgress:(float)progress;
-/** fetch did update displayed image */
-- (void)tip_fetchHelper:(TIPImageViewFetchHelper *)helper didUpdateDisplayedImage:(UIImage *)image fromSourceDimensions:(CGSize)size isFinal:(BOOL)isFinal;
+/** fetch did update displayed image with a `TIPImageContainer` */
+- (void)tip_fetchHelper:(TIPImageViewFetchHelper *)helper didUpdateDisplayedImageContainer:(TIPImageContainer *)imageContainer fromSourceDimensions:(CGSize)size isFinal:(BOOL)isFinal;
 /** fetch did load final image */
 - (void)tip_fetchHelper:(TIPImageViewFetchHelper *)helper didLoadFinalImageFromSource:(TIPImageLoadSource)source;
 /** fetch did fail */
@@ -282,6 +289,28 @@ FOUNDATION_EXTERN NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotif
 - (void)tip_fetchHelperDidReset:(TIPImageViewFetchHelper *)helper;
 /** fetch did start loading from the network */
 - (void)tip_fetchHelperDidStartLoadingFromNetwork:(TIPImageViewFetchHelper *)helper;
+
+
+#pragma mark Deprecated
+
+/**
+ should reload after a different fetch completed?
+ Has automatic/default behavior, call super to utilize auto behavior
+ @warning deprecated callback, implement `tip_fetchHelper:shouldReloadAfterDifferentFetchCompletedWithImage:dimensions:identifier:URL:treatedAsPlaceholder:manuallyStored:` instead
+ */
+- (BOOL)tip_fetchHelper:(TIPImageViewFetchHelper *)helper
+        shouldReloadAfterDifferentFetchCompletedWithImage:(UIImage *)image
+        dimensions:(CGSize)dimensions
+        identifier:(NSString *)identifier
+        URL:(NSURL *)URL
+        treatedAsPlaceholder:(BOOL)placeholder
+         manuallyStored:(BOOL)manuallyStored __attribute__((deprecated("implement `tip_fetchHelper:shouldReloadAfterDifferentFetchCompletedWithImage:dimensions:identifier:URL:treatedAsPlaceholder:manuallyStored:` instead")));
+
+/**
+ fetch did update displayed image
+ @warning deprecated callback, implement `tip_fetchHelper:didUpdateDisplayedImageContainer:fromSourceDimensions:isFinal:` instead
+ */
+- (void)tip_fetchHelper:(TIPImageViewFetchHelper *)helper didUpdateDisplayedImage:(UIImage *)image fromSourceDimensions:(CGSize)size isFinal:(BOOL)isFinal __attribute__((deprecated("implement `tip_fetchHelper:didUpdateDisplayedImageContainer:fromSourceDimensions:isFinal:` instead")));
 
 @end
 

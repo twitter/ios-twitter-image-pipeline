@@ -313,7 +313,17 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
     return outImage;
 }
 
-- (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions contentMode:(UIViewContentMode)targetContentMode
+- (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions
+                                     contentMode:(UIViewContentMode)targetContentMode
+{
+    return [self tip_scaledImageWithTargetDimensions:targetDimensions
+                                         contentMode:targetContentMode
+                                              decode:YES];
+}
+
+- (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions
+                                     contentMode:(UIViewContentMode)targetContentMode
+                                          decode:(BOOL)decode
 {
     const CGSize dimensions = [self tip_dimensions];
     const CGSize scaledTargetDimensions = TIPSizeGreaterThanZero(targetDimensions) ? TIPDimensionsScaledToTargetSizing(dimensions, targetDimensions, targetContentMode) : CGSizeZero;
@@ -322,32 +332,29 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
     // If we have a target size and the target size is not the same as our source image's size, draw the resized image
     if (TIPSizeGreaterThanZero(scaledTargetDimensions) && !CGSizeEqualToSize(dimensions, scaledTargetDimensions)) {
 
-        // OK, so, to provide some context:
-        //
-        // The UIKit and CoreGraphics mechanisms for scaling occasionally yield a `nil` image.
-        // We cannot repro locally, but externally, it is clearly an issue that affects users.
-        // It has noticeably upticked in iOS 11 as well.
-        //
-        // There are numerous radars out there against this, including #33057552 and #22097047.
-        // It has not been fixed in years and we see no reason to expect a fix in the future.
-        //
-        // Rather than incur complexity of implementing our own custom pixel buffer scaling
-        // as a fallback, we'll instead just return `self` unscaled.  This is not ideal,
-        // but returning a `nil` image is crash prone while returning the image unscaled
-        // would merely be prone to a performance hit.
 
         // scale with UIKit at screen scale
         image = _UIKitScale(self, scaledTargetDimensions, 0 /*auto scale*/);
+
         // image = _CoreGraphicsScale(self, scaledTargetDimensions, 0 /*auto scale*/);
 
     } else {
         image = self;
     }
 
-    if (image == self) {
-        [image tip_decode];
-    }
-
+    // OK, so, to provide some context:
+    //
+    // The UIKit and CoreGraphics mechanisms for scaling occasionally yield a `nil` image.
+    // We cannot repro locally, but externally, it is clearly an issue that affects users.
+    // It has noticeably upticked in iOS 11 as well.
+    //
+    // There are numerous radars out there against this, including #33057552 and #22097047.
+    // It has not been fixed in years and we see no reason to expect a fix in the future.
+    //
+    // Rather than incur complexity of implementing our own custom pixel buffer scaling
+    // as a fallback, we'll instead just return `self` unscaled.  This is not ideal,
+    // but returning a `nil` image is crash prone while returning the image unscaled
+    // would merely be prone to a performance hit.
     if (!image) {
         NSDictionary *userInfo = @{
                                    TIPProblemInfoKeyImageDimensions : [NSValue valueWithCGSize:dimensions],
@@ -361,6 +368,10 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
         image = self; // yuck!
     }
     TIPAssert(image != nil);
+
+    if (decode) {
+        [image tip_decode];
+    }
 
     return image;
 }
@@ -464,6 +475,30 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
     return image;
 }
 
+- (UIImage *)tip_imageByUpdatingScale:(CGFloat)scale
+{
+    if (scale == self.scale) {
+        return self;
+    }
+
+    CGImageRef cgImageRef = self.CGImage;
+    if (cgImageRef) {
+        return [[UIImage alloc] initWithCGImage:cgImageRef
+                                          scale:scale
+                                    orientation:self.imageOrientation];
+    }
+
+    CGRect imageRect = CGRectZero;
+    imageRect.size = TIPDimensionsToSizeScaled(self.tip_dimensions, scale);
+
+    return [self tip_imageWithRenderFormatting:^(id<TIPRenderImageFormat>  _Nonnull format) {
+        format.scale = scale;
+        format.renderSize = imageRect.size;
+    } render:^(UIImage * _Nullable sourceImage, CGContextRef  _Nonnull ctx) {
+        [sourceImage drawInRect:imageRect];
+    }];
+}
+
 - (nullable UIImage *)tip_CGImageBackedImageAndReturnError:(out NSError * __autoreleasing __nullable * __nullable)error
 {
     __block NSError *outError = nil;
@@ -508,8 +543,8 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
         TIPDeferRelease(cgImage);
         if (cgImage) {
             image = [UIImage imageWithCGImage:cgImage
-                                        scale:[UIScreen mainScreen].scale
-                                  orientation:UIImageOrientationUp];
+                                        scale:self.scale
+                                  orientation:self.imageOrientation];
         }
     });
 
@@ -694,6 +729,36 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
 }
 
 #pragma mark Decode Methods
+
++ (nullable UIImage *)tip_thumbnailImageWithFileURL:(NSURL *)fileURL
+                          thumbnailMaximumDimension:(CGFloat)thumbnailMaximumDimension
+{
+    if (!fileURL.isFileURL) {
+        return nil;
+    }
+
+    NSDictionary *options = @{
+                              (id)kCGImageSourceShouldCache : (id)kCFBooleanFalse,
+                              (id)kCGImageSourceThumbnailMaxPixelSize : @(thumbnailMaximumDimension),
+                              (id)kCGImageSourceCreateThumbnailFromImageAlways : (id)kCFBooleanTrue,
+                              (id)kCGImageSourceShouldAllowFloat : (id)kCFBooleanTrue,
+                              (id)kCGImageSourceCreateThumbnailWithTransform : (id)kCFBooleanTrue,
+                              };
+    CGImageSourceRef imageSource = CGImageSourceCreateWithURL((CFURLRef)fileURL, (CFDictionaryRef)options);
+    if (!imageSource) {
+        return nil;
+    }
+
+    CGImageRef imageRef = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, (CFDictionaryRef)options);
+    CFRelease(imageSource);
+    if (!imageRef) {
+        return nil;
+    }
+
+    UIImage *image = [UIImage imageWithCGImage:imageRef scale:(CGFloat)1.f orientation:UIImageOrientationUp];
+    CFRelease(imageRef);
+    return image;
+}
 
 + (nullable UIImage *)tip_imageWithAnimatedImageFile:(NSString *)filePath
                                            durations:(out NSArray<NSNumber *> * __autoreleasing __nullable * __nullable)durationsOut

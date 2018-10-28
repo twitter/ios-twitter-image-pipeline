@@ -43,7 +43,13 @@ NSString * const TIPProblemInfoKeyImageIsAnimated = @"animated";
 
 NSString *TIPVersion()
 {
-    return @"2.10";
+    TIPStaticAssert(TIP_PROJECT_VERSION >= 1.0 && TIP_PROJECT_VERSION <= 10.0, INVALID_TIP_VERSION);
+
+#define __TIP_VERSION(version) @"" #version
+#define _TIP_VERSION(version) __TIP_VERSION( version )
+#define TIP_VERSION()  _TIP_VERSION( TIP_PROJECT_VERSION )
+
+    return TIP_VERSION();
 }
 
 void TIPSwizzle(Class cls, SEL originalSelector, SEL swizzledSelector)

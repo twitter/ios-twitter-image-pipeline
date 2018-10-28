@@ -784,6 +784,9 @@ static void _extractBasicRequestInfo(SELF_ARG)
 - (void)imageDownloadDidStart:(id<TIPImageDownloadContext>)context
 {
     _background_postDidStartDownload(self);
+    const TIPPartialImage *partialImage = self->_networkContext.imageDownloadRequest.imageDownloadPartialImageForResuming;
+    const float progress = partialImage ? partialImage.progress : 0.0f;
+    _background_updateProgress(self, progress);
 }
 
 - (void)imageDownload:(id<TIPImageDownloadContext>)context didResetFromPartialImage:(TIPPartialImage *)oldPartialImage
