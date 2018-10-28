@@ -21,5 +21,4 @@ function ci_demo() {
 }
 
 
-ci_lib "iPhone 6" && ci_demo "iPhone 6"
 ci_lib "iPhone 7" && ci_demo "iPhone 7"

@@ -256,7 +256,7 @@
     return YES;
 }
 
-//- (BOOL)tip_fetchHelper:(nonnull TIPImageViewFetchHelper *)helper shouldReloadAfterDifferentFetchCompletedWithImage:(nonnull UIImage *)image dimensions:(CGSize)dimensions identifier:(nonnull NSString *)identifier URL:(nonnull NSURL *)URL treatedAsPlaceholder:(BOOL)placeholder manuallyStored:(BOOL)manuallyStored
+//- (BOOL)tip_fetchHelper:(nonnull TIPImageViewFetchHelper *)helper shouldReloadAfterDifferentFetchCompletedWithImageContainer:(nonnull TIPImageContainer *)imageContainer dimensions:(CGSize)dimensions identifier:(nonnull NSString *)identifier URL:(nonnull NSURL *)URL treatedAsPlaceholder:(BOOL)placeholder manuallyStored:(BOOL)manuallyStored
 //{
 //
 //}

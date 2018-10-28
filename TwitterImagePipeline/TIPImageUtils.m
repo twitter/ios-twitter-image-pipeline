@@ -36,7 +36,11 @@ static CGSize TIPSizeAlignToPixelEx(CGSize size, CGFloat scale);
 - (instancetype)initWithRendererFormat:(UIGraphicsImageRendererFormat *)format
 {
     if (self = [self init]) {
-        _prefersExtendedRange = format.prefersExtendedRange;
+        if (tip_available_ios_12) {
+            _prefersExtendedRange = (format.preferredRange == UIGraphicsImageRendererFormatRangeExtended);
+        } else {
+            _prefersExtendedRange = format.prefersExtendedRange;
+        }
         _opaque = format.opaque;
         _scale = format.scale;
     }
@@ -434,6 +438,11 @@ static UIImage * __nullable _TIPRenderImageModern(UIImage * __nullable sourceIma
             // Prep the format mutable object
             TIPRenderImageFormatInternal *formatInternal = [[TIPRenderImageFormatInternal alloc] initWithRendererFormat:format];
             formatInternal.renderSize = size;
+            if (tip_available_ios_12) {
+                if (sourceImage) {
+                    formatInternal.prefersExtendedRange = sourceImage.tip_usesWideGamutColorSpace;
+                }
+            }
 
             // Format the format object
             formatBlock(formatInternal);
@@ -442,7 +451,10 @@ static UIImage * __nullable _TIPRenderImageModern(UIImage * __nullable sourceIma
             if (format.opaque != formatInternal.opaque) {
                 format.opaque = formatInternal.opaque;
             }
-            if (format.prefersExtendedRange != formatInternal.prefersExtendedRange) {
+            if (tip_available_ios_12) {
+                format.preferredRange = (formatInternal.prefersExtendedRange) ? UIGraphicsImageRendererFormatRangeExtended : UIGraphicsImageRendererFormatRangeStandard;
+                format.prefersExtendedRange = formatInternal.prefersExtendedRange;
+            } else {
                 format.prefersExtendedRange = formatInternal.prefersExtendedRange;
             }
             if (format.scale != formatInternal.scale) {

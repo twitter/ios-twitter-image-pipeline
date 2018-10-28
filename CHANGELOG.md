@@ -2,13 +2,36 @@
 
 ## Info
 
-**Document version:** 2.10.0
+**Document version:** 2.11.0
 
-**Last updated:** 08/17/2018
+**Last updated:** 09/03/2018
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.11.0
+
+- add support for animated images with `TIPImageViewFetchHelper` by supporting `TIPImageContainer` as well as `UIImage`
+  - to support animated images, implement a `UIView` that adopts `TIPImageFetchable` with `tip_fetchedImageContainer` that can animate the provided `TIPImageContainer`
+  - update `TIPImageFetchable`
+    - add `tip_fetchedImageContainer` as optional property
+    - mark `tip_fetchedImage` as optional
+    - require at least one of the two methods be implemented to conform to `TIPImageFetchable`
+  - add helper functions:
+    - `TIPImageFetchableHasImage`
+    - `TIPImageFetchableGetImage` and `TIPImageFetchableGetImageContainer`
+    - `TIPImageFetchableSetImage` and `TIPImageFetchableSetImageContainer`
+  - update `TIPImageViewFetchHelper`
+    - add `setImageContainerAsIfLoaded:`
+    - add `setImageContainerAsIfPlaceholder:`
+  - update `TIPImageViewFetchHelperDataSource`
+    - add `tip_imageContainerForFetchHelper:`
+  - update `TIPImageViewFetchHelperDelegate`
+    - add `tip_fetchHelper:didUpdateDisplayedImageContainer:fromSourceDimensions:isFinal:`
+    - deprecate `tip_fetchHelper:didUpdateDisplayedImage:fromSourceDimensions:isFinal:`
+    - add `tip_fetchHelper:shouldReloadAfterDifferentFetchCompletedWithImageContainer:dimensions:identifier:URL:treatedAsPlaceholder:manuallyStored:`
+    - deprecate `tip_fetchHelper:shouldReloadAfterDifferentFetchCompletedWithImage:dimensions:identifier:URL:treatedAsPlaceholder:manuallyStored:`
 
 ### 2.10.0
 

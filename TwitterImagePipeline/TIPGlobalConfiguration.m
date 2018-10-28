@@ -644,9 +644,13 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
     TIPAssert(imageFetchDownloadProvider != nil);
     id<TIPImageFetchDownload> download = [imageFetchDownloadProvider imageFetchDownloadWithContext:context];
     if (context != download.context) {
+        NSDictionary *userInfo;
+        if (imageFetchDownloadProvider) {
+            userInfo = @{ @"className" :  NSStringFromClass([imageFetchDownloadProvider class]) };
+        }
         @throw [NSException exceptionWithName:TIPImageFetchDownloadConstructorExceptionName
                                        reason:@"TIPImageFetchDownload did not adhere to protocol requirements!"
-                                     userInfo:@{ @"className" : NSStringFromClass([imageFetchDownloadProvider class]) }];
+                                     userInfo:userInfo];
     }
     return download;
 }
