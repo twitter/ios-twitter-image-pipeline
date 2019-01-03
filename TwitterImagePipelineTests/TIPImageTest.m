@@ -121,6 +121,10 @@ tip_defer(^{ \
 #define JPEG_QUALITY_GOOD (kTIPAppleQualityValueRepresentingJFIFQuality85)
 #define JPEG_QUALITY_OK (0.15f)
 
+#define HEIF_QUALITY_PERFECT (1.0f)
+#define HEIF_QUALITY_GOOD (0.650f /*.575f is less quality than JPEG .575f*/)
+#define HEIF_QUALITY_OK (0.415f /*.500f is really the minimum match to JPEG at .150f, but that's basically the same size*/)
+
 #define JPEG2000_QUALITY_PERFECT (1.0f)
 #define JPEG2000_QUALITY_GOOD (kTIPAppleQualityValueRepresentingJFIFQuality85)
 #define JPEG2000_QUALITY_OK (0.15f)
@@ -136,6 +140,12 @@ tip_defer(^{ \
 
 #define TEST_ANIMATION_WIDTH ((CGFloat)480.0)
 #define TEST_ANIMATION_HEIGHT ((CGFloat)320.0)
+
+NS_INLINE BOOL CODEC_FULLY_SUPPORTED(NSString *imageType)
+{
+    id<TIPImageCodec> codec = [[TIPImageCodecCatalogue sharedInstance] codecForImageType:imageType];
+    return codec.tip_encoder != nil && codec.tip_decoder != nil;
+}
 
 static TIPImageContainer *sImageContainer;
 static TIPImageContainer *sAnimatedImageContainer;
@@ -517,6 +527,84 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 {
     [self runMeasurement:@"speed" format:@"tga" block:^{
         [self runSpeedTest:TIPImageTypeTARGA options:0];
+    }];
+}
+
+- (void)testSaveHEIC
+{
+    if (!CODEC_FULLY_SUPPORTED(TIPImageTypeHEIC)) {
+        return;
+    }
+
+    [self runSaveTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_PERFECT useAnimatedImage:NO];
+    [self runSaveTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_GOOD useAnimatedImage:NO];
+
+    [self runMeasurement:@"save" format:@"heic" block:^{
+        [self runSaveTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_OK useAnimatedImage:NO];
+    }];
+}
+
+- (void)testXLoadHEIC
+{
+    if (!CODEC_FULLY_SUPPORTED(TIPImageTypeHEIC)) {
+        return;
+    }
+
+    [self runLoadTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_PERFECT isAnimated:NO];
+    [self runLoadTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_GOOD isAnimated:NO];
+
+    [self runMeasurement:@"load" format:@"heic" block:^{
+        [self runLoadTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_OK isAnimated:NO];
+    }];
+}
+
+- (void)testSpeedHEIC
+{
+    if (!CODEC_FULLY_SUPPORTED(TIPImageTypeHEIC)) {
+        return;
+    }
+
+    [self runMeasurement:@"speed" format:@"heic" block:^{
+        [self runSpeedTest:TIPImageTypeHEIC options:0];
+    }];
+}
+
+- (void)testSaveAVCI
+{
+    if (!CODEC_FULLY_SUPPORTED(TIPImageTypeAVCI)) {
+        return;
+    }
+
+    [self runSaveTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_PERFECT useAnimatedImage:NO];
+    [self runSaveTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_GOOD useAnimatedImage:NO];
+
+    [self runMeasurement:@"save" format:@"avci" block:^{
+        [self runSaveTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_OK useAnimatedImage:NO];
+    }];
+}
+
+- (void)testXLoadAVCI
+{
+    if (!CODEC_FULLY_SUPPORTED(TIPImageTypeAVCI)) {
+        return;
+    }
+
+    [self runLoadTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_PERFECT isAnimated:NO];
+    [self runLoadTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_GOOD isAnimated:NO];
+
+    [self runMeasurement:@"load" format:@"avci" block:^{
+        [self runLoadTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_OK isAnimated:NO];
+    }];
+}
+
+- (void)testSpeedAVCI
+{
+    if (!CODEC_FULLY_SUPPORTED(TIPImageTypeAVCI)) {
+        return;
+    }
+
+    [self runMeasurement:@"speed" format:@"avci" block:^{
+        [self runSpeedTest:TIPImageTypeAVCI options:0];
     }];
 }
 

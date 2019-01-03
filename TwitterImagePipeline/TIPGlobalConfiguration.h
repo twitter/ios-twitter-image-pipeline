@@ -15,12 +15,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Default max bytes for rendered caches.
- Resolves to being the greater of `System RAM / 12` or `64 MBs`
+ Resolves to being the lesser of `System RAM / 12` or `160 MBs`
  */
 FOUNDATION_EXTERN SInt64 const TIPMaxBytesForAllRenderedCachesDefault;
 /**
  Default max bytes for memory caches.
- Resolves to being the greater of `System RAM / 12` or `64 MBs`
+ Resolves to being the lesser of `System RAM / 12` or `160 MBs`
  */
 FOUNDATION_EXTERN SInt64 const TIPMaxBytesForAllMemoryCachesDefault;
 //! Default max bytes for disk caches.  `128 MBs`
@@ -30,9 +30,9 @@ FOUNDATION_EXTERN NSInteger const TIPMaxConcurrentImagePipelineDownloadCountDefa
 //! Default maximum size of a cache entry by ratio to the cache max size.  `1:6` - `1/6th` the size
 FOUNDATION_EXTERN NSUInteger const TIPMaxRatioSizeOfCacheEntryDefault;
 
-//! Default max count for all memory caches to hold. `INT16_MAX >> 6` (511)
+//! Default max count for all memory caches to hold. `INT16_MAX >> 7` (255)
 FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllMemoryCachesDefault;
-//! Default max count for all rendered caches to hold. `INT16_MAX >> 6` (511)
+//! Default max count for all rendered caches to hold. `INT16_MAX >> 7` (255)
 FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllRenderedCachesDefault;
 //! Default max count for all disk caches to hold. `INT16_MAX >> 4` (2044)
 FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;

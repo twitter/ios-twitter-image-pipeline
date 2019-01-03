@@ -37,7 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
                                                  TIPImageTypeQTIF,
                                                  TIPImageTypeICNS,
                                                  TIPImageTypeICO,
-                                                 TIPImageTypeRAW
+                                                 TIPImageTypeRAW,
+                                                 TIPImageTypeHEIC,
+                                                 TIPImageTypeAVCI,
                                                  ];
         for (NSString *imageType in knownImageTypes) {
             id<TIPImageCodec> codec = [TIPBasicCGImageSourceCodec codecWithImageType:imageType];

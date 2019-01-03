@@ -29,6 +29,7 @@ static const ImageTypeStruct sImageTypes[] = {
     { @"public.tiff",           "TIFF",         "twitterfied.tiff",         NO,     NO  },
     { @"com.compuserve.gif",    "GIF",          "fireworks_original.gif",   NO,     YES },
     { @"com.google.webp",       "WEBP",         "twitterfied.webp",         NO,     NO  },
+    { @"public.heic",           "HEIC",         "twitterfied.heic",         NO,     NO  },
     { @"public.jpeg",           "Small-PJPEG",  "twitterfied.small.pjpg",   YES,    NO  },
 };
 
@@ -391,8 +392,8 @@ static const NSUInteger kDefaultBitrateIndex = 5;
 
 //- (NSDictionary *)progressiveLoadingPolicies
 //{
-//    if ([sImageTypes[_imageTypeIndex].type isEqualToString:TIPImageTypeJPEG2000] || [sImageTypes[_imageTypeIndex].type isEqualToString:TIPImageTypePNG]) {
-//        if (sImageTypes[_imageTypeIndex].isProgressive) {
+//    if (sImageTypes[_imageTypeIndex].isProgressive) {
+//        if (![sImageTypes[_imageTypeIndex].type isEqualToString:TIPImageTypeJPEG]) {
 //            return @{ sImageTypes[_imageTypeIndex].type : [[TIPGreedyProgressiveLoadingPolicy alloc] init] };
 //        }
 //    }

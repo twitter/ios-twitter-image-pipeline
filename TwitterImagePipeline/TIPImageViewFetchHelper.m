@@ -333,31 +333,6 @@ static void _markAsIfPlaceholder(SELF_ARG)
     fromHelper.fetchView = nil;
 }
 
-
-- (void)triggerViewWillChangeHidden
-{
-    UIView *view = self.fetchView;
-    if (view.window != nil) {
-        if (view.isHidden) {
-            [self triggerViewWillAppear];
-        } else {
-            [self triggerViewWillDisappear];
-        }
-    }
-}
-
-- (void)triggerViewDidChangeHidden
-{
-    UIView *view = self.fetchView;
-    if (view.window != nil) {
-        if (view.isHidden) {
-            [self triggerViewDidDisappear];
-        } else {
-            [self triggerViewDidAppear];
-        }
-    }
-}
-
 - (void)triggerViewWillMoveToWindow:(nullable UIWindow *)newWindow
 {
     UIView *imageView = self.fetchView;

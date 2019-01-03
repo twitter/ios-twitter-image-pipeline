@@ -40,14 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithImageURL:(NSURL *)imageURL
 {
-    if (self = [super init]) {
-        _imageURL = imageURL;
-        _targetContentMode = UIViewContentModeCenter;
-        _timeToLive = TIPTimeToLiveDefault;
-        _options = TIPImageFetchNoOptions;
-        _loadingSources = TIPImageFetchLoadingSourcesAll;
-    }
-    return self;
+    return [self initWithImageURL:imageURL identifier:nil targetDimensions:CGSizeZero targetContentMode:UIViewContentModeCenter];
 }
 
 - (instancetype)initWithImageURL:(NSURL *)imageURL
@@ -55,10 +48,14 @@ NS_ASSUME_NONNULL_BEGIN
                 targetDimensions:(CGSize)dims
                targetContentMode:(UIViewContentMode)mode
 {
-    if (self = [self initWithImageURL:imageURL]) {
+    if (self = [super init]) {
+        _imageURL = imageURL;
         _imageIdentifier = [imageIdentifier copy];
         _targetDimensions = dims;
         _targetContentMode = mode;
+        _timeToLive = TIPTimeToLiveDefault;
+        _options = TIPImageFetchNoOptions;
+        _loadingSources = TIPImageFetchLoadingSourcesAll;
     }
     return self;
 }

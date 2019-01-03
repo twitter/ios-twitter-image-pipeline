@@ -29,17 +29,17 @@ NS_ASSUME_NONNULL_BEGIN
 SInt64 const TIPMaxBytesForAllRenderedCachesDefault = -1;
 SInt64 const TIPMaxBytesForAllMemoryCachesDefault = -1;
 SInt64 const TIPMaxBytesForAllDiskCachesDefault = -1;
-SInt16 const TIPMaxCountForAllMemoryCachesDefault = INT16_MAX >> 6;
-SInt16 const TIPMaxCountForAllRenderedCachesDefault = INT16_MAX >> 6;
+SInt16 const TIPMaxCountForAllMemoryCachesDefault = INT16_MAX >> 7;
+SInt16 const TIPMaxCountForAllRenderedCachesDefault = INT16_MAX >> 7;
 SInt16 const TIPMaxCountForAllDiskCachesDefault = INT16_MAX >> 4;
 NSInteger const TIPMaxConcurrentImagePipelineDownloadCountDefault = 4;
 NSUInteger const TIPMaxRatioSizeOfCacheEntryDefault = 6;
 
-// Arbitrarily cap the default max memory bytes at 64MB for Rendered and Memory caches
-#define MAX_MEMORY_BYTES_CAP        (64ull * 1024ull * 1024ull)
-// Arbitrarily default the max bytes for in memory caching to 1/12th the devices RAM (1/6th if you consider rendered cache cap plus memory cache cap)
+// Cap the default max memory bytes at 160MB for Rendered and Memory caches -- large enough for cache size / TIPMaxRatioSizeOfCacheEntryDefault to be large enough for full screen images on iPhone XS Max (2688x1242) or iPad Pro 12.9 (2732x2048)
+#define MAX_MEMORY_BYTES_CAP        (160ull * 1024ull * 1024ull)
+// Default the max bytes for in memory caching to 1/12th the devices RAM (1/6th if you consider rendered cache cap plus memory cache cap)
 #define MAX_MEMORY_BYTES_DIVISOR    (12ull)
-// Arbitrarily default the max bytes for on disk caching
+// Arbitrarily default the max bytes for on disk caching to 128MBs (roughly 64 large images or 1,600 small images or 32,000 73x73 avatars)
 #define MAX_DISK_BYTES              (128ull * 1024ull * 1024ull)
 
 static pthread_mutex_t sUITraitCollectionMutex = PTHREAD_MUTEX_INITIALIZER;

@@ -126,10 +126,6 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 /** call when view is laying out subviews */
 - (void)triggerViewLayingOutSubviews NS_REQUIRES_SUPER;
 
-/** call when view's hidden property changes */
-- (void)triggerViewWillChangeHidden NS_REQUIRES_SUPER;
-/** call when view's hidden property changes */
-- (void)triggerViewDidChangeHidden NS_REQUIRES_SUPER;
 /** call when view will move to window _newWindow_ (can be `nil` when removed from all windows) */
 - (void)triggerViewWillMoveToWindow:(nullable UIWindow *)newWindow NS_REQUIRES_SUPER;
 /** call when view did move to window (or `nil`) */

@@ -56,6 +56,12 @@ FOUNDATION_EXTERN NSString * const TIPImageTypeBMP;
  TARGA or TGA (Truevision Advanced Raster Graphics Adapter)
  */
 FOUNDATION_EXTERN NSString * const TIPImageTypeTARGA;
+/**
+ HEIC (High Efficiency Image File w/ HEVC compressed image)
+ HEIC is a specific variant of HEIF
+ @note Supported on devices with iOS 11+ and Simulators with iOS 12+.
+ */
+FOUNDATION_EXTERN NSString * const TIPImageTypeHEIC;
 
 #pragma mark Read-only image types
 
@@ -79,6 +85,13 @@ FOUNDATION_EXTERN NSString * const TIPImageTypeRAW;
  @note requires iOS 11+
  */
 FOUNDATION_EXTERN NSString * const TIPImageTypeICNS;
+/**
+ AVCI (High Efficiency Image File w/ H.264 compressed image)
+ AVCI is a specific variant of HEIF
+ @note Supported on devices with iOS 11+ and Simulator with iOS 12+.
+ @warning this is untested currently due to difficulty in creating .avci files to test
+ */
+FOUNDATION_EXTERN NSString * const TIPImageTypeAVCI;
 
 #pragma mark Unsupported image types (cannot read nor write)
 

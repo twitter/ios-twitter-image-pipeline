@@ -158,7 +158,10 @@ NS_ASSUME_NONNULL_BEGIN
  @param maskImage The image to mask the output image with, or `nil` to have no mask
  @return an image with each opted in effect applied
  */
-- (nullable UIImage *)tip_imageWithBlurWithRadius:(CGFloat)blurRadius tintColor:(nullable UIColor *)tintColor saturationDeltaFactor:(CGFloat)saturationDeltaFactor maskImage:(nullable UIImage *)maskImage;
+- (nullable UIImage *)tip_imageWithBlurWithRadius:(CGFloat)blurRadius
+                                        tintColor:(nullable UIColor *)tintColor
+                            saturationDeltaFactor:(CGFloat)saturationDeltaFactor
+                                        maskImage:(nullable UIImage *)maskImage;
 
 #pragma mark Decode Methods
 

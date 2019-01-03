@@ -134,7 +134,10 @@ static const char sTIPImageFetchableViewObserverKey[] = "TIPImageFetchableViewOb
     }
     if (newSuperview && !_didGetAddedToSuperview) {
         _observingSuperview = YES;
-        [newSuperview addObserver:self forKeyPath:@"hidden" options:NSKeyValueObservingOptionPrior context:NULL];
+        [newSuperview addObserver:self
+                       forKeyPath:@"hidden"
+                          options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld)
+                          context:NULL];
     }
 }
 
@@ -153,11 +156,25 @@ static const char sTIPImageFetchableViewObserverKey[] = "TIPImageFetchableViewOb
 {
     if ([keyPath isEqualToString:@"hidden"]) {
         TIPAssert(object == self.superview);
-        NSNumber *prior = change[NSKeyValueChangeNotificationIsPriorKey];
-        if (prior.boolValue) {
-            [self.fetchHelper triggerViewWillChangeHidden];
-        } else {
-            [self.fetchHelper triggerViewDidChangeHidden];
+        const BOOL wasHidden = [change[NSKeyValueChangeOldKey] boolValue];
+        const BOOL willHide = [change[NSKeyValueChangeNewKey] boolValue];
+        if (wasHidden == willHide) {
+            // no change
+            return;
+        }
+
+        UIView *view = object;
+        if (view.window == nil) {
+            // no window -- won't actually appear then
+            return;
+        }
+
+        if (willHide) {
+            [self.fetchHelper triggerViewWillDisappear];
+            [self.fetchHelper triggerViewDidDisappear];
+        } else /* will show */ {
+            [self.fetchHelper triggerViewWillAppear];
+            [self.fetchHelper triggerViewDidAppear];
         }
     }
 }

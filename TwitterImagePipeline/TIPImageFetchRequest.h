@@ -197,8 +197,8 @@ NS_INLINE NSString *TIPImageFetchRequestGetImageIdentifier(id<TIPImageFetchReque
 - (instancetype)initWithImageURL:(NSURL *)imageURL
                       identifier:(nullable NSString *)imageIdentifier
                 targetDimensions:(CGSize)dims
-               targetContentMode:(UIViewContentMode)mode;
-- (instancetype)initWithImageURL:(NSURL *)imageURL NS_DESIGNATED_INITIALIZER;
+               targetContentMode:(UIViewContentMode)mode NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithImageURL:(NSURL *)imageURL;
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 
