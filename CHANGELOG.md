@@ -2,13 +2,26 @@
 
 ## Info
 
-**Document version:** 2.11.0
+**Document version:** 2.12.0
 
-**Last updated:** 09/03/2018
+**Last updated:** 12/18/2018
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.12.0
+
+- Add `TIPImageTypeHEIC` and `TIPImageTypeAVCI` support
+  - There are OS version limitations, see `TIPImageTypes.h` for details
+
+### 2.11.1
+
+- Update defaults in `TIPGlobalConfiguration` for cache sizes
+  - `TIPMaxBytesForAllRenderedCachesDefault` and `TIPMaxBytesForAllMemoryCachesDefault`
+    - the lesser of `System RAM / 12` or `160 MBs`
+  - `TIPMaxCountForAllRenderedCachesDefault` and `TIPMaxCountForAllMemoryCachesDefault`
+    - default cap to `255` instead of `511`
 
 ### 2.11.0
 

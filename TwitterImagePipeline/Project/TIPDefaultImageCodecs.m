@@ -147,10 +147,15 @@ NS_ASSUME_NONNULL_BEGIN
                 } else {
                     TIPAssert(nil == decoder);
                 }
+                TIPAssert(nil == encoder);
 #else
                 TIPAssert(nil == decoder);
-#endif
                 TIPAssert(nil == encoder);
+#endif
+            } else if ([imageType isEqualToString:TIPImageTypeHEIC]) {
+                // it's a crapshoot when the encoder/decoder are present or not
+            } else if ([imageType isEqualToString:TIPImageTypeAVCI]) {
+                // it's a crapshoot when the encoder/decoder are present or not
             }
         }
     }

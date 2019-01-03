@@ -23,6 +23,11 @@ FOUNDATION_EXTERN NSString *TIPVersion(void);
 
 #pragma mark - Helpers
 
+NS_INLINE BOOL tip_never(void)
+{
+    return NO;
+}
+
 FOUNDATION_EXTERN BOOL TIPImageTypeSupportsLossyQuality(NSString * __nullable type);
 
 FOUNDATION_EXTERN void TIPSwizzle(Class cls, SEL originalSelector, SEL swizzledSelector);

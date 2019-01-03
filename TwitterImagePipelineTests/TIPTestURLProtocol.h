@@ -31,6 +31,12 @@ FOUNDATION_EXTERN NSString * const TIPTestURLProtocolErrorDomain;
 
 @end
 
+typedef NS_ENUM(NSUInteger, TIPTestURLProtocolRedirectBehavior) {
+    TIPTestURLProtocolRedirectBehaviorFollowLocation = 0,
+    TIPTestURLProtocolRedirectBehaviorDontFollowLocation = 1,
+    TIPTestURLProtocolRedirectBehaviorFollowLocationIfRedirectResponseIsRegistered = 2,
+};
+
 @interface TIPTestURLProtocolResponseConfig : NSObject <NSCopying>
 
 @property (nonatomic) uint64_t bps; // bits per second, 0 == unlimited
@@ -40,6 +46,7 @@ FOUNDATION_EXTERN NSString * const TIPTestURLProtocolErrorDomain;
 @property (nonatomic) NSInteger statusCode; // 0 == don't override
 @property (nonatomic) BOOL canProvideRange; // default == YES
 @property (nonatomic, copy, nullable) NSString *stringForIfRange; // default == nil, nil == match any, @"" == match nothing
+@property (nonatomic) TIPTestURLProtocolRedirectBehavior redirectBehavior; // default == .FollowLocation
 
 @property (nonatomic, copy, nullable) NSDictionary<NSString *, NSString *> *extraRequestHeaders;
 

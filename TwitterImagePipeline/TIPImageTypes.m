@@ -48,6 +48,8 @@ NSString * const TIPImageTypeQTIF       = @"com.apple.quicktime-image";
 NSString * const TIPImageTypeICNS       = @"com.apple.icns";
 NSString * const TIPImageTypeICO        = @"com.microsoft.ico";
 NSString * const TIPImageTypeRAW        = @"public.camera-raw-image";
+NSString * const TIPImageTypeHEIC       = @"public.heic";
+NSString * const TIPImageTypeAVCI       = @"public.avci";
 
 #pragma mark - Static Functions
 
@@ -123,7 +125,9 @@ static BOOL TIPImageTypeHasProgressiveVariant(NSString * __nullable type)
 BOOL TIPImageTypeSupportsLossyQuality(NSString * __nullable type)
 {
     const BOOL hasLossy =  [type isEqualToString:TIPImageTypeJPEG]
-                        || [type isEqualToString:TIPImageTypeJPEG2000];
+                        || [type isEqualToString:TIPImageTypeJPEG2000]
+                        || [type isEqualToString:TIPImageTypeHEIC]
+                        || [type isEqualToString:TIPImageTypeAVCI];
 
     // though GIF can be munged many ways to change the quality,
     // we'll keep it simple and not treat GIF as supporting lossy quality
@@ -173,6 +177,10 @@ NSString * __nullable TIPImageTypeFromUTType(NSString * __nullable utType)
         return TIPImageTypeICNS;
     } else if (UTTypeConformsTo(imageType, kUTTypeQuickTimeImage)) {
         return TIPImageTypeQTIF;
+    } else if (UTTypeConformsTo(imageType, CFSTR("public.heic"))) {
+        return TIPImageTypeHEIC;
+    } else if (UTTypeConformsTo(imageType, CFSTR("public.avci"))) {
+        return TIPImageTypeAVCI;
     }
 
     return nil;

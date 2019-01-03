@@ -199,6 +199,8 @@ static void _executeClientBlock(SELF_ARG,
                     NSHTTPURLResponse *httpResponse = (id)response.response;
                     NSData *data = response.data;
                     NSInteger statusCode = (config.statusCode > 0) ? config.statusCode : httpResponse.statusCode;
+
+                    // See if we need to change to a 206
                     if (200 == statusCode && config.canProvideRange) {
 
                         const NSRange range = _RangeForRequest(request, data.length, config.stringForIfRange);
@@ -208,6 +210,15 @@ static void _executeClientBlock(SELF_ARG,
                             data = [data subdataWithRange:range];
                         }
 
+                    }
+
+                    // On 3xx (when `Location` is provided), execute redirection based on config behavior.
+                    if (statusCode >= 300 && statusCode < 400) {
+                        const TIPTestURLProtocolRedirectBehavior behavior = (config) ? config.redirectBehavior : TIPTestURLProtocolRedirectBehaviorFollowLocation;
+                        if (_handleRedirect(self, request, httpResponse, behavior)) {
+                            // was handled, return
+                            return;
+                        }
                     }
 
                     httpResponse = _UpdateResponse(httpResponse, data.length, statusCode);
@@ -250,6 +261,74 @@ static void _executeClientBlock(SELF_ARG,
             });
         }
     });
+}
+
+static BOOL _handleRedirect(SELF_ARG,
+                            NSURLRequest *request,
+                            NSHTTPURLResponse *httpResponse,
+                            const TIPTestURLProtocolRedirectBehavior behavior)
+{
+    if (!self) {
+        return NO;
+    }
+
+    TIPAssert(httpResponse.statusCode >= 300);
+    TIPAssert(httpResponse.statusCode < 400);
+
+    if (TIPTestURLProtocolRedirectBehaviorDontFollowLocation == behavior) {
+        return NO;
+    }
+
+    NSString *location = httpResponse.allHeaderFields[@"Location"];
+    if (!location) {
+        return NO;
+    }
+
+    NSURL *locationURL = nil;
+    @try {
+        locationURL = [NSURL URLWithString:location];
+    } @catch (NSException *e) {
+        locationURL = nil;
+    }
+    if (!locationURL) {
+        return NO;
+    }
+
+    // create the redirect request
+    NSMutableURLRequest *mRedirectRequest = [request mutableCopy];
+    mRedirectRequest.URL = locationURL;
+    if (303 == httpResponse.statusCode) {
+        mRedirectRequest.HTTPMethod = @"GET";
+    }
+
+    // get the cached redirect response (if requested)
+    __block NSCachedURLResponse *redirectCachedResponse;
+    if (TIPTestURLProtocolRedirectBehaviorFollowLocationIfRedirectResponseIsRegistered == behavior) {
+        dispatch_sync(sOriginQueue, ^{
+            redirectCachedResponse = sOriginToResponseDictionary[_UnderlyingURLString(locationURL)];
+        });
+    }
+
+    // if we have a cached response or we follow the redirect anyway, tell the client we redirected
+    if (redirectCachedResponse || TIPTestURLProtocolRedirectBehaviorFollowLocation == behavior) {
+        /*
+         radar://45880389
+         The NSURLProtocolClient has always supported taking a `nil` redirectResponse.
+         In recent years, `NS_ASSUME_NONNULL_BEGIN` was added to the interface's header and it mistakenly updates
+         the redirectResponse argument to be a nonnull parameter.
+         We can safely work around this by forcibly casting our potentially `nil` redirectResponse as __nonnull.
+         Radar has been filed against Apple.
+         */
+        NSHTTPURLResponse * __nonnull redirectResponse = (NSHTTPURLResponse * __nonnull)redirectCachedResponse.response;
+        _executeClientBlock(self, ^(id<NSURLProtocolClient> client) {
+            [client URLProtocol:self
+         wasRedirectedToRequest:[mRedirectRequest copy]
+               redirectResponse:redirectResponse];
+        });
+        return YES;
+    }
+
+    return NO;
 }
 
 static void _chunkData(SELF_ARG,
@@ -331,6 +410,7 @@ static void _executeClientBlock(SELF_ARG,
 {
     if (self = [super init]) {
         _canProvideRange = YES;
+        _redirectBehavior = TIPTestURLProtocolRedirectBehaviorFollowLocation;
     }
     return self;
 }
@@ -346,6 +426,7 @@ static void _executeClientBlock(SELF_ARG,
     config.statusCode = self.statusCode;
     config.canProvideRange = self.canProvideRange;
     config.stringForIfRange = self.stringForIfRange;
+    config.redirectBehavior = self.redirectBehavior;
     config.extraRequestHeaders = self.extraRequestHeaders;
 
     return config;
