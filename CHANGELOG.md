@@ -2,13 +2,20 @@
 
 ## Info
 
-**Document version:** 2.12.0
+**Document version:** 2.12.1
 
-**Last updated:** 12/18/2018
+**Last updated:** 01/22/2018
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.12.1
+
+- Fix bugs related to capping the sizes of caches
+  - Capping a cache to `0` bytes would not completely disable it as documented, fixed
+  - Setting the max ratio value to a negative value would not use the default value as documented, fixed
+  - Thanks to @jml5qh for filing this issue (#41)
 
 ### 2.12.0
 

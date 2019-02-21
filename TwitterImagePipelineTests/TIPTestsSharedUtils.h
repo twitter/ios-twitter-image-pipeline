@@ -11,6 +11,8 @@
 
 #import "TIPImageDownloader.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 static const uint64_t kKiloBits = 1024 * 8;
 static const uint64_t kMegaBits = 1024 * kKiloBits;
 static const CGSize kCarnivalImageDimensions = { (CGFloat)1880.f, (CGFloat)1253.f };
@@ -33,8 +35,8 @@ static const NSTimeInterval kFireworksAnimationDurations[10] =
 @interface TIPImagePipelineTestFetchRequest : NSObject <TIPImageFetchRequest>
 
 @property (nonatomic) NSURL *imageURL;
-@property (nonatomic, copy) NSString *imageIdentifier;
-@property (nonatomic, copy) TIPImageFetchHydrationBlock imageRequestHydrationBlock;
+@property (nonatomic, copy, nullable) NSString *imageIdentifier;
+@property (nonatomic, copy, nullable) TIPImageFetchHydrationBlock imageRequestHydrationBlock;
 @property (nonatomic) CGSize targetDimensions;
 @property (nonatomic) UIViewContentMode targetContentMode;
 @property (nonatomic) NSTimeInterval timeToLive;
@@ -87,7 +89,9 @@ static const NSTimeInterval kFireworksAnimationDurations[10] =
 @end
 
 @interface TIPImagePipelineBaseTests : XCTestCase <TIPImageFetchDelegate>
-+ (NSString *)pathForImageOfType:(NSString *)type progressive:(BOOL)progressive;
++ (nullable NSString *)pathForImageOfType:(NSString *)type progressive:(BOOL)progressive;
 + (NSURL *)dummyURLWithPath:(NSString *)path;
 + (TIPImagePipeline *)sharedPipeline;
 @end
+
+NS_ASSUME_NONNULL_END

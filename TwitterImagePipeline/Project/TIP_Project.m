@@ -145,7 +145,7 @@ NSString *TIPRawFromSafe(NSString *safe)
     TIPAssert(safe != 0);
     NSString *raw = TIPURLDecodeString(safe, NO);
     TIPAssert(raw != 0);
-    return raw;
+    return (NSString * _Nonnull)raw; // TIPAssert() performed 1 line above
 }
 
 dispatch_block_t __nullable TIPStartBackgroundTask(NSString * __nullable name)

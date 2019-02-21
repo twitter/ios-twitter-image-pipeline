@@ -1305,10 +1305,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8B6511D92135DE7300ED057B /* Build configuration list for PBXNativeTarget "TwitterImagePipeline.framework tvOS" */;
 			buildPhases = (
+				8B6511BB2135DE7300ED057B /* Headers */,
 				8B6511952135DE7300ED057B /* Sources */,
 				8B6511BA2135DE7300ED057B /* Frameworks */,
-				8B6511BB2135DE7300ED057B /* Headers */,
-				8B6511D82135DE7300ED057B /* Resources */,
 			);
 			buildRules = (
 			);
@@ -1323,10 +1322,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8B6511F82135DEB400ED057B /* Build configuration list for PBXNativeTarget "TIPTests tvOS" */;
 			buildPhases = (
+				8B6511F12135DEB400ED057B /* Headers */,
 				8B6511E12135DEB400ED057B /* Sources */,
 				8B6511ED2135DEB400ED057B /* Frameworks */,
-				8B6511F12135DEB400ED057B /* Headers */,
-				8B6511F72135DEB400ED057B /* Resources */,
 			);
 			buildRules = (
 			);
@@ -1379,10 +1377,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8BA9755C1D77E2CA00601D70 /* Build configuration list for PBXNativeTarget "TIPTests" */;
 			buildPhases = (
+				8BA975501D77E2C900601D70 /* Headers */,
 				8BA9754E1D77E2C900601D70 /* Sources */,
 				8BA9754F1D77E2C900601D70 /* Frameworks */,
-				8BA975501D77E2C900601D70 /* Headers */,
-				8BA975511D77E2C900601D70 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -1471,10 +1468,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8BFF17751DF5B4AD005DE734 /* Build configuration list for PBXNativeTarget "TwitterImagePipeline.framework" */;
 			buildPhases = (
+				8BFF17671DF5B4AD005DE734 /* Headers */,
 				8BFF17651DF5B4AD005DE734 /* Sources */,
 				8BFF17661DF5B4AD005DE734 /* Frameworks */,
-				8BFF17671DF5B4AD005DE734 /* Headers */,
-				8BFF17681DF5B4AD005DE734 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -1577,20 +1573,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8B6511D82135DE7300ED057B /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8B6511F72135DEB400ED057B /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		8B65120B2135DFC600ED057B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1616,13 +1598,6 @@
 				8B93D8FC20864F7B00CFB01A /* parrot_wide.jpg in Resources */,
 				8B93D90A20866B8600CFB01A /* parrot_srgb.jpg in Resources */,
 				8B93D8F320864D5600CFB01A /* iceland_P3.jpg in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8BA975511D77E2C900601D70 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1664,13 +1639,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				8B1A49391D78D1BC0003F252 /* TIPTestsResources.bundle in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8BFF17681DF5B4AD005DE734 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

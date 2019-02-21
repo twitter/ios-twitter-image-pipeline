@@ -393,6 +393,8 @@
 {
     TestImageStoreRequest *storeRequest = [[TestImageStoreRequest alloc] init];
     storeRequest.imageFilePath = [[self class] pathForImageOfType:TIPImageTypeJPEG progressive:NO];
+    XCTAssertNotNil(storeRequest.imageFilePath);
+
     storeRequest.imageURL = [[self class] dummyURLWithPath:@"dummy.image.jpg"];
     NSString *signalIdentifier = [NSString stringWithFormat:@"%@", @(time(NULL))];
     __block XCTestExpectation *expectation = nil;
@@ -446,7 +448,10 @@
     XCTestExpectation *expectation;
     TIPImageFetchOperation *op;
     NSURL *URL = [NSURL URLWithString:@"http://cross.pipeline.com/image.jpg"];
+
     NSString *imagePath = [[self class] pathForImageOfType:TIPImageTypeJPEG progressive:NO];
+    XCTAssertNotNil(imagePath);
+
     TestImageStoreRequest *storeRequest = [[TestImageStoreRequest alloc] init];
     storeRequest.imageURL = URL;
     storeRequest.imageFilePath = imagePath;

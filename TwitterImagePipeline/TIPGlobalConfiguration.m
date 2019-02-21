@@ -462,14 +462,22 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
 
 - (SInt64)internalMaxBytesForCacheEntryOfType:(TIPImageCacheType)type
 {
-    SInt64 maxBytes = [self internalMaxBytesForAllCachesOfType:type];
-    if (maxBytes <= 0) {
+    const SInt64 maxBytes = [self internalMaxBytesForAllCachesOfType:type];
+    if (maxBytes < 0) {
+        // negative == unlimited
         return INT64_MAX;
     }
 
     // if on the main thread, accept potentially stale max ratio size by using nonatomic access
     NSInteger ratio = [NSThread isMainThread] ? _maxRatioSizeOfCacheEntry : self.maxRatioSizeOfCacheEntry;
+
+    if (ratio < 0) {
+        // negative == use default
+        ratio = TIPMaxRatioSizeOfCacheEntryDefault;
+    }
+
     if (ratio <= 1) {
+        // 0 or 1 == no maximium ratio, aka, no max bytes
         return INT64_MAX;
     }
 
@@ -520,10 +528,16 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
 {
     const SInt64 globalMaxBytes = [self internalMaxBytesForAllCachesOfType:type];
     const SInt16 globalMaxCount = [self internalMaxCountForAllCachesOfType:type];
-    [self pruneAllCachesOfType:type withPriorityCache:priorityCache toGlobalMaxBytes:globalMaxBytes toGlobalMaxCount:globalMaxCount];
+    [self pruneAllCachesOfType:type
+             withPriorityCache:priorityCache
+              toGlobalMaxBytes:globalMaxBytes
+              toGlobalMaxCount:globalMaxCount];
 }
 
-- (void)pruneAllCachesOfType:(TIPImageCacheType)type withPriorityCache:(nullable id<TIPImageCache>)priorityCache toGlobalMaxBytes:(SInt64)globalMaxBytes toGlobalMaxCount:(SInt16)globalMaxCount
+- (void)pruneAllCachesOfType:(TIPImageCacheType)type
+           withPriorityCache:(nullable id<TIPImageCache>)priorityCache
+            toGlobalMaxBytes:(SInt64)globalMaxBytes
+            toGlobalMaxCount:(SInt16)globalMaxCount
 {
     @autoreleasepool {
         switch (type) {
@@ -539,9 +553,12 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
         TIPAssert(globalMaxBytes >= 0);
         TIPAssert(globalMaxCount >= 0);
 
+        // max bytes of 0 == disable the cache
         if (globalMaxBytes == 0) {
-            globalMaxBytes = INT64_MAX;
+            // leave as 0
         }
+
+        // max count of 0 == unlimited
         if (globalMaxCount == 0) {
             globalMaxCount = INT16_MAX;
         }

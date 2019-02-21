@@ -86,12 +86,22 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
 
     NSString *identifier = entry.LRUEntryIdentifier;
     TIPAssert(identifier != nil);
+#ifndef __clang_analyzer__
+    // clang analyzer reports identifier can be nil for the check   if (... && _cache[identifier]) {
+    // just below.  (and then, if we ignore only that with #ifndef __clang_analyzer__, then it reports
+    // _cache[identifier] within the TIPAssert() protected by the if stmt.)
+    // however, in real life, the TIPAssert(identifier != nil) just above will prevent control from getting to
+    // the if stmt at all when gTwitterImagePipelineAssertEnabled is true, and when it is false, then the 2nd
+    // part of the condition (and the stmts protected by the condition) will never be executed and won't crash.
     if (gTwitterImagePipelineAssertEnabled && _cache[identifier]) {
         TIPAssert((id)_cache[identifier] == (id)entry);
     }
+#endif
 
     [self moveEntryToFront:entry];
+#ifndef __clang_analyzer__ // reports identifier can be nil; we prefer to crash if it is
     _cache[identifier] = entry;
+#endif
 
     TIPLRUCacheAssertHeadAndTail(self);
 }
@@ -114,7 +124,9 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
     entry.previousLRUEntry = _tailEntry;
     entry.nextLRUEntry = nil;
     _tailEntry = entry;
+#ifndef __clang_analyzer__ // reports identifier can be nil; we prefer to crash if it is
     _cache[identifier] = entry;
+#endif
 
     if (!_headEntry) {
         _headEntry = _tailEntry;

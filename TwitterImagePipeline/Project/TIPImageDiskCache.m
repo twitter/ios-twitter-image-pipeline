@@ -213,7 +213,7 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
     }
 
     TIPAssert(manifest != nil);
-    return manifest;
+    return (TIPLRUCache * _Nonnull)manifest; // TIPAssert() performed 1 line above
 }
 
 - (NSUInteger)totalCost
@@ -1022,38 +1022,46 @@ static void _diskCache_updateImageEntry(SELF_ARG,
         didChangeComplete = YES;
     }
 
-    // Update xattrs and LRU
-    const NSUInteger newCost = existingEntry.partialFileSize + existingEntry.completeFileSize;
-    _diskCache_updateByteCounts(self, newCost /*bytesAdded*/, oldCost /*bytesRemoved*/);
-    if (!hasPreviousEntry && existingEntry) {
-        self->_globalConfig.internalTotalCountForAllDiskCaches += 1;
-    }
-
-    if (gTwitterImagePipelineAssertEnabled) {
-        if (existingEntry.partialImageContext && 0 == existingEntry.partialFileSize) {
-            NSDictionary *info = @{
-                                   @"dimension" : NSStringFromCGSize(existingEntry.partialImageContext.dimensions),
-                                   @"URL" : existingEntry.partialImageContext.URL,
-                                   @"id" : existingEntry.identifier,
-                                   };
-            TIPLogError(@"Cached zero cost partial image to disk cache %@", info);
+    if (!existingEntry.partialImageContext && !existingEntry.completeImageContext) {
+        // shoot... the save cannot complete -- purge the entry
+        if (hasPreviousEntry) {
+            [manifest removeEntry:existingEntry];
         }
-        if (existingEntry.completeImageContext && 0 == existingEntry.completeFileSize) {
-            NSDictionary *info = @{
-                                   @"dimension" : NSStringFromCGSize(existingEntry.completeImageContext.dimensions),
-                                   @"URL" : existingEntry.completeImageContext.URL,
-                                   @"id" : existingEntry.identifier,
-                                   };
-            TIPLogError(@"Cached zero cost complete image to disk cache %@", info);
-        }
-    }
+    } else {
 
-    [manifest addEntry:existingEntry];
-    if (didChangePartial) {
-        _diskCache_touchEntry(self, existingEntry, forciblyReplaceExisting /*forced*/, YES /*partial*/);
-    }
-    if (didChangeComplete) {
-        _diskCache_touchEntry(self, existingEntry, forciblyReplaceExisting /*forced*/, NO /*partial*/);
+        // Update xattrs and LRU
+        const NSUInteger newCost = existingEntry.partialFileSize + existingEntry.completeFileSize;
+        _diskCache_updateByteCounts(self, newCost /*bytesAdded*/, oldCost /*bytesRemoved*/);
+        if (!hasPreviousEntry && existingEntry) {
+            self->_globalConfig.internalTotalCountForAllDiskCaches += 1;
+        }
+
+        [manifest addEntry:existingEntry];
+        if (didChangePartial) {
+            _diskCache_touchEntry(self, existingEntry, forciblyReplaceExisting /*forced*/, YES /*partial*/);
+        }
+        if (didChangeComplete) {
+            _diskCache_touchEntry(self, existingEntry, forciblyReplaceExisting /*forced*/, NO /*partial*/);
+        }
+
+        if (gTwitterImagePipelineAssertEnabled) {
+            if (existingEntry.partialImageContext && 0 == existingEntry.partialFileSize) {
+                NSDictionary *info = @{
+                                       @"dimension" : NSStringFromCGSize(existingEntry.partialImageContext.dimensions),
+                                       @"URL" : existingEntry.partialImageContext.URL,
+                                       @"id" : existingEntry.identifier,
+                                       };
+                TIPLogError(@"Cached zero cost partial image to disk cache %@", info);
+            }
+            if (existingEntry.completeImageContext && 0 == existingEntry.completeFileSize) {
+                NSDictionary *info = @{
+                                       @"dimension" : NSStringFromCGSize(existingEntry.completeImageContext.dimensions),
+                                       @"URL" : existingEntry.completeImageContext.URL,
+                                       @"id" : existingEntry.identifier,
+                                       };
+                TIPLogError(@"Cached zero cost complete image to disk cache %@", info);
+            }
+        }
     }
 
     [self->_globalConfig pruneAllCachesOfType:self.cacheType withPriorityCache:self];
