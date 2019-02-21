@@ -245,7 +245,7 @@ static UIImage *_UIKitScale(PRIVATE_SELF(UIImage),
     } render:^(UIImage *sourceImage, CGContextRef ctx) {
         [self drawInRect:drawRect];
     }];
-    return image ?: self;
+    return image ?: (UIImage * _Nonnull)self;
 }
 
 static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),

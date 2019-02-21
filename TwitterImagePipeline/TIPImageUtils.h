@@ -241,4 +241,18 @@ FOUNDATION_EXTERN UIImage * __nullable TIPRenderImage(UIImage * __nullable sourc
                                                       TIPImageRenderFormattingBlock __nullable __attribute__((noescape)) formatBlock,
                                                       TIPImageRenderBlock __attribute__((noescape)) renderBlock);
 
+/**
+ Detect the dimensions of the given image from its data
+ @param data the image data
+ @return the dimensions of the image or `CGSizeZero` if the dimensions could not be determined
+ */
+FOUNDATION_EXTERN CGSize TIPDetectImageDataDimensions(NSData * __nullable data);
+
+/**
+ Detect the dimensions of the given image from its file path
+ @param filePath the image file path
+ @return the dimensions of the image or `CGSizeZero` if the dimensions could not be determined
+ */
+FOUNDATION_EXTERN CGSize TIPDetectImageFileDimensions(NSString * __nullable filePath);
+
 NS_ASSUME_NONNULL_END

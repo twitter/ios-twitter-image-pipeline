@@ -778,7 +778,7 @@ static void _extractBasicRequestInfo(SELF_ARG)
     TIPImageDiskCacheTemporaryFile *tempFile = [_imagePipeline.diskCache openTemporaryFileForImageIdentifier:self.imageIdentifier];
     TIPAssert(tempFile != nil);
     _networkContext.imageDownloadRequest.imageDownloadTemporaryFileForResuming = tempFile;
-    return tempFile;
+    return (TIPImageDiskCacheTemporaryFile * _Nonnull)tempFile; // TIPAssert() performed 2 lines above
 }
 
 - (void)imageDownloadDidStart:(id<TIPImageDownloadContext>)context
@@ -938,6 +938,12 @@ static void _extractBasicRequestInfo(SELF_ARG)
                 _background_loadFromNetwork(self);
                 return;
             }
+        }
+
+        if (!error) {
+            error = [NSError errorWithDomain:TIPImageFetchErrorDomain
+                                        code:TIPImageFetchErrorCodeUnknown
+                                    userInfo:nil];
         }
 
         _background_updateFailureToLoadFinalImage(self, error, YES /*updateMetrics*/);
@@ -1629,6 +1635,14 @@ static void _background_updatePreviewImage(SELF_ARG,
 
     TIPImageContainer *image = cacheEntry.completeImage;
     TIPAssert(image != nil);
+    if (!image) {
+        // the analyzer reports image can be nil because .completeImage is nullable;
+        // if it is (and thus even if we fail TIPAssert() in dogfood but not Production),
+        // then return early, because the logic below will lead to a previewResult that
+        // is also nil, which results in an else-part below where we do the following.
+        block(YES);
+        return;
+    }
 
     self.previewImageContainerRaw = image;
     const uint64_t startMachTime = mach_absolute_time();

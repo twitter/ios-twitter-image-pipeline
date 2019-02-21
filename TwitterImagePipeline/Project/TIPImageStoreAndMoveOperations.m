@@ -40,7 +40,9 @@ static NSDictionary<NSString *, id> * __nullable _getDecoderConfigMap(PRIVATE_SE
 static TIPImageContainer * __nullable _getImageContainer(PRIVATE_SELF(TIPImageStoreOperation));
 static TIPCompleteImageEntryContext *_getEntryContext(PRIVATE_SELF(TIPImageStoreOperation),
                                                       NSURL *imageURL,
-                                                      TIPImageContainer * __nullable imageContainer);
+                                                      TIPImageContainer * __nullable imageContainer,
+                                                      NSString * __nullable imageFilePath,
+                                                      NSData * __nullable imageData);
 static void _asyncStoreMemoryEntry(PRIVATE_SELF(TIPImageStoreOperation),
                                    TIPImageCacheEntry *memoryEntry,
                                    void(^complete)(BOOL));
@@ -193,7 +195,11 @@ static void _asyncStoreMemoryEntry(PRIVATE_SELF(TIPImageStoreOperation),
         NSString *identifier = TIPImageStoreRequestGetImageIdentifier(_request);
 
         // Create context
-        TIPCompleteImageEntryContext *context = _getEntryContext(self, imageURL, imageContainer);
+        TIPCompleteImageEntryContext *context = _getEntryContext(self,
+                                                                 imageURL,
+                                                                 imageContainer,
+                                                                 imageFilePath,
+                                                                 imageData);
 
         // Create Memory Entry
         TIPImageCacheEntry *memoryEntry = nil;
@@ -330,7 +336,9 @@ static TIPImageContainer * __nullable _getImageContainer(PRIVATE_SELF(TIPImageSt
 
 static TIPCompleteImageEntryContext *_getEntryContext(PRIVATE_SELF(TIPImageStoreOperation),
                                                       NSURL *imageURL,
-                                                      TIPImageContainer * __nullable imageContainer)
+                                                      TIPImageContainer * __nullable imageContainer,
+                                                      NSString * __nullable imageFilePath,
+                                                      NSData * __nullable imageData)
 {
     TIPAssert(self);
     if (!self) {
@@ -354,6 +362,10 @@ static TIPCompleteImageEntryContext *_getEntryContext(PRIVATE_SELF(TIPImageStore
         context.dimensions = imageContainer.dimensions;
     } else if ([self->_request respondsToSelector:@selector(imageDimensions)]) {
         context.dimensions = self->_request.imageDimensions;
+    } else if (imageData) {
+        context.dimensions = TIPDetectImageDataDimensions(imageData);
+    } else if (imageFilePath) {
+        context.dimensions = TIPDetectImageFileDimensions(imageFilePath);
     }
     if ([self->_request respondsToSelector:@selector(imageType)]) {
         context.imageType = [self->_request imageType];

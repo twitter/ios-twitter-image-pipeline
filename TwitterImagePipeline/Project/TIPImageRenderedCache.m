@@ -282,7 +282,9 @@ sourceImageDimensions:(CGSize)sourceDims;
                                                                              class:[TIPImagePipelineInspectionResultRenderedEntry class]];
                 TIPAssert(entry != nil);
                 entry.bytesUsed = [entry.image tip_estimatedSizeInBytes];
+#ifndef __clang_analyzer__ // reports entry can be nil; we prefer to crash if it is
                 [inspectedEntries addObject:entry];
+#endif
             }
         }
 
