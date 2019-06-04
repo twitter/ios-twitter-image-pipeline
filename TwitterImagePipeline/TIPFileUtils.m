@@ -7,6 +7,7 @@
 //
 
 #include <dirent.h>
+#include <objc/runtime.h>
 #include <sys/stat.h>
 #include <sys/xattr.h>
 
@@ -30,6 +31,10 @@ NSArray<NSString *> * __nullable TIPContentsAtPath(NSString *path,
         return nil;
     }
 
+    tip_defer(^{
+        closedir(dir);
+    });
+
     NSMutableArray *entries = [[NSMutableArray alloc] init];
     struct dirent *dirEntity = NULL;
     while ((dirEntity = readdir(dir)) != NULL) {
@@ -44,33 +49,31 @@ NSArray<NSString *> * __nullable TIPContentsAtPath(NSString *path,
             }
         }
     }
-    closedir(dir);
     return entries;
 }
 
 NSUInteger TIPFileSizeAtPath(NSString *path,
                              NSError * __nullable * __nullable outError)
 {
+    NSError *error = nil;
     NSUInteger size = 0;
     if (path.length > 0) {
         struct stat fileStatStruct;
         if (0 != stat(path.UTF8String, &fileStatStruct)) {
-            if (outError) {
-                *outError = [NSError errorWithDomain:NSPOSIXErrorDomain
-                                                code:errno
-                                            userInfo:nil];
-            }
+            error = [NSError errorWithDomain:NSPOSIXErrorDomain
+                                        code:errno
+                                    userInfo:nil];
+        } else if (fileStatStruct.st_size < 0) {
+            error = [NSError errorWithDomain:NSPOSIXErrorDomain
+                                        code:EBADF
+                                    userInfo:nil];
         } else {
-            if (fileStatStruct.st_size < 0) {
-                if (outError) {
-                    *outError = [NSError errorWithDomain:NSPOSIXErrorDomain
-                                                    code:EBADF
-                                                userInfo:nil];
-                }
-            } else {
-                size = (NSUInteger)fileStatStruct.st_size;
-            }
+            size = (NSUInteger)fileStatStruct.st_size;
         }
+    }
+
+    if (error && outError) {
+        *outError = error;
     }
     return size;
 }
@@ -109,11 +112,17 @@ NSArray<NSString *> * __nullable TIPListXAttributesForFile(NSString *filePath)
     const ssize_t listStringSize = listxattr(cFilePath, NULL, 0, 0);
     if (listStringSize < 0) {
         return nil;
+    } else if (listStringSize == 0) {
+        return @[];
     }
 
-    char listBuff[listStringSize + 1];
+    char* listBuff = (char*)malloc((size_t)(listStringSize + 1));
     listBuff[listStringSize] = '\0';
 
+    // make the buffer ARC controlled (freed when no longer used)
+    NSData *listData = [NSData dataWithBytesNoCopy:listBuff
+                                            length:(NSUInteger)(listStringSize + 1)
+                                      freeWhenDone:YES];
     if (listxattr(cFilePath, listBuff, (size_t)listStringSize, 0) < 0) {
         return nil;
     }
@@ -124,11 +133,16 @@ NSArray<NSString *> * __nullable TIPListXAttributesForFile(NSString *filePath)
     char *end = listBuff + listStringSize;
     for (; cur < end; cur++) {
         if (*cur == '\0') {
-            NSString *attributeName = [[NSString alloc] initWithBytes:head
-                                                               length:(NSUInteger)(cur - head)
-                                                             encoding:NSUTF8StringEncoding];
+            NSString *attributeName = [[NSString alloc] initWithBytesNoCopy:head
+                                                                     length:(NSUInteger)(cur - head)
+                                                                   encoding:NSUTF8StringEncoding
+                                                               freeWhenDone:NO];
             if (attributeName) {
                 [attributeNames addObject:attributeName];
+
+                // Associate the NSString with the source NSData to keep the data properly ref counted
+                static const char kAssociatedDataKey[] = "data_ref";
+                objc_setAssociatedObject(attributeName, &kAssociatedDataKey, listData, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             }
 
             cur++;
@@ -225,32 +239,49 @@ int TIPSetXAttributeURLForFile(const char *name, NSURL *URL, const char *filePat
 
 NSString * __nullable TIPGetXAttributeStringFromFile(const char *name, const char *filePath)
 {
-    ssize_t bufferLength = getxattr(filePath, name, NULL, 0, 0, 0);
-    if (bufferLength <= 0) {
+    static const NSUInteger kStackBufferSize = 1024;
+    char stackBuffer[kStackBufferSize];
+
+    ssize_t bytesRead = getxattr(filePath, name, &stackBuffer, kStackBufferSize, 0, 0);
+    if (bytesRead > 0) {
+        // copy to heap in NSString
+        return [[NSString alloc] initWithBytes:stackBuffer
+                                        length:(NSUInteger)bytesRead
+                                      encoding:NSUTF8StringEncoding];
+    } else if (bytesRead == 0) {
+        // no attribute
+        return nil;
+    } else if (errno != ERANGE) {
+        // attribute access error is not recoverable
         return nil;
     }
 
-    char *buffer = (char *)malloc((size_t)bufferLength);
-    if (getxattr(filePath, name, buffer, (size_t)bufferLength, 0, 0) <= 0) {
+    bytesRead = getxattr(filePath, name, NULL, 0, 0, 0);
+    if (bytesRead <= 0) {
+        // Failure to load attribute
+        return nil;
+    }
+
+    char *buffer = (char *)malloc((size_t)bytesRead);
+    if (getxattr(filePath, name, buffer, (size_t)bytesRead, 0, 0) <= 0) {
+        // Failure to read attribute
         free(buffer);
         return nil;
     }
 
+    // Return attribute as NSString on heap (use malloc'd buffer directly)
     return [[NSString alloc] initWithBytesNoCopy:buffer
-                                          length:(NSUInteger)bufferLength
+                                          length:(NSUInteger)bytesRead
                                         encoding:NSUTF8StringEncoding
                                     freeWhenDone:YES];
 }
 
 NSNumber * __nullable TIPGetXAttributeNumberFromFile(const char *name, const char *filePath)
 {
-    ssize_t bufferLength = getxattr(filePath, name, NULL, 0, 0, 0);
-    if (bufferLength != sizeof(double)) {
-        return nil;
-    }
-
     double number;
-    if (getxattr(filePath, name, &number, sizeof(double), 0, 0) <= 0) {
+    const ssize_t bufferLength = getxattr(filePath, name, &number, sizeof(double), 0, 0);
+    if (bufferLength != sizeof(double)) {
+        // failure to load attribute or failure to read attribute or incorrect format of attribute
         return nil;
     }
     return @(number);

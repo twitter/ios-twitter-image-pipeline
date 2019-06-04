@@ -6,7 +6,7 @@
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
-import Foundation
+import TwitterImagePipeline
 
 class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, TIPImageFetchDelegate {
 

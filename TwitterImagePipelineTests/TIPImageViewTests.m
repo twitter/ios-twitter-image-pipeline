@@ -2,7 +2,7 @@
 //  TIPImageViewTests.m
 //  TwitterImagePipeline
 //
-//  Created by Brandon Carpenter on 4/3/17.
+//  Created on 4/3/17.
 //  Copyright © 2017 Twitter, Inc. All rights reserved.
 //
 

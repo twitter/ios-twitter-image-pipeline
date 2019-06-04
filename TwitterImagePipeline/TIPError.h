@@ -202,6 +202,8 @@ FOUNDATION_EXTERN NSString * const TIPProblemImageDownloadedHasGPSInfo;
 FOUNDATION_EXTERN NSString * const TIPProblemImageDownloadedCouldNotBeDecoded;
 //! Problem when attempting to store an image to disk cache due to size limit
 FOUNDATION_EXTERN NSString * const TIPProblemImageTooLargeToStoreInDiskCache;
+//! Problem downloading an image where the full image was loaded but there was an unnecessary error
+FOUNDATION_EXTERN NSString * const TIPProblemImageDownloadedWithUnnecessaryError;
 
 #pragma mark Problem Info Keys
 

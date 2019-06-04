@@ -104,6 +104,58 @@
     }
 }
 
+- (void)checkFileAttributes:(TIPImagePipeline *)pipeline
+{
+    // Check the file attributes
+    XCTestExpectation *expectation = [self expectationWithDescription:@"wait for inspection to complete expectation"];
+    __block NSDictionary<NSString *, id> *attributes = nil;
+    __block NSArray<NSString *> *attributeNames = nil;
+    NSDictionary<NSString *, Class> *attributeKeyKindMap = @{
+                                                             @"ANI" : [NSNumber class] /*BOOL*/,
+                                                             @"LAD" : [NSDate class],
+                                                             @"LMD" : [NSString class],
+                                                             @"TTL" : [NSNumber class],
+                                                             @"URL" : [NSURL class],
+                                                             @"clen" : [NSNumber class],
+                                                             @"dX" : [NSNumber class],
+                                                             @"dY" : [NSNumber class],
+                                                             @"uTTL" : [NSNumber class] /*BOOL*/,
+                                                             // @"pl" : [NSNumber class] /*BOOL*/,
+                                                             };
+    NSArray<NSString *> *expectedAttributeNames = [attributeKeyKindMap.allKeys sortedArrayUsingSelector:@selector(compare:)];
+
+    [pipeline inspect:^(TIPImagePipelineInspectionResult * _Nullable result) {
+        if (!result.completeDiskEntries.count) {
+            [expectation fulfill];
+            return;
+        }
+
+        [pipeline copyDiskCacheFileWithIdentifier:result.completeDiskEntries.firstObject.identifier
+                                       completion:^(NSString * _Nullable temporaryFilePath, NSError * _Nullable error) {
+                                           XCTAssertNil(error);
+                                           XCTAssertNotNil(temporaryFilePath);
+
+                                           attributeNames = [TIPListXAttributesForFile(temporaryFilePath) sortedArrayUsingSelector:@selector(compare:)];
+                                           attributes = TIPGetXAttributesForFile(temporaryFilePath, attributeKeyKindMap);
+
+                                           // Fulfill async after 1 second.
+                                           // If anything allocated in the attributes lookups deallocs we
+                                           // want to fail rather than have a race condition that might succeed.
+                                           dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                                               [expectation fulfill];
+                                           });
+                                       }];
+    }];
+
+    [self waitForExpectations:@[expectation] timeout:10];
+
+    XCTAssertNotNil(attributeNames);
+    XCTAssertEqualObjects(attributeNames, expectedAttributeNames);
+    NSArray<NSString *> *parsedAttributeNames = [attributes.allKeys sortedArrayUsingSelector:@selector(compare:)];
+    XCTAssertNotNil(parsedAttributeNames);
+    XCTAssertEqualObjects(parsedAttributeNames, expectedAttributeNames);
+}
+
 @end
 
 @implementation TIPImagePipelineTests_One
@@ -733,7 +785,10 @@
 
 - (void)testFillingTheCaches
 {
-    [self runFillingTheCaches:[TIPImagePipelineBaseTests sharedPipeline] bps:1024 * kMegaBits testCacheHits:YES];
+    TIPImagePipeline *pipeline = [TIPImagePipelineBaseTests sharedPipeline];
+    [self runFillingTheCaches:pipeline bps:1024 * kMegaBits testCacheHits:YES];
+    [self checkFileAttributes:pipeline];
 }
 
 @end
+

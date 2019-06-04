@@ -2,13 +2,22 @@
 
 ## Info
 
-**Document version:** 2.12.1
+**Document version:** 2.12.2
 
-**Last updated:** 01/22/2018
+**Last updated:** 03/03/2019
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.12.2
+
+- Add automatic handling of unnecessary image download errors when the download has finished loading
+  - It is not uncommon for a service/CDN to yield an error after the final byte of the response has been loaded by the client
+  - The consequence of treating a successful load as a failure is that upon next fetch for that image an unnessecary network request will trigger:
+    - For image resumption supported loads, resumes the load beyond the available byte range
+    - For full image loads, a redundant download
+  - When TIP sees an error on image download but has all the bytes (looking at `Content-Length` header), TIP now posts `TIPProblemImageDownloadedWithUnnecessaryError` problem
 
 ### 2.12.1
 

@@ -244,17 +244,17 @@ static const NSUInteger kDefaultBitrateIndex = 5;
 
     [UIView animateWithDuration:animated ? 0.5 : 0.0
                      animations:^{
-                         _selectImageTypeButton.alpha = 0;
-                         _selectSpeedButton.alpha = 0;
-                         _startButton.alpha = 0;
-                         _resultsLabel.alpha = 0;
-                         CGRect frame = _pickerView.frame;
+                         self->_selectImageTypeButton.alpha = 0;
+                         self->_selectSpeedButton.alpha = 0;
+                         self->_startButton.alpha = 0;
+                         self->_resultsLabel.alpha = 0;
+                         CGRect frame = self->_pickerView.frame;
                          frame.origin.y = self.view.bounds.size.height - frame.size.height;
-                         _pickerView.frame = frame;
+                         self->_pickerView.frame = frame;
                      }
                      completion:^(BOOL finished) {
-                         _pickerView.userInteractionEnabled = YES;
-                         _tapper.enabled = YES;
+                         self->_pickerView.userInteractionEnabled = YES;
+                         self->_tapper.enabled = YES;
                      }];
 }
 
@@ -263,19 +263,19 @@ static const NSUInteger kDefaultBitrateIndex = 5;
     _pickerView.userInteractionEnabled = NO;
     [UIView animateWithDuration:animated ? 0.5 : 0.0
                      animations:^{
-                         _selectImageTypeButton.alpha = 1;
-                         _selectSpeedButton.alpha = 1;
-                         _startButton.alpha = 1;
-                         _resultsLabel.alpha = 1;
-                         CGRect frame = _pickerView.frame;
+                         self->_selectImageTypeButton.alpha = 1;
+                         self->_selectSpeedButton.alpha = 1;
+                         self->_startButton.alpha = 1;
+                         self->_resultsLabel.alpha = 1;
+                         CGRect frame = self->_pickerView.frame;
                          frame.origin.y = self.view.bounds.size.height;
-                         _pickerView.frame = frame;
+                         self->_pickerView.frame = frame;
                      }
                      completion:^(BOOL finished) {
-                         _startButton.enabled = YES;
-                         _selectImageTypeButton.enabled = YES;
-                         _selectSpeedButton.enabled = YES;
-                         _tapper.enabled = NO;
+                         self->_startButton.enabled = YES;
+                         self->_selectImageTypeButton.enabled = YES;
+                         self->_selectSpeedButton.enabled = YES;
+                         self->_tapper.enabled = NO;
                      }];
 }
 
@@ -355,7 +355,7 @@ static const NSUInteger kDefaultBitrateIndex = 5;
         if (targetDimensions.width <= imageDimension.width && targetDimensions.height <= imageDimension.height) {
             return nil;
         }
-        blurRadius = log2(MAX(targetDimensions.height / imageDimension.height, targetDimensions.width / targetDimensions.width));
+        blurRadius = (CGFloat)log2(MAX(targetDimensions.height / imageDimension.height, targetDimensions.width / targetDimensions.width));
         shouldScaleFirst = YES;
     } else {
         // progressive
@@ -363,7 +363,7 @@ static const NSUInteger kDefaultBitrateIndex = 5;
             return nil;
         }
         const CGFloat divisor = (1.f + progress) * 2.f;
-        blurRadius = log2(MAX(imageDimension.width, imageDimension.height)) / divisor;
+        blurRadius = (CGFloat)log2(MAX(imageDimension.width, imageDimension.height)) / divisor;
         blurRadius *= 1.f - progress;
     }
 

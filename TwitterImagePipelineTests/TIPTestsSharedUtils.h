@@ -2,7 +2,7 @@
 //  TIPTestsSharedUtils.h
 //  TwitterImagePipeline
 //
-//  Created by Nolan on 8/30/18.
+//  Created on 8/30/18.
 //  Copyright © 2018 Twitter. All rights reserved.
 //
 

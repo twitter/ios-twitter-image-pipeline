@@ -189,12 +189,28 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Construct an image without RAM impact of loading the full image before scaling
+ @param imageSource the `CGImageSourceRef` to create the thumbnail from
+ @param thumbnailMaximumDimension the dimension limitation to scale the image down to (but not up!)
+ @return an `UIImage` or `nil` if there was an error
+ */
++ (nullable UIImage *)tip_thumbnailImageWithImageSource:(CGImageSourceRef)imageSource
+                              thumbnailMaximumDimension:(CGFloat)thumbnailMaximumDimension;
+/**
+ Construct an image without RAM impact of loading the full image before scaling
  @param fileURL the file path as an `NSURL` to load the image with
  @param thumbnailMaximumDimension the dimension limitation to scale the image down to (but not up!)
  @return an `UIImage` or `nil` if there was an error
  */
 + (nullable UIImage *)tip_thumbnailImageWithFileURL:(NSURL *)fileURL
                           thumbnailMaximumDimension:(CGFloat)thumbnailMaximumDimension;
+/**
+ Construct an image without RAM impact of loading the full image before scaling
+ @param data the image data to decode
+ @param thumbnailMaximumDimension the dimension limitation to scale the image down to (but not up!)
+ @return an `UIImage` or `nil` if there was an error
+ */
++ (nullable UIImage *)tip_thumbnailImageWithData:(NSData *)data
+                       thumbnailMaximumDimension:(CGFloat)thumbnailMaximumDimension;
 
 #pragma mark Encode Methods
 

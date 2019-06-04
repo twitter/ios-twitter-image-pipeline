@@ -18,7 +18,8 @@ FOUNDATION_EXTERN NSBundle *TIPTestsResourceBundle(void);
 // Put TIP_TESTS_IMPLEMENT_DUMMY in a code file for the consuming unit tests
 
 #define TIP_TESTS_IMPLEMENT_DUMMY \
-void TwitterImagePipelineTestsDummyFunction() \
+void TwitterImagePipelineTestsDummyFunction(void); \
+void TwitterImagePipelineTestsDummyFunction(void) \
 { \
     NSLog(@"TwitterImagePipelineTestsDummyFunction"); \
 }

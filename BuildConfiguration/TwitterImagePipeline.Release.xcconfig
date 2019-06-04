@@ -1,0 +1,18 @@
+//
+//  TwitterImagePipeline.Release.xcconfig
+//  TwitterImagePipeline
+//
+//  Created on 5/25/19.
+//  Copyright © 2019 Twitter. All rights reserved.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://help.apple.com/xcode/#/dev745c5c974
+
+#include "TwitterImagePipeline.xcconfig"
+
+// Deployment
+COPY_PHASE_STRIP = YES
+
+GCC_OPTIMIZATION_LEVEL = fast
+
