@@ -11,7 +11,7 @@
 /**
  The source that an image was loaded from
  */
-typedef NS_ENUM(NSInteger, TIPImageLoadSource) {
+typedef NS_ENUM(NSUInteger, TIPImageLoadSource) {
     /** Unknown */
     TIPImageLoadSourceUnknown = 0,
     /** The in memory cache */
