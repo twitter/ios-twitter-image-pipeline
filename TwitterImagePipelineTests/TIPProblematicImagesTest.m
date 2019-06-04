@@ -23,6 +23,17 @@
 @import MobileCoreServices;
 @import XCTest;
 
+@interface TIPImagePipelineTestSuccessWithErrorDownloadProvider : NSObject <TIPImageFetchDownloadProvider>
+@property (nonatomic) NSData *downloadData;
+@property (nonatomic) NSError *downloadError;
+@end
+
+@interface TIPImagePipelineTestProblemHandler : NSObject <TIPProblemObserver>
+@property (nonatomic) XCTestExpectation *expectation;
+@property (nonatomic, copy) NSString *problemToExpect;
+@property (nonatomic, copy) NSDictionary *problemUserInfoSeen;
+@end
+
 @interface TIPImagePipelineTestFetchRequest : NSObject <TIPImageFetchRequest>
 @property (nonatomic) NSURL *imageURL;
 @property (nonatomic, copy) NSString *cannedImageFilePath;
@@ -304,6 +315,162 @@ static NSString *sProblematicAvatarPath = nil;
 
     [pipeline clearDiskCache];
     [pipeline clearMemoryCaches];
+}
+
+- (void)testCompletedDownloadWithError
+{
+    /**
+     If the server yields an error despite all the data loading, we want TIP to be robust at
+     catching these problems, reporting them, and continuing without a failure.
+     */
+
+    NSBundle *thisBundle = TIPTestsResourceBundle();
+    NSString *imagePath = [thisBundle pathForResource:@"twitterfied" ofType:@"jpg"];
+    NSData *imageData = [NSData dataWithContentsOfFile:imagePath];
+
+    TIPImagePipelineTestSuccessWithErrorDownloadProvider *provider = [[TIPImagePipelineTestSuccessWithErrorDownloadProvider alloc] init];
+    provider.downloadData = imageData;
+    provider.downloadError = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorTimedOut userInfo:nil];
+
+    TIPImagePipelineTestProblemHandler *problemObserver = [[TIPImagePipelineTestProblemHandler alloc] init];
+    problemObserver.problemToExpect = TIPProblemImageDownloadedWithUnnecessaryError;
+
+    id<TIPImageFetchDownloadProvider> originalProvider = [TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider;
+    [TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider = provider;
+    id<TIPProblemObserver> originalProblemObserver = [TIPGlobalConfiguration sharedInstance].problemObserver;
+    [TIPGlobalConfiguration sharedInstance].problemObserver = problemObserver;
+    tip_defer(^{
+        [TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider = originalProvider;
+        [TIPGlobalConfiguration sharedInstance].problemObserver = originalProblemObserver;
+    });
+
+    XCTAssertTrue([[NSFileManager defaultManager] fileExistsAtPath:imagePath]);
+    TIPImagePipelineTestFetchRequest *request = [[TIPImagePipelineTestFetchRequest alloc] init];
+    request.imageURL = [NSURL URLWithString:@"https://dummy.twitter.com/some_path/image.jpg"];
+    request.cannedImageFilePath = imagePath;
+
+    __block NSError *error;
+    __block id<TIPImageFetchResult> result;
+    TIPImagePipeline *pipeline = [[TIPImagePipeline alloc] initWithIdentifier:@"error.image.complete"];
+    TIPImageFetchOperation *op = nil;
+    [pipeline clearDiskCache];
+    [pipeline clearMemoryCaches];
+
+    problemObserver.expectation = [self expectationWithDescription:@"Problem.Expectation"];
+    op = [pipeline operationWithRequest:request context:nil completion:^(id<TIPImageFetchResult> theResult, NSError *theError) {
+        result = theResult;
+        error = theError;
+    }];
+    [pipeline fetchImageWithOperation:op];
+    [self waitForExpectations:@[problemObserver.expectation] timeout:10.0];
+    [op waitUntilFinishedWithoutBlockingRunLoop];
+    XCTAssertNil(error);
+    XCTAssertNotNil(result.imageContainer.image);
+    XCTAssertEqual(result.imageSource, TIPImageLoadSourceNetwork);
+    [pipeline clearMemoryCaches];
+
+    op = [pipeline operationWithRequest:request context:nil completion:^(id<TIPImageFetchResult> theResult, NSError *theError) {
+        result = theResult;
+        error = theError;
+    }];
+    [pipeline fetchImageWithOperation:op];
+    [op waitUntilFinishedWithoutBlockingRunLoop];
+    XCTAssertNil(error);
+    XCTAssertNotNil(result.imageContainer.image);
+    XCTAssertEqual(result.imageSource, TIPImageLoadSourceDiskCache);
+    [pipeline clearDiskCache];
+    [pipeline clearMemoryCaches];
+}
+
+@end
+
+@interface TIPImagePipelineTestSuccessWithErrorDownload : NSObject <TIPImageFetchDownload>
+
+@property (nonatomic, readonly) NSData *downloadData;
+@property (nonatomic, readonly) NSError *downloadError;
+
+- (instancetype)initWithContext:(id<TIPImageFetchDownloadContext>)context downloadData:(NSData *)data downloadError:(NSError *)error;
+
+@end
+
+@implementation TIPImagePipelineTestSuccessWithErrorDownload
+
+@synthesize context = _context;
+@synthesize finalURLRequest = _finalURLRequest;
+
+- (instancetype)initWithContext:(id<TIPImageFetchDownloadContext>)context downloadData:(NSData *)data downloadError:(NSError *)error
+{
+    if (self = [super init]) {
+        _context = context;
+        _downloadData = data;
+        _downloadError = error;
+    }
+    return self;
+}
+
+- (void)start
+{
+    dispatch_async(self.context.downloadQueue, ^{
+        [self.context.client imageFetchDownloadDidStart:self];
+        [self.context.client imageFetchDownload:self
+                                 hydrateRequest:self.context.originalRequest
+                                     completion:^(NSError * _Nullable error) {
+            if (error) {
+                [self.context.client imageFetchDownload:self didCompleteWithError:error];
+            } else {
+                NSMutableDictionary *headers = [[NSMutableDictionary alloc] init];
+                headers[@"Content-Length"] = [@(self.downloadData.length) stringValue];
+                headers[@"Content-Type"] = @"image/jpeg";
+                headers[@"Accept-Ranges"] = @"bytes";
+                headers[@"Last-Modified"] = @"Wed, 15 Nov 1995 04:58:08 GMT";
+                NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:self.context.hydratedRequest.URL
+                                                                          statusCode:200
+                                                                         HTTPVersion:@"http/1.1"
+                                                                        headerFields:headers];
+                [self.context.client imageFetchDownload:self didReceiveURLResponse:response];
+                dispatch_async(self.context.downloadQueue, ^{
+                    [self.context.client imageFetchDownload:self didReceiveData:self.downloadData];
+                    dispatch_async(self.context.downloadQueue, ^{
+                        [self.context.client imageFetchDownload:self didCompleteWithError:self.downloadError];
+                    });
+                });
+            }
+        }];
+    });
+}
+
+- (void)cancelWithDescription:(NSString *)cancelDescription
+{
+    // noop
+}
+
+- (void)discardContext
+{
+    _context = nil;
+}
+
+@end
+
+@implementation TIPImagePipelineTestSuccessWithErrorDownloadProvider
+
+- (id<TIPImageFetchDownload>)imageFetchDownloadWithContext:(id<TIPImageFetchDownloadContext>)context
+{
+    return [[TIPImagePipelineTestSuccessWithErrorDownload alloc] initWithContext:context downloadData:self.downloadData downloadError:self.downloadError];
+}
+
+@end
+
+@implementation TIPImagePipelineTestProblemHandler
+
+- (void)tip_problemWasEncountered:(NSString *)problemName
+                         userInfo:(NSDictionary<NSString *, id> *)userInfo
+{
+    if ([self.problemToExpect isEqualToString:problemName]) {
+        self.problemUserInfoSeen = userInfo;
+        if (self.expectation) {
+            [self.expectation fulfill];
+        }
+    }
 }
 
 @end

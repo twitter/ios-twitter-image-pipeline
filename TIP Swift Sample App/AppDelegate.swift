@@ -6,6 +6,7 @@
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
+import TwitterImagePipeline
 import UIKit
 
 @UIApplicationMain
@@ -43,7 +44,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
 
     // MARK: UIApplicationDelegate functions
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool
     {
         let tipConfig = TIPGlobalConfiguration.sharedInstance()
         tipConfig.logger = self
@@ -175,8 +176,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
             levelString = "INF"
         case .debug:
             levelString = "DBG"
+        @unknown default:
+            fatalError("unknown objc TIPLogLevel enum (\(level))")
         }
-
         print("[\(levelString): \(message)")
     }
 

@@ -28,6 +28,7 @@ FOUNDATION_EXTERN BOOL TIPIsExtension(void);
 #define tip_available_ios_10    @available(iOS 10, tvOS 10, macOS 10.12, watchOS 3, *)
 #define tip_available_ios_11    @available(iOS 11, tvOS 11, macOS 10.13, watchOS 4, *)
 #define tip_available_ios_12    @available(iOS 12, tvOS 12, macOS 10.14, watchOS 5, *)
+#define tip_available_ios_13    @available(iOS 13, tvOS 13, macOS 10.15, watchOS 6, *)
 
 #pragma mark - Bitmask Helpers
 

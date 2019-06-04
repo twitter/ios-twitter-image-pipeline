@@ -6,7 +6,7 @@
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
-import Foundation
+import TwitterImagePipeline
 
 class TweetWithMediaTableViewCell: UITableViewCell, TIPImageViewFetchHelperDataSource, TIPImageViewFetchHelperDelegate {
 

@@ -1,0 +1,18 @@
+//
+//  TwitterImagePipeline.framework.ios.xcconfig
+//  TwitterImagePipeline
+//
+//  Created on 5/25/19.
+//  Copyright © 2019 Twitter. All rights reserved.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://help.apple.com/xcode/#/dev745c5c974
+
+#include "TwitterImagePipeline.framework.xcconfig"
+
+// Architectures
+SDKROOT = iphoneos
+
+// Deployment
+IPHONEOS_DEPLOYMENT_TARGET = 8.0

@@ -6,11 +6,11 @@
 //  Copyright © 2017 Twitter. All rights reserved.
 //
 
-#import <TwitterImagePipeline/TwitterImagePipeline.h>
 #import "TwitterAPI.h"
 
 @import Accounts;
 @import Social;
+@import TwitterImagePipeline;
 
 FOUNDATION_EXTERN NSString *TIPURLEncodeString(NSString *string);
 
@@ -80,6 +80,18 @@ FOUNDATION_EXTERN NSString *TIPURLEncodeString(NSString *string);
         return;
     }
 
+    NSInteger iOSMajorVersion = NSProcessInfo.processInfo.operatingSystemVersion.majorVersion;
+    if (iOSMajorVersion >= 11) { // for when assertions are disabled
+        NSString *reason = [NSString stringWithFormat:@"\n\n=== iOS %ld not supported ==="
+                                                       "\nThis TIP Sample App has not yet been upgraded to run on iOS 11 or later;"
+                                                       "\nit requires iOS Accounts.frameowrk access, which was removed in iOS 11."
+                                                       "\n===\n\n",
+                                                      (long)iOSMajorVersion];
+        @throw [NSException exceptionWithName:@"TIPSampleAppRunningOnUnsupportedOSVersion"
+                                       reason:reason
+                                     userInfo:@{@"OSVersion": NSProcessInfo.processInfo.operatingSystemVersionString}];
+    }
+#if __IPHONE_11_0 > __IPHONE_OS_VERSION_MIN_REQUIRED
     NSLog(@"Accessing Twitter Account...");
     id<TwitterAPIDelegate> delegate = self.delegate;
     if ([delegate respondsToSelector:@selector(APIWorkStarted:)]) {
@@ -109,6 +121,7 @@ FOUNDATION_EXTERN NSString *TIPURLEncodeString(NSString *string);
             }
         });
     }];
+#endif
 }
 
 - (void)searchForTerm:(NSString *)term count:(NSUInteger)count complete:(void (^)(NSArray<TweetInfo *> *, NSError *))complete

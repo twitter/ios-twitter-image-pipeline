@@ -730,27 +730,27 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
 
 #pragma mark Decode Methods
 
-+ (nullable UIImage *)tip_thumbnailImageWithFileURL:(NSURL *)fileURL
-                          thumbnailMaximumDimension:(CGFloat)thumbnailMaximumDimension
+static NSDictionary * __nonnull _ThumbnailOptions(CGFloat thumbnailMaximumDimension);
+static NSDictionary * __nonnull _ThumbnailOptions(CGFloat thumbnailMaximumDimension)
 {
-    if (!fileURL.isFileURL) {
-        return nil;
-    }
+    return @{
+             (id)kCGImageSourceShouldCache : (id)kCFBooleanFalse,
+             (id)kCGImageSourceThumbnailMaxPixelSize : @(thumbnailMaximumDimension),
+             (id)kCGImageSourceCreateThumbnailFromImageAlways : (id)kCFBooleanTrue,
+             (id)kCGImageSourceShouldAllowFloat : (id)kCFBooleanTrue,
+             (id)kCGImageSourceCreateThumbnailWithTransform : (id)kCFBooleanTrue,
+             };
+}
 
-    NSDictionary *options = @{
-                              (id)kCGImageSourceShouldCache : (id)kCFBooleanFalse,
-                              (id)kCGImageSourceThumbnailMaxPixelSize : @(thumbnailMaximumDimension),
-                              (id)kCGImageSourceCreateThumbnailFromImageAlways : (id)kCFBooleanTrue,
-                              (id)kCGImageSourceShouldAllowFloat : (id)kCFBooleanTrue,
-                              (id)kCGImageSourceCreateThumbnailWithTransform : (id)kCFBooleanTrue,
-                              };
-    CGImageSourceRef imageSource = CGImageSourceCreateWithURL((CFURLRef)fileURL, (CFDictionaryRef)options);
++ (nullable UIImage *)tip_thumbnailImageWithImageSource:(CGImageSourceRef)imageSource
+                              thumbnailMaximumDimension:(CGFloat)thumbnailMaximumDimension
+{
     if (!imageSource) {
         return nil;
     }
 
+    NSDictionary *options = _ThumbnailOptions(thumbnailMaximumDimension);
     CGImageRef imageRef = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, (CFDictionaryRef)options);
-    CFRelease(imageSource);
     if (!imageRef) {
         return nil;
     }
@@ -758,6 +758,40 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
     UIImage *image = [UIImage imageWithCGImage:imageRef scale:(CGFloat)1.f orientation:UIImageOrientationUp];
     CFRelease(imageRef);
     return image;
+}
+
++ (nullable UIImage *)tip_thumbnailImageWithData:(NSData *)data
+                       thumbnailMaximumDimension:(CGFloat)thumbnailMaximumDimension
+{
+    if (0 == data.length) {
+        return nil;
+    }
+
+    NSDictionary *options = _ThumbnailOptions(thumbnailMaximumDimension);
+    CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)data, (CFDictionaryRef)options);
+    if (!imageSource) {
+        return nil;
+    }
+    TIPDeferRelease(imageSource);
+    return [self tip_thumbnailImageWithImageSource:imageSource
+                         thumbnailMaximumDimension:thumbnailMaximumDimension];
+}
+
++ (nullable UIImage *)tip_thumbnailImageWithFileURL:(NSURL *)fileURL
+                          thumbnailMaximumDimension:(CGFloat)thumbnailMaximumDimension
+{
+    if (!fileURL.isFileURL) {
+        return nil;
+    }
+
+    NSDictionary *options = _ThumbnailOptions(thumbnailMaximumDimension);
+    CGImageSourceRef imageSource = CGImageSourceCreateWithURL((CFURLRef)fileURL, (CFDictionaryRef)options);
+    if (!imageSource) {
+        return nil;
+    }
+    TIPDeferRelease(imageSource);
+    return [self tip_thumbnailImageWithImageSource:imageSource
+                         thumbnailMaximumDimension:thumbnailMaximumDimension];
 }
 
 + (nullable UIImage *)tip_imageWithAnimatedImageFile:(NSString *)filePath

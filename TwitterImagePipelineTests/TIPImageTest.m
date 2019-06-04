@@ -1104,8 +1104,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
     // Smaller target
     targetDimensions = sImageContainer.dimensions;
-    targetDimensions.width /= 2.0;
-    targetDimensions.height /= 2.0;
+    targetDimensions.width /= 2.f;
+    targetDimensions.height /= 2.f;
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeCenter]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeTopLeft]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeRedraw]);
@@ -1115,8 +1115,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
     // Larger target
     targetDimensions = sImageContainer.dimensions;
-    targetDimensions.width *= 2.0;
-    targetDimensions.height *= 2.0;
+    targetDimensions.width *= 2.f;
+    targetDimensions.height *= 2.f;
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeCenter]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeTopLeft]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeRedraw]);
@@ -1126,7 +1126,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
     // Larger height
     targetDimensions = sImageContainer.dimensions;
-    targetDimensions.height *= 2.0;
+    targetDimensions.height *= 2.f;
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeCenter]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeTopLeft]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeRedraw]);
@@ -1136,7 +1136,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
     // Smaller height
     targetDimensions = sImageContainer.dimensions;
-    targetDimensions.height /= 2.0;
+    targetDimensions.height /= 2.f;
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeCenter]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeTopLeft]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeRedraw]);
@@ -1146,7 +1146,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
     // Larger width
     targetDimensions = sImageContainer.dimensions;
-    targetDimensions.width *= 2.0;
+    targetDimensions.width *= 2.f;
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeCenter]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeTopLeft]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeRedraw]);
@@ -1156,7 +1156,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
     // Smaller width
     targetDimensions = sImageContainer.dimensions;
-    targetDimensions.width /= 2.0;
+    targetDimensions.width /= 2.f;
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeCenter]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeTopLeft]);
     XCTAssertFalse([sImageContainer.image tip_matchesTargetDimensions:targetDimensions contentMode:UIViewContentModeRedraw]);
@@ -1222,8 +1222,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     @autoreleasepool {
         // Larger size
         targetDimensions = imageDimensions;
-        targetDimensions.width *= 2.0;
-        targetDimensions.height *= 2.0;
+        targetDimensions.width *= 2.f;
+        targetDimensions.height *= 2.f;
         scaledImage = [sImageContainer.image tip_scaledImageWithTargetDimensions:targetDimensions contentMode:UIViewContentModeScaleToFill];
         scaledDimensions = [scaledImage tip_dimensions];
         XCTAssertEqualWithAccuracy(targetDimensions.height, scaledDimensions.height, (CGFloat)0.0);
@@ -1265,7 +1265,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     @autoreleasepool {
         // Larger width
         targetDimensions = imageDimensions;
-        targetDimensions.width *= 2.0;
+        targetDimensions.width *= 2.f;
         scaledImage = [sImageContainer.image tip_scaledImageWithTargetDimensions:targetDimensions contentMode:UIViewContentModeScaleToFill];
         scaledDimensions = [scaledImage tip_dimensions];
         XCTAssertEqualWithAccuracy(targetDimensions.height, scaledDimensions.height, (CGFloat)0.0);
@@ -1307,7 +1307,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     @autoreleasepool {
         // Larger height
         targetDimensions = imageDimensions;
-        targetDimensions.height *= 2.0;
+        targetDimensions.height *= 2.f;
         scaledImage = [sImageContainer.image tip_scaledImageWithTargetDimensions:targetDimensions contentMode:UIViewContentModeScaleToFill];
         scaledDimensions = [scaledImage tip_dimensions];
         XCTAssertEqualWithAccuracy(targetDimensions.height, scaledDimensions.height, (CGFloat)0.0);

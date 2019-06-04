@@ -28,6 +28,7 @@ NSString * const TIPProblemImageFetchHasInvalidTargetDimensions = @"TIPProblemIm
 NSString * const TIPProblemImageDownloadedHasGPSInfo = @"TIPProblemImageDownloadedHasGPSInfo";
 NSString * const TIPProblemImageDownloadedCouldNotBeDecoded = @"TIPProblemImageDownloadedCouldNotBeDecoded";
 NSString * const TIPProblemImageTooLargeToStoreInDiskCache = @"TIPProblemImageTooLargeToStoreInDiskCache";
+NSString * const TIPProblemImageDownloadedWithUnnecessaryError = @"TIPProblemImageDownloadedWithUnnecessaryError";
 
 #pragma mark Problem User Info Keys
 

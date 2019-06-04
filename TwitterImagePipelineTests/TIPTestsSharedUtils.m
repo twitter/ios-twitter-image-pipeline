@@ -2,12 +2,11 @@
 //  TIPTestsSharedUtils.m
 //  TwitterImagePipeline
 //
-//  Created by Nolan on 8/30/18.
+//  Created on 8/30/18.
 //  Copyright © 2018 Twitter. All rights reserved.
 //
 
 #import "TIP_Project.h"
-//#import "TIPGlobalConfiguration+Project.h"
 #import "TIPImageDiskCache.h"
 #import "TIPImageFetchOperation+Project.h"
 #import "TIPImageMemoryCache.h"

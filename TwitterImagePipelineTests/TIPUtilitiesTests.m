@@ -155,4 +155,39 @@
 }
 #endif
 
+- (void)testThumbnail
+{
+    NSString *imagePath = [TIPTestsResourceBundle() pathForResource:@"1538x2048" ofType:@"jpg"];
+    const NSUInteger targetDimension = 512;
+    CGSize targetDimensions = CGSizeMake(targetDimension, targetDimension);
+    UIViewContentMode targetContentMode = UIViewContentModeScaleAspectFit;
+
+    UIImage *scaledImageFromFullImage;
+    @autoreleasepool {
+        scaledImageFromFullImage = [UIImage imageWithData:[NSData dataWithContentsOfFile:imagePath]];
+        [scaledImageFromFullImage tip_decode];
+        scaledImageFromFullImage = [scaledImageFromFullImage tip_scaledImageWithTargetDimensions:targetDimensions contentMode:targetContentMode decode:YES];
+    }
+
+    UIImage *thumbnailImageFromData;
+    @autoreleasepool {
+        thumbnailImageFromData = [UIImage tip_thumbnailImageWithData:[NSData dataWithContentsOfFile:imagePath]
+                                           thumbnailMaximumDimension:targetDimension];
+        [thumbnailImageFromData tip_decode];
+    }
+
+    UIImage *thumbnailImageFromFile;
+    @autoreleasepool {
+        thumbnailImageFromFile = [UIImage tip_thumbnailImageWithFileURL:[NSURL fileURLWithPath:imagePath]
+                                              thumbnailMaximumDimension:targetDimension];
+        [thumbnailImageFromFile tip_decode];
+    }
+
+    XCTAssertEqualWithAccuracy(scaledImageFromFullImage.tip_dimensions.width, thumbnailImageFromData.tip_dimensions.width, 1.5);
+    XCTAssertEqualWithAccuracy(scaledImageFromFullImage.tip_dimensions.height, thumbnailImageFromData.tip_dimensions.height, 1.5);
+
+    XCTAssertEqualWithAccuracy(scaledImageFromFullImage.tip_dimensions.width, thumbnailImageFromFile.tip_dimensions.width, 1.5);
+    XCTAssertEqualWithAccuracy(scaledImageFromFullImage.tip_dimensions.height, thumbnailImageFromFile.tip_dimensions.height, 1.5);
+}
+
 @end

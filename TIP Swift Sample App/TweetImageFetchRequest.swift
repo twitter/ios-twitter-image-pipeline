@@ -26,6 +26,8 @@
 //    VariantInfo.init(kLARGE, dimensions: 2048)
 //]
 
+import TwitterImagePipeline
+
 class TweetImageFetchRequest: NSObject, TIPImageFetchRequest {
 
     var forcePlaceholder: Bool
@@ -34,7 +36,8 @@ class TweetImageFetchRequest: NSObject, TIPImageFetchRequest {
     private var internalImageURL: URL?
 
     @objc var targetDimensions: CGSize
-    @objc var targetContentMode: UIViewContentMode
+
+    @objc var targetContentMode: UIView.ContentMode
 
     @objc var imageIdentifier: String? {
         return self.tweetImageInfo.baseURLString

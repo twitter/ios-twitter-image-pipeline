@@ -72,7 +72,7 @@
     [_imageView addGestureRecognizer:_doubleTapGuestureRecognizer];
     _imageView.userInteractionEnabled = YES;
     _scrollView.delegate = self;
-    _scrollView.minimumZoomScale = 0.01; // start VERY small
+    _scrollView.minimumZoomScale = 0.01f; // start VERY small
     _scrollView.maximumZoomScale = 2.0;
     _scrollView.contentSize = targetSize;
 
@@ -113,10 +113,10 @@
 
 - (void)scrollViewDidZoom:(UIScrollView *)scrollView
 {
-    CGFloat offsetX = MAX((scrollView.bounds.size.width - scrollView.contentInset.left - scrollView.contentInset.right - scrollView.contentSize.width) * 0.5, 0.0);
-    CGFloat offsetY = MAX((scrollView.bounds.size.height - scrollView.contentInset.top - scrollView.contentInset.bottom - scrollView.contentSize.height) * 0.5, 0.0);
+    CGFloat offsetX = MAX((scrollView.bounds.size.width - scrollView.contentInset.left - scrollView.contentInset.right - scrollView.contentSize.width) * 0.5f, 0.f);
+    CGFloat offsetY = MAX((scrollView.bounds.size.height - scrollView.contentInset.top - scrollView.contentInset.bottom - scrollView.contentSize.height) * 0.5f, 0.f);
 
-    _imageView.center = CGPointMake(scrollView.contentSize.width * 0.5 + offsetX, scrollView.contentSize.height * 0.5 + offsetY);
+    _imageView.center = CGPointMake(scrollView.contentSize.width * 0.5f + offsetX, scrollView.contentSize.height * 0.5f + offsetY);
 }
 
 #pragma mark Double tap

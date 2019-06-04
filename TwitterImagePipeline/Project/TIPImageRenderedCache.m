@@ -115,7 +115,7 @@ sourceImageDimensions:(CGSize)sourceDims;
 
 - (void)clearAllImages:(nullable void (^)(void))completion
 {
-    if (![NSThread mainThread]) {
+    if (![NSThread isMainThread]) {
         [self performSelectorOnMainThread:_cmd
                                withObject:completion
                             waitUntilDone:NO];
