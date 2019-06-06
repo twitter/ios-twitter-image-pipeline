@@ -52,8 +52,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         tipConfig.isClearMemoryCachesOnApplicationBackgroundEnabled = true
         tipConfig.add(self)
 
+#if !targetEnvironment(UIKitForMac)
         let catalogue = TIPImageCodecCatalogue.sharedInstance()
         catalogue.setCodec(TIPXWebPCodec.init(), forImageType: TIPXImageTypeWebP)
+#endif
 
         self.imagePipeline = TIPImagePipeline(identifier: "Twitter.Example")
         self.imagePipeline?.additionalCaches = [self]

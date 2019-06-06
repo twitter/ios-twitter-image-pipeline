@@ -226,10 +226,20 @@ static NSString *ModelName()
                     format = [UIGraphicsImageRendererFormat defaultFormat];
                 }
                 format.opaque = !hasAlpha;
-                if (RenderBehaviorModernForcePrefersWideColorNo == behavior) {
-                    format.prefersExtendedRange = NO;
-                } else if (RenderBehaviorModernForcePrefersWideColorYes == behavior) {
-                    format.prefersExtendedRange = YES;
+                if (@available(iOS 12, *)) {
+                    if (RenderBehaviorModernForcePrefersWideColorNo == behavior) {
+                        format.preferredRange = UIGraphicsImageRendererFormatRangeStandard;
+                    } else if (RenderBehaviorModernForcePrefersWideColorYes == behavior) {
+                        format.preferredRange = UIGraphicsImageRendererFormatRangeExtended;
+                    }
+#if !TARGET_OS_UIKITFORMAC
+                } else {
+                    if (RenderBehaviorModernForcePrefersWideColorNo == behavior) {
+                        format.prefersExtendedRange = NO;
+                    } else if (RenderBehaviorModernForcePrefersWideColorYes == behavior) {
+                        format.prefersExtendedRange = YES;
+                    }
+#endif
                 }
                 format.scale = scale;
             }

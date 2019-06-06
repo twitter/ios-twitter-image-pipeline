@@ -99,6 +99,7 @@ FOUNDATION_EXTERN NSString * const TIPImageTypeAVCI;
  PICT (QuickDraw image)
  Not supported by __TIP__ by default,
  a custom `TIPImageCodec` would be required to add support.
+ @note PICT images _ARE_ supported on UIKitForMac
  */
 FOUNDATION_EXTERN NSString * const TIPImageTypePICT;
 /**

@@ -22,7 +22,9 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     [TIPGlobalConfiguration sharedInstance].logger = self;
+#if !TARGET_OS_UIKITFORMAC
     [TIPImageCodecCatalogue sharedInstance][TIPXImageTypeWebP] = [[TIPXWebPCodec alloc] init];
+#endif
     return YES;
 }
 

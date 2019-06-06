@@ -80,13 +80,11 @@ FOUNDATION_EXTERN NSString *TIPURLEncodeString(NSString *string);
         return;
     }
 
-    NSInteger iOSMajorVersion = NSProcessInfo.processInfo.operatingSystemVersion.majorVersion;
-    if (iOSMajorVersion >= 11) { // for when assertions are disabled
-        NSString *reason = [NSString stringWithFormat:@"\n\n=== iOS %ld not supported ==="
-                                                       "\nThis TIP Sample App has not yet been upgraded to run on iOS 11 or later;"
-                                                       "\nit requires iOS Accounts.frameowrk access, which was removed in iOS 11."
-                                                       "\n===\n\n",
-                                                      (long)iOSMajorVersion];
+    if (@available(iOS 11, *)) { // for when assertions are disabled
+        NSString *reason = @"\n\n=== Current iOS not supported ==="
+                            "\nThis TIP Sample App has not yet been upgraded to run on iOS 11 or later;"
+                            "\nit requires iOS Accounts.framework access, which was removed in iOS 11."
+                            "\n===\n\n";
         @throw [NSException exceptionWithName:@"TIPSampleAppRunningOnUnsupportedOSVersion"
                                        reason:reason
                                      userInfo:@{@"OSVersion": NSProcessInfo.processInfo.operatingSystemVersionString}];
@@ -151,7 +149,10 @@ FOUNDATION_EXTERN NSString *TIPURLEncodeString(NSString *string);
                                  @"adc" : @"phone",
                                  @"q" : term,
                                  };
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         SLRequest *request = [SLRequest requestForServiceType:SLServiceTypeTwitter requestMethod:SLRequestMethodGET URL:requestURL parameters:params];
+#pragma clang diagnostic pop
         request.account = _account;
         preparedRequest = request.preparedURLRequest;
     }

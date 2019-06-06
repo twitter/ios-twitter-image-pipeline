@@ -6,6 +6,10 @@
 //  Copyright © 2016 Twitter. All rights reserved.
 //
 
+#include <TargetConditionals.h>
+
+#if !TARGET_OS_UIKITFORMAC
+
 #import <Accelerate/Accelerate.h>
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
 #import <WebP/decode.h>
@@ -583,3 +587,5 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 }
 
 NS_ASSUME_NONNULL_END
+
+#endif // #if !TARGET_OS_UIKITFORMAC

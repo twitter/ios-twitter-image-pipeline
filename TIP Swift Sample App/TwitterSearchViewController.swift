@@ -260,8 +260,28 @@ class TwitterSearchViewController: UIViewController, UISearchResultsUpdating, UI
     {
     }
 
+#if targetEnvironment(UIKitForMac)
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String)
+    {
+        NSObject.cancelPreviousPerformRequests(withTarget: self)
+        self.perform(#selector(_triggerSearch),
+                     with: nil,
+                     afterDelay: 0.5)
+    }
+#endif
+
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar)
     {
+        self._triggerSearch()
+    }
+
+    @objc
+    func _triggerSearch()
+    {
+        guard let searchBar = self.searchController?.searchBar else {
+            return
+        }
+
         let search = searchBar.text
         self.term = search
         self.searchController!.isActive = false

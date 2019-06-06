@@ -313,7 +313,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     for (NSUInteger i = 0; i < 5; i++) {
         @autoreleasepool {
             float quality = 1.0f - ((i % 10) / 10.0f);
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS && !TARGET_OS_UIKITFORMAC
             if (type == TIPXImageTypeWebP && quality > .99f) {
                 // Lossless WebP is super slow,
                 // drop down to 99% in order to give WebP a fighting chance
@@ -676,7 +676,11 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testXLoadPICT
 {
+#if TARGET_OS_UIKITFORMAC
+    [self runLoadTestForReadOnlyFormat:@"pict" imageType:TIPImageTypePICT];
+#else
     [self runLoadTestForUnreadableFormat:@"pict"];
+#endif
 }
 
 - (void)testSpeedPICT
@@ -763,7 +767,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     // unsupported with read only format
 }
 
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS && !TARGET_OS_UIKITFORMAC
 - (void)testSaveWebP
 {
     XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:TIPXImageTypeWebP]);
@@ -779,7 +783,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 }
 #endif
 
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS && !TARGET_OS_UIKITFORMAC
 - (void)testXLoadWebP
 {
     [self runLoadTestForUnreadableFormat:@"webp"];
@@ -795,7 +799,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 }
 #endif
 
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS && !TARGET_OS_UIKITFORMAC
 - (void)testSpeedWebP
 {
     XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:@"webp"]);
@@ -1029,7 +1033,11 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(@"com.canon.cr2-raw-image"));
 #endif
 
+#if TARGET_OS_UIKITFORMAC
+    XCTAssertTrue(TIPImageTypeCanReadWithImageIO(TIPImageTypePICT));
+#else
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypePICT));
+#endif
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeQTIF));
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypeRAW));
 

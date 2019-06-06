@@ -40,7 +40,9 @@
     [TIPGlobalConfiguration sharedInstance].serializeCGContextAccess = YES;
     [TIPGlobalConfiguration sharedInstance].clearMemoryCachesOnApplicationBackgroundEnabled = YES;
     [[TIPGlobalConfiguration sharedInstance] addImagePipelineObserver:self];
+#if !TARGET_OS_UIKITFORMAC
     [[TIPImageCodecCatalogue sharedInstance] setCodec:[[TIPXWebPCodec alloc] init] forImageType:TIPXImageTypeWebP];
+#endif
     _imagePipeline = [[TIPImagePipeline alloc] initWithIdentifier:@"Twitter.Example"];
     _imagePipeline.additionalCaches = @[self];
     [TwitterAPI sharedInstance].delegate = self;
@@ -88,14 +90,18 @@
 - (void)_private_incrementNetworkOperations
 {
     if ((++_opCount) > 0) {
+#if !TARGET_OS_UIKITFORMAC
         [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+#endif
     }
 }
 
 - (void)_private_decrementNetworkOperations
 {
     if ((--_opCount) <= 0) {
+#if !TARGET_OS_UIKITFORMAC
         [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+#endif
     }
 }
 

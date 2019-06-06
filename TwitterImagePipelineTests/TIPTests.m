@@ -47,9 +47,12 @@ NSBundle *TIPTestsResourceBundle(void)
             for (NSBundle *innerBundle in [NSBundle allBundles]) {
                 if ([innerBundle.bundlePath hasSuffix:@".xctest"]) {
                     bundle = [NSBundle bundleWithPath:[innerBundle.bundlePath stringByAppendingPathComponent:@"TIPTestsResources.bundle"]];
-                    if (bundle) {
-                        break;
+                    if (!bundle) {
+                        bundle = [NSBundle bundleWithPath:[innerBundle.resourcePath stringByAppendingPathComponent:@"TIPTestsResources.bundle"]];
                     }
+                }
+                if (bundle) {
+                    break;
                 }
             }
         }

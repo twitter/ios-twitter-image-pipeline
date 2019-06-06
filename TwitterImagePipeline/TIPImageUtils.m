@@ -40,7 +40,11 @@ static CGSize TIPDetectImageDataProviderDimensions(CGDataProviderRef dataProvide
         if (tip_available_ios_12) {
             _prefersExtendedRange = (format.preferredRange == UIGraphicsImageRendererFormatRangeExtended);
         } else {
+#if TARGET_OS_UIKITFORMAC
+            TIPAssertNever();
+#else
             _prefersExtendedRange = format.prefersExtendedRange;
+#endif
         }
         _opaque = format.opaque;
         _scale = format.scale;
@@ -454,9 +458,14 @@ static UIImage * __nullable _TIPRenderImageModern(UIImage * __nullable sourceIma
             }
             if (tip_available_ios_12) {
                 format.preferredRange = (formatInternal.prefersExtendedRange) ? UIGraphicsImageRendererFormatRangeExtended : UIGraphicsImageRendererFormatRangeStandard;
-                format.prefersExtendedRange = formatInternal.prefersExtendedRange;
+#if !TARGET_OS_UIKITFORMAC
+                if (tip_available_ios_13) {
+                } else {
+                    format.prefersExtendedRange = formatInternal.prefersExtendedRange;
+                }
             } else {
                 format.prefersExtendedRange = formatInternal.prefersExtendedRange;
+#endif
             }
             if (format.scale != formatInternal.scale) {
                 format.scale = (formatInternal.scale == 0.0) ? [UIScreen mainScreen].scale : formatInternal.scale;

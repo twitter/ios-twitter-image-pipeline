@@ -6,6 +6,10 @@
 //  Copyright © 2016 Twitter. All rights reserved.
 //
 
+#include <TargetConditionals.h>
+
+#if !TARGET_OS_UIKITFORMAC
+
 #import <TwitterImagePipeline/TIPImageCodecs.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -27,3 +31,5 @@ FOUNDATION_EXTERN NSString * const TIPXImageTypeWebP;
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif // #if !TARGET_OS_UIKITFORMAC

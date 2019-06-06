@@ -115,8 +115,24 @@
 {
 }
 
+#if TARGET_OS_UIKITFORMAC
+- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText
+{
+    [NSObject cancelPreviousPerformRequestsWithTarget:self];
+    [self performSelector:@selector(_triggerSearch)
+               withObject:nil
+               afterDelay:0.5];
+}
+#endif
+
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar
 {
+    [self _triggerSearch];
+}
+
+- (void)_triggerSearch
+{
+    UISearchBar *searchBar = self.searchController.searchBar;
     NSString *search = searchBar.text;
     _term = search;
     _searchController.active = NO;
