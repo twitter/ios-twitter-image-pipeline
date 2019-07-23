@@ -227,7 +227,7 @@ populate with images.
 
     /* category on TIPImagePipeline */
 
-    - (TIPImagePipeline *)my_imagePipeline
+    + (TIPImagePipeline *)my_imagePipeline
     {
         static TIPImagePipeline *sPipeline;
         static dispatch_once_t sOnceToken;
