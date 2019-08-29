@@ -23,7 +23,7 @@ images was the best route and led to *TIP*.
   - PJPEG images happen to be 10% smaller (on average) than their non-progressive counterparts
   - PJPEG is hardware decodable on iOS devices, just like non-progressive JPEG images
 - Resumable download support
-  - If an image load is terminated (via failure or cancellation) when an image is partially loaded, the next load of that image should resume from where it left off saving on bytes needing to be transfered
+  - If an image load is terminated (via failure or cancellation) when an image is partially loaded, the next load of that image should resume from where it left off saving on bytes needing to be transferred
   - Has a compounding benefit with Progressive JPEG as resuming an image that is partially loaded can render to screen with a progressive scan immediately while remaining bytes can be loaded to improve the quality
 - Support programmatically/manually storing images to the cache(s)
   - By being able to store images to the underlying cache(s), cases where images are uploaded can have those images in cache at the right location without having to make a fetch.  (Ex// Post a Tweet with an image, that image can be stored to the cache before it is ever seen in the timeline making the timeline's fetch of that image immediate and avoids hitting the network.)
