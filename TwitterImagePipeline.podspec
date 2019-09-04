@@ -11,12 +11,7 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '8.0'
 
   s.subspec 'Default' do |sp|
-    sp.source_files = 'TwitterImagePipeline/**/*'
-    sp.public_header_files = 'TwitterImagePipeline/*.h'
-  end
-
-  s.subspec 'ObjC' do |sp|
-    sp.source_files = 'TwitterImagePipeline/**/*.{h,m,c,cpp,mm}'
+    sp.source_files = 'TwitterImagePipeline/**/*.{h,m}'
     sp.public_header_files = 'TwitterImagePipeline/*.h'
   end
 
