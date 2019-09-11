@@ -30,6 +30,20 @@ NS_ASSUME_NONNULL_BEGIN
     return _delegates.count;
 }
 
+- (void)reset
+{
+    TIPAssert(!_flags.didComplete);
+    TIPAssert(!_progressStateError);
+
+    _response = nil;
+    _contentLength = 0;
+
+    _hydratedRequest = nil;
+    _authorization = nil;
+
+    memset(&_flags, 0, sizeof(_flags));
+}
+
 - (nullable TIPImageFetchOperation *)associatedImageFetchOperation
 {
     for (id<TIPImageDownloadDelegate> delegate in _delegates) {

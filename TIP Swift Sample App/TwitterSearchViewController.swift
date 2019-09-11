@@ -260,7 +260,7 @@ class TwitterSearchViewController: UIViewController, UISearchResultsUpdating, UI
     {
     }
 
-#if targetEnvironment(UIKitForMac)
+#if targetEnvironment(macCatalyst)
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String)
     {
         NSObject.cancelPreviousPerformRequests(withTarget: self)

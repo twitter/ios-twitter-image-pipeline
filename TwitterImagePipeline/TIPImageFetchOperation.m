@@ -64,6 +64,7 @@ static NSQualityOfService ConvertNSOperationQueuePriorityToQualityOfService(NSOp
 @property (nonatomic) TIPImageFetchOptions imageDownloadOptions;
 @property (nonatomic) NSTimeInterval imageDownloadTTL;
 @property (nonatomic, nullable, copy) TIPImageFetchHydrationBlock imageDownloadHydrationBlock;
+@property (nonatomic, nullable, copy) TIPImageFetchAuthorizationBlock imageDownloadAuthorizationBlock;
 @property (nonatomic, nullable, copy) NSDictionary<NSString *, id> *decoderConfigMap;
 
 // Manually set
@@ -1088,6 +1089,7 @@ static void _background_extractAdvancedRequestInfo(SELF_ARG)
     }
 
     self->_networkContext.imageDownloadRequest.imageDownloadHydrationBlock = [self->_request respondsToSelector:@selector(imageRequestHydrationBlock)] ? self->_request.imageRequestHydrationBlock : nil;
+    self->_networkContext.imageDownloadRequest.imageDownloadAuthorizationBlock = [self->_request respondsToSelector:@selector(imageRequestAuthorizationBlock)] ? self->_request.imageRequestAuthorizationBlock : nil;
     self->_progressiveLoadingPolicies = nil;
     id<TIPImageFetchDelegate> delegate = self.delegate;
     if ([delegate respondsToSelector:@selector(tip_imageFetchOperation:shouldLoadProgressivelyWithIdentifier:URL:imageType:originalDimensions:)]) {

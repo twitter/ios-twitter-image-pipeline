@@ -105,6 +105,9 @@ FOUNDATION_EXTERN NSString * const TIPImageFetchDownloadConstructorExceptionName
 /** Block for hydration completion that provides `nil` on success or an `NSError` on failure */
 typedef void(^TIPImageFetchDownloadRequestHydrationCompleteBlock)(NSError * __nullable error);
 
+/** Block for authorization completion that provides `nil` on success and an `NSError` on failure */
+typedef void(^TIPImageFetchDownloadRequestAuthorizationCompleteBlock)(NSError * __nullable error);
+
 /**
  The client for the `TIPImageFetchDownload` to call to as it executes on downloading the image.
  Calling these methods is required and they must be called in order with the exception of
@@ -127,7 +130,7 @@ typedef void(^TIPImageFetchDownloadRequestHydrationCompleteBlock)(NSError * __nu
  Call this method from your `TIPImageFetchDownload` implementation before executing on the network
  load so that `[TIPImageFetchContext hydratedRequest]` can be populated.
  This method MUST be called after `imageFetchDownloadDidStart:`.
- This method MUST be called (and permitted to complete) before other methods can be called.
+ This method MUST be called before `imageFetchDownload:authorizeRequest:completion:`.
  @param download The download that is hydrating
  @param request The `NSURLRequest` being hydrated (MUST match
  `[TIPImageFetchDownloadContext originalRequest]`)
@@ -139,6 +142,23 @@ typedef void(^TIPImageFetchDownloadRequestHydrationCompleteBlock)(NSError * __nu
 - (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
             hydrateRequest:(NSURLRequest *)request
                 completion:(TIPImageFetchDownloadRequestHydrationCompleteBlock)complete;
+
+/**
+ Call this method from your `TIPImageFetchDownload` implementation before executing on the network
+ load so that `[TIPImageFetchContext hydratedRequest]` can be populated.
+ This method MUST be called after `imageFetchDownload:hydrateRequest:completion:`
+ This method MUST be called (and permitted to complete) before other methods can be called.
+ @param download The download that is authorizing
+ @param request The `NSURLRequest` being authorized (SHOULD match
+ `[TIPImageFetchDownloadContext hydratedRequest]`, but can be further modified)
+ @param complete The completion block to be called when authorization has finished.
+ _error_ will be `nil` on success, otherwise the download can be treated as a failure and
+ `imageFetchDownload:didCompleteWithError:` needs to be called at some point (passing along the
+ _error_)
+ */
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
+          authorizeRequest:(NSURLRequest *)request
+                completion:(TIPImageFetchDownloadRequestAuthorizationCompleteBlock)complete;
 
 /**
  Call this method from your `TIPImageFetchDownload` once the `NSHTTPResponse` has been received from
@@ -156,6 +176,14 @@ typedef void(^TIPImageFetchDownloadRequestHydrationCompleteBlock)(NSError * __nu
  */
 - (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
             didReceiveData:(NSData *)data;
+
+/**
+ Call this method from your `TIPImageFetchDownload` if the download needs to be retried.
+ This call will reset the state of this `TIPImageFetchDownloadClient` and its `TIPImageFetchDownloadContext`.
+ Can call this method anytime except if `imageFetchDownload:didCompleteWithError:` has been called.
+ @param download The download that will retry.
+ */
+- (void)imageFetchDownloadWillRetry:(id<TIPImageFetchDownload>)download;
 
 /**
  Call this method from your `TIPImageFetchDownload` when the download has completed.
@@ -188,7 +216,16 @@ typedef void(^TIPImageFetchDownloadRequestHydrationCompleteBlock)(NSError * __nu
  This request will be populated after the `TIPImageFetchDownloadClient` hydrates the
  _originalRequest_ for the download.
  */
-@property (nonatomic, readonly, copy) NSURLRequest *hydratedRequest;
+@property (nonatomic, readonly, copy, nullable) NSURLRequest *hydratedRequest;
+
+/**
+ The _Authorization_ for the download.
+ This value will be populated after the `TIPImageFetchDownloadClient` authorizes the _hydratedRequest_.
+ @note The value is not populated onto the _hydratedRequest_.
+ Apply the value to be the authorization of your request in whatever mechanism best serves your
+ loading system.
+ */
+@property (nonatomic, readonly, copy, nullable) NSString *authorization;
 
 /**
  The client instance to call from the `TIPImageFetchDownload` implementation as the download loads.

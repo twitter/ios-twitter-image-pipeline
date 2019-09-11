@@ -64,11 +64,21 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (id)tip_copyToMutable:(BOOL)mutable uppercase:(BOOL)uppercase
 {
-    NSMutableDictionary *d = [[NSMutableDictionary alloc] init];
+    NSMutableDictionary *replacementDict = nil;
+
     for (NSString *key in self) {
-        d[(uppercase) ? key.uppercaseString : key.lowercaseString] = self[key];
+        NSString *updatedKey = uppercase ? [key uppercaseString] : [key lowercaseString];
+        if (![key isEqualToString:updatedKey]) {
+            if (!replacementDict) {
+                replacementDict = [self mutableCopy];
+            }
+
+            [replacementDict removeObjectForKey:key];
+            replacementDict[updatedKey] = self[key];
+        }
     }
-    return (mutable) ? d : [d copy];
+
+    return replacementDict ?: (mutable ? [self mutableCopy] : [self copy]);
 }
 
 @end

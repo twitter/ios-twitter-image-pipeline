@@ -25,6 +25,7 @@ FOUNDATION_EXTERN NSString * const TIPImageTypeJPEG;
  JPEG-2000 has a way of being encoded progressively (numerous ways actually).
  Progressive encoding/decoding _is not_ supported by __TIP__ by default,
  a custom `TIPImageCodec` would be required to add progressive support.
+ @warning Apple has announced JPEG2000 support is deprecated as of iOS 13 & macOS 10.15... use at your own risk.
  */
 FOUNDATION_EXTERN NSString * const TIPImageTypeJPEG2000;
 /**
@@ -99,7 +100,7 @@ FOUNDATION_EXTERN NSString * const TIPImageTypeAVCI;
  PICT (QuickDraw image)
  Not supported by __TIP__ by default,
  a custom `TIPImageCodec` would be required to add support.
- @note PICT images _ARE_ supported on UIKitForMac
+ @note PICT images _ARE_ supported on TARGET_OS_MACCATALYST
  */
 FOUNDATION_EXTERN NSString * const TIPImageTypePICT;
 /**

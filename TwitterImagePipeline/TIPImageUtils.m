@@ -40,7 +40,7 @@ static CGSize TIPDetectImageDataProviderDimensions(CGDataProviderRef dataProvide
         if (tip_available_ios_12) {
             _prefersExtendedRange = (format.preferredRange == UIGraphicsImageRendererFormatRangeExtended);
         } else {
-#if TARGET_OS_UIKITFORMAC
+#if TARGET_OS_MACCATALYST
             TIPAssertNever();
 #else
             _prefersExtendedRange = format.prefersExtendedRange;
@@ -458,7 +458,7 @@ static UIImage * __nullable _TIPRenderImageModern(UIImage * __nullable sourceIma
             }
             if (tip_available_ios_12) {
                 format.preferredRange = (formatInternal.prefersExtendedRange) ? UIGraphicsImageRendererFormatRangeExtended : UIGraphicsImageRendererFormatRangeStandard;
-#if !TARGET_OS_UIKITFORMAC
+#if !TARGET_OS_MACCATALYST
                 if (tip_available_ios_13) {
                 } else {
                     format.prefersExtendedRange = formatInternal.prefersExtendedRange;
@@ -529,6 +529,24 @@ CGSize TIPDetectImageFileDimensions(NSString * __nullable filePath)
     return CGSizeZero;
 }
 
+CGSize TIPDetectImageSourceDimensionsAtIndex(CGImageSourceRef __nullable imageSource, size_t index)
+{
+    if (imageSource) {
+        CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(imageSource, index, NULL);
+        TIPDeferRelease(properties);
+        if (properties) {
+            CFNumberRef heightNum = CFDictionaryGetValue(properties, kCGImagePropertyPixelHeight);
+            CFNumberRef widthNum = CFDictionaryGetValue(properties, kCGImagePropertyPixelWidth);
+            if (heightNum && widthNum) {
+                return CGSizeMake([(__bridge NSNumber *)widthNum integerValue],
+                                  [(__bridge NSNumber *)heightNum integerValue]);
+            }
+        }
+    }
+
+    return CGSizeZero;
+}
+
 #pragma mark - Statics
 
 static CGSize TIPSizeAlignToPixelEx(CGSize size, CGFloat scale)
@@ -543,19 +561,8 @@ static CGSize TIPDetectImageDataProviderDimensions(CGDataProviderRef dataProvide
     TIPDeferRelease(imageSourceRef);
     if (imageSourceRef) {
         CGImageSourceUpdateDataProvider(imageSourceRef, dataProviderRef, false);
-
-        CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(imageSourceRef, 0, NULL);
-        TIPDeferRelease(properties);
-        if (properties) {
-            CFNumberRef heightNum = CFDictionaryGetValue(properties, kCGImagePropertyPixelHeight);
-            CFNumberRef widthNum = CFDictionaryGetValue(properties, kCGImagePropertyPixelWidth);
-            if (heightNum && widthNum) {
-                return CGSizeMake([(__bridge NSNumber *)widthNum integerValue], [(__bridge NSNumber *)heightNum integerValue]);
-            }
-        }
     }
-
-    return CGSizeZero;
+    return TIPDetectImageSourceDimensionsAtIndex(imageSourceRef, 0);
 }
 
 NS_ASSUME_NONNULL_END

@@ -93,7 +93,8 @@ typedef NS_ENUM(NSInteger, TIPImageFetchErrorCode) {
      The image fetch download never attempted to hydrate the request.
      Custom `TIPImageFetchDownload` implementations are to call
      `[TIPImageFetchDownloadClient imageFetchDownload:hydrateRequest:completion:]` once after
-     `[TIPImageFetchDownloadClient imageFetchDownloadDidStart:]` and before any other client method.
+     `[TIPImageFetchDownloadClient imageFetchDownloadDidStart:]` and before
+     `[TIPImageFetchDownloadClient imageFetchDownload:authorizeRequest:completion:]`
      */
     TIPImageFetchErrorCodeDownloadNeverAttemptedToHydrateRequest,
     /**
@@ -104,6 +105,27 @@ typedef NS_ENUM(NSInteger, TIPImageFetchErrorCode) {
      `[TIPImageFetchDownloadClient imageFetchDownload:didCompleteWithError:]`
      */
     TIPImageFetchErrorCodeDownloadNeverReceivedResponse,
+    /**
+     The image fetch download redundantly attempted to authorize the request.
+     Custom `TIPImageFetchDownload` implementations are to call
+     `[TIPImageFetchDownloadClient imageFetchDownload:authorizeRequest:completion:]` only once.
+     */
+    TIPImageFetchErrorCodeDownloadAttemptedToAuthorizeRequestMoreThanOnce,
+    /**
+     The image fetch download never attempted to authorize the request.
+     Custom `TIPImageFetchDownload` implementations are to call
+     `[TIPImageFetchDownloadClient imageFetchDownload:authorizeRequest:completion:]` once after
+     `[TIPImageFetchDownloadClient imageFetchDownload:hydrateRequest:completion:]` and before any other client method.
+     */
+    TIPImageFetchErrorCodeDownloadNeverAttemptedToAuthorizeRequest,
+    /**
+     The image fetch download wanted to retry, but already had data appended and could not.
+     Happens when `[TIPImageFetchDownloadClient imageFetchDownloadWillRetry:]` is called but there
+     was already image data loaded.
+     In this case, the retry should not happen at the download level but should happen at the
+     app level by trying another TIP image fetch operation.
+     */
+    TIPImageFetchErrorCodeDownloadWantedToRetryAfterAlreadyLoadingData,
 
     // Cancellation codes (negative)
 

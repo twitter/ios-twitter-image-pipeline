@@ -8,7 +8,7 @@
 
 #include <TargetConditionals.h>
 
-#if !TARGET_OS_UIKITFORMAC
+#if !TARGET_OS_MACCATALYST
 
 #import <Accelerate/Accelerate.h>
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
@@ -588,4 +588,4 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 
 NS_ASSUME_NONNULL_END
 
-#endif // #if !TARGET_OS_UIKITFORMAC
+#endif // #if !TARGET_OS_MACCATALYST

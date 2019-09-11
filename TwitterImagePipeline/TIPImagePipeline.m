@@ -567,6 +567,17 @@ static NSString *TIPImagePipelinePath(void)
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         sPath = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
+#if !TARGET_OS_IPHONE || TARGET_OS_MACCATALYST
+        // platform may be non-sandboxed, or "sandbox" may contain sym-links outside of expected sandbox
+        // ensure unique path using bundle-id for safety (if possible)
+        NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
+        if (bundleId) {
+            sPath = [sPath stringByResolvingSymlinksInPath];
+            if (![sPath containsString:[NSString stringWithFormat:@"/%@/", bundleId]]) {
+                sPath = [sPath stringByAppendingPathComponent:bundleId];
+            }
+        }
+#endif
         sPath = [sPath stringByAppendingPathComponent:kImagePipelineFolderName];
     });
     return sPath;

@@ -156,6 +156,10 @@ static BOOL _CanCoalesceDelegate(NSObject<TIPImageDownloadDelegate> *delegate,
         return NO;
     }
 
+    if (otherRequest.imageDownloadAuthorizationBlock != request.imageDownloadAuthorizationBlock) {
+        return NO;
+    }
+
     if (delegate.imagePipeline != otherDelegate.imagePipeline) {
         return NO;
     }
@@ -290,8 +294,8 @@ static void _background_removeDelegate(SELF_ARG,
         context->_response = response;
         context->_contentLength = (NSUInteger)MAX(0LL, _ExpectedResponseBodySize(response));
 
-        if (!context->_flags.didRequestHydration) {
-            _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadNeverAttemptedToHydrateRequest, download);
+        if (!context->_flags.didRequestAuthorization) {
+            _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadNeverAttemptedToAuthorizeRequest, download);
             return;
         }
         TIPAssert(context.hydratedRequest);
@@ -313,9 +317,8 @@ static void _background_removeDelegate(SELF_ARG,
             }
             context->_contentLength = context->_partialImage.expectedContentLength;
         } else {
-            // Don't bother downloading any further if our status code is not going to have image bytes
+            // Failure status code, image is not going to load
             context->_flags.responseStatusCodeIsFailure = YES;
-            [download cancelWithDescription:[NSString stringWithFormat:@"TIP: Encountered HTTP Status Code (%ti)", context->_response.statusCode]];
         }
 
 #if TIP_LOG_DOWNLOAD_PROGRESS
@@ -351,7 +354,7 @@ static void _background_removeDelegate(SELF_ARG,
         }
 
         if (context->_flags.responseStatusCodeIsFailure) {
-            // will be cancelled async, need to return early
+            // data is for a failure, don't capture
             return;
         }
 
@@ -419,6 +422,10 @@ static void _background_removeDelegate(SELF_ARG,
             return;
         }
 
+#if TIP_LOG_DOWNLOAD_PROGRESS
+        TIPLogDebug(@"(%@)[%p] - hydrating", context.originalRequest.URL, download);
+#endif
+
         void(^internalResumeBlock)(NSUInteger, NSString *, NSURLRequest *) = ^(NSUInteger alreadyDownloadedBytes, NSString *lastModified, NSURLRequest *requestToSend) {
             if (alreadyDownloadedBytes > 0 && lastModified.length > 0) {
                 NSMutableURLRequest *mURLRequst = [requestToSend mutableCopy];
@@ -428,6 +435,10 @@ static void _background_removeDelegate(SELF_ARG,
                     requestToSend = mURLRequst;
                 }
             }
+
+#if TIP_LOG_DOWNLOAD_PROGRESS
+            TIPLogDebug(@"(%@)[%p] - did hydrate", context.originalRequest.URL, download);
+#endif
 
             context.hydratedRequest = [requestToSend copy];
             TIPAssert(context.hydratedRequest != nil);
@@ -486,6 +497,104 @@ static void _background_removeDelegate(SELF_ARG,
 }
 
 - (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
+          authorizeRequest:(NSURLRequest *)request
+                completion:(TIPImageFetchDownloadRequestAuthorizationCompleteBlock)complete
+{
+    TIPAssertDownloaderQueue();
+
+    @autoreleasepool {
+        TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
+        TIPAssert(context);
+        if (!context) {
+            complete(nil);
+            return;
+        }
+
+        if (context->_flags.didRequestAuthorization) {
+            _ImageDownloadSetProgressStateFailureAndCancel(context, TIPImageFetchErrorCodeDownloadAttemptedToAuthorizeRequestMoreThanOnce, download);
+            return;
+        }
+        context->_flags.didRequestAuthorization = YES;
+
+        if (!context->_flags.didRequestHydration) {
+            _ImageDownloadSetProgressStateFailureAndCancel(context,
+                                                           TIPImageFetchErrorCodeDownloadNeverAttemptedToHydrateRequest,
+                                                           download);
+            return;
+        }
+
+#if TIP_LOG_DOWNLOAD_PROGRESS
+        TIPLogDebug(@"(%@)[%p] - authorizing", context.originalRequest.URL, download);
+#endif
+
+        TIPImageFetchAuthorizationCompletionBlock authCompleteBlock = ^(NSString *authValue, NSError *error) {
+            if (error) {
+                complete(error);
+                return;
+            }
+
+            if (authValue) {
+                context.authorization = authValue;
+            }
+
+#if TIP_LOG_DOWNLOAD_PROGRESS
+            TIPLogDebug(@"(%@)[%p] - did authorize", context.originalRequest.URL, download);
+#endif
+
+            complete(nil);
+        };
+
+        id<TIPImageDownloadDelegate> delegate = context.firstDelegate;
+        dispatch_queue_t delegateQueue = delegate.imageDownloadDelegateQueue;
+        TIPImageFetchAuthorizationBlock authorizationBlock = delegate.imageDownloadRequest.imageDownloadAuthorizationBlock;
+        if (authorizationBlock) {
+            if (delegateQueue) {
+                tip_dispatch_async_autoreleasing(delegateQueue, ^{
+                    authorizationBlock(request, context, authCompleteBlock);
+                });
+            } else {
+                authorizationBlock(request, context, authCompleteBlock);
+            }
+        } else {
+            authCompleteBlock(nil, nil);
+        }
+    }
+}
+
+- (void)imageFetchDownloadWillRetry:(id<TIPImageFetchDownload>)download
+{
+    TIPAssertDownloaderQueue();
+
+    @autoreleasepool {
+
+        TIPImageDownloadInternalContext *context = (TIPImageDownloadInternalContext *)download.context;
+        TIPAssert(context);
+        if (!context) {
+            return;
+        }
+
+        if (context->_flags.didComplete || context->_progressStateError != nil) {
+            TIPLogError(@"Cannot retry a download after it has already completed! %@", download);
+            return;
+        }
+
+        if (context->_flags.didReceiveData) {
+            TIPLogError(@"Cannot retry a download if it has already appended data, need to start a new TIP fetch!");
+            _ImageDownloadSetProgressStateFailureAndCancel(context,
+                                                           TIPImageFetchErrorCodeDownloadWantedToRetryAfterAlreadyLoadingData,
+                                                           download);
+            return;
+        }
+
+#if TIP_LOG_DOWNLOAD_PROGRESS
+        TIPLogDebug(@"(%@)[%p] - retrying", context.originalRequest.URL, download);
+#endif
+
+        [context reset];
+    }
+}
+
+- (void)imageFetchDownload:(id<TIPImageFetchDownload>)download
       didCompleteWithError:(nullable NSError *)error
 {
     TIPAssertDownloaderQueue();
@@ -508,11 +617,11 @@ static void _background_removeDelegate(SELF_ARG,
         context->_download = nil;
         [download discardContext];
 
-    #if TIP_LOG_DOWNLOAD_PROGRESS
+#if TIP_LOG_DOWNLOAD_PROGRESS
         TIPLogDebug(@"(%@)[%p] - finished %@", context.originalRequest.URL, download, error ?: @(context.response.statusCode));
-    #endif
+#endif
 
-        if (!error && !context->_progressStateError && !context->_flags.didReceiveData) {
+        if (!error && !context->_progressStateError && !context->_flags.didReceiveData && !context->_flags.responseStatusCodeIsFailure) {
             _ImageDownloadSetProgressStateFailureAndCancel(context,
                                                              TIPImageFetchErrorCodeDownloadNeverReceivedResponse,
                                                              nil /* don't cancel */);
@@ -648,7 +757,7 @@ static void _background_removeDelegate(SELF_ARG,
         }
 
         if (!error && !image) {
-            if (200 != ((context->_response.statusCode / 100) * 100)) {
+            if (context->_flags.responseStatusCodeIsFailure || 200 != ((context->_response.statusCode / 100) * 100)) {
                 error = [NSError errorWithDomain:TIPImageFetchErrorDomain
                                             code:TIPImageFetchErrorCodeHTTPTransactionError
                                         userInfo:@{ TIPErrorUserInfoHTTPStatusCodeKey : @(context->_response.statusCode) }];
