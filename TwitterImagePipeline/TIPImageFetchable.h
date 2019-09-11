@@ -14,6 +14,8 @@ NS_ASSUME_NONNULL_BEGIN
 @class UIImage;
 @class UIView;
 
+#pragma mark - TIPImageFetchable protocol
+
 /**
  A protocol for enabling a `UIView` to become compliant with `TIPImageViewFetchHelper`.
  At least one of `tip_fetchedImage` or `tip_fetchedImageContainer` must be implemented.
@@ -41,6 +43,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+#pragma mark - Helper functions
+
+#pragma mark Image helper functions
+
 /** does the _fetchable_ have an image (via `tip_fetchedImageContainer` or `tip_fetchedImage`) */
 FOUNDATION_EXTERN BOOL TIPImageFetchableHasImage(id<TIPImageFetchable> __nullable fetchable);
 
@@ -53,5 +59,6 @@ FOUNDATION_EXTERN TIPImageContainer * __nullable TIPImageFetchableGetImageContai
 FOUNDATION_EXTERN void TIPImageFetchableSetImage(id<TIPImageFetchable> __nullable fetchable, UIImage * __nullable image);
 /** set the _fetchable_ fetch image with a container (via `tip_fetchedImageContainer` or `tip_fetchedImage`) */
 FOUNDATION_EXTERN void TIPImageFetchableSetImageContainer(id<TIPImageFetchable> __nullable fetchable, TIPImageContainer * __nullable imageContainer);
+
 
 NS_ASSUME_NONNULL_END

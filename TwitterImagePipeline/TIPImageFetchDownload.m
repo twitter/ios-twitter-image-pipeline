@@ -89,15 +89,26 @@ static void _PrepareGlobalState(void);
     _session = [self URLSession];
     id<TIPImageFetchDownloadContext> context = self.context;
     [context.client imageFetchDownloadDidStart:self];
-    [context.client imageFetchDownload:self hydrateRequest:context.originalRequest completion:^(NSError *error) {
-        if (!error) {
-            self->_task = [self->_session dataTaskWithRequest:context.hydratedRequest];
-            [self->_session.delegateQueue addOperationWithBlock:^{
-                [(TIPImageFetchDownloadInternalURLSessionDelegate *)self->_session.delegate addDownload:self];
+    [context.client imageFetchDownload:self hydrateRequest:context.originalRequest completion:^(NSError *hydrateError) {
+        if (!hydrateError) {
+            [context.client imageFetchDownload:self authorizeRequest:context.hydratedRequest completion:^(NSError * _Nullable authError) {
+                if (!authError) {
+                    NSURLRequest *request = context.hydratedRequest;
+                    if (context.authorization) {
+                        request =  [request mutableCopy];
+                        [(NSMutableURLRequest *)request setValue:context.authorization forHTTPHeaderField:@"Authorization"];
+                    }
+                    self->_task = [self->_session dataTaskWithRequest:request];
+                    [self->_session.delegateQueue addOperationWithBlock:^{
+                        [(TIPImageFetchDownloadInternalURLSessionDelegate *)self->_session.delegate addDownload:self];
+                    }];
+                    [self->_task resume];
+                } else {
+                    [context.client imageFetchDownload:self didCompleteWithError:authError];
+                }
             }];
-            [self->_task resume];
         } else {
-            [context.client imageFetchDownload:self didCompleteWithError:error];
+            [context.client imageFetchDownload:self didCompleteWithError:hydrateError];
         }
     }];
 }

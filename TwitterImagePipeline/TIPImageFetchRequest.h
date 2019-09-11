@@ -25,6 +25,15 @@ typedef void(^TIPImageFetchHydrationBlock)(NSURLRequest *requestToHydrate,
                                            id<TIPImageFetchOperationUnderlyingContext> context,
                                            TIPImageFetchHydrationCompletionBlock complete);
 
+//! Block to call with the _Authorization_ string when authorizing an `NSURLRequest` is triggered
+typedef void(^TIPImageFetchAuthorizationCompletionBlock)(NSString * __nullable authorizationString,
+                                                         NSError * __nullable error);
+
+//! Block to provide the Authorization for a given `NSURLRequest` (and its _context_)
+typedef void(^TIPImageFetchAuthorizationBlock)(NSURLRequest *requestToAuthorize,
+                                               id<TIPImageFetchOperationUnderlyingContext> context,
+                                               TIPImageFetchAuthorizationCompletionBlock complete);
+
 /** Options for a `TIPImageFetchRequest` */
 typedef NS_OPTIONS(NSInteger, TIPImageFetchOptions)
 {
@@ -125,12 +134,23 @@ typedef NS_OPTIONS(NSInteger, TIPImageFetchOptions)
 /**
  The `TIPImageFetchHydrationBlock` to use when retrieving the image over the _Network_.
  Use this to modify the `NSURLRequest` that will be loaded over the _Network_.
- This can be valuable for providing auth to the _HTTP Request_ that will be sent.
+ This can be valuable for providing custom headers like the User-Agent to the _HTTP Request_ that will be sent.
  The `imageRequestHydrationBlock` MUST NOT change the `URL` nor the _HTTP Method_,
  otherwise doing so will yield an error.
  Default == `nil`
+ @note It is best to avoid using this hydration block for _Authorization_ header population and
+ better to use `imageRequestAuthorizationBlock` for authorization.  We won't enforce it, but to
+ preserve the flow of network request construction, we recommend keeping authorization separate
+ from hydration.
  */
 @property (nonatomic, readonly, copy, nullable) TIPImageFetchHydrationBlock imageRequestHydrationBlock;
+
+/**
+ The `TIPImageFetchAuthorizationBlock` to use for signing the `NSURLRequest` to load the image over the _Network_.
+ Use this to provide an _Authorization_ header value to load the image.
+ Default == `nil`
+ */
+@property (nonatomic, readonly, copy, nullable) TIPImageFetchAuthorizationBlock imageRequestAuthorizationBlock;
 
 /**
  An optional decoder config map.
@@ -192,6 +212,7 @@ NS_INLINE NSString *TIPImageFetchRequestGetImageIdentifier(id<TIPImageFetchReque
 @property (nonatomic, readonly, nullable) id<TIPImageFetchTransformer> transformer;
 @property (nonatomic, readonly) TIPImageFetchLoadingSources loadingSources;
 @property (nonatomic, readonly, copy, nullable) TIPImageFetchHydrationBlock imageRequestHydrationBlock;
+@property (nonatomic, readonly, copy, nullable) TIPImageFetchAuthorizationBlock imageRequestAuthorizationBlock;
 @property (nonatomic, readonly, copy, nullable) NSDictionary<NSString *, id> *decoderConfigMap;
 
 - (instancetype)initWithImageURL:(NSURL *)imageURL
@@ -225,6 +246,7 @@ NS_INLINE NSString *TIPImageFetchRequestGetImageIdentifier(id<TIPImageFetchReque
 @property (nonatomic, nullable) id<TIPImageFetchTransformer> transformer;
 @property (nonatomic) TIPImageFetchLoadingSources loadingSources;
 @property (nonatomic, copy, nullable) TIPImageFetchHydrationBlock imageRequestHydrationBlock;
+@property (nonatomic, copy, nullable) TIPImageFetchAuthorizationBlock imageRequestAuthorizationBlock;
 @property (nonatomic, copy, nullable) NSDictionary<NSString *, id> *decoderConfigMap;
 
 @end

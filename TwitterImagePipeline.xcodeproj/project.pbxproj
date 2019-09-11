@@ -1645,7 +1645,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0820;
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1100;
 				ORGANIZATIONNAME = Twitter;
 				TargetAttributes = {
 					8B63017F1E68F9B400C9A86A = {
@@ -2272,6 +2272,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3DEC0A75229A71870053C279 /* TwitterImagePipeline.Debug.xcconfig */;
 			buildSettings = {
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 			};
 			name = Debug;
 		};
@@ -2279,6 +2280,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3DEC0A76229A719B0053C279 /* TwitterImagePipeline.Release.xcconfig */;
 			buildSettings = {
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 			};
 			name = Release;
 		};

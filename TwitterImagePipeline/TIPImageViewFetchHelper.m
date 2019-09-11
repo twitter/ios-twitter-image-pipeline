@@ -362,29 +362,7 @@ static void _markAsIfPlaceholder(SELF_ARG)
 
 - (void)triggerViewLayingOutSubviews
 {
-    if (!self.fetchRequest || _resizeRequestIfNeeded(self)) {
-        id<TIPImageFetchRequest> peekRequest = nil;
-        if (_flags.isLoadedImageFinal) {
-            // downgrade what we have from being "final" to a "preview"
-            _flags.isLoadedImageFinal = 0;
-            _flags.isLoadedImagePreview = 1;
-            _cancelFetch(self);
-        } else if (_fetchOperation) {
-            id<TIPImageViewFetchHelperDataSource> dataSource = self.dataSource;
-            peekRequest = _extractRequest(self, dataSource);
-
-            if (peekRequest && [_fetchOperation.request.imageURL isEqual:peekRequest.imageURL]) {
-                // We're about to fetch the same image as our current op.
-                // Don't cancel the current op, just make it headless (no delegate).
-                // That way, the resize doesn't force the request to stop and start again.
-                [_fetchOperation discardDelegate];
-            } else {
-                [_fetchOperation cancelAndDiscardDelegate];
-            }
-            _fetchOperation = nil;
-        }
-        _refetch(self, peekRequest);
-    }
+    _handleViewResizeEvent(self);
 }
 
 - (void)triggerViewWillDisappear
@@ -861,6 +839,37 @@ static void _prep(SELF_ARG)
     [self _tip_didUpdateDebugVisibility];
     self->_fetchDisappearanceBehavior = TIPImageViewDisappearanceBehaviorCancelImageFetch;
     _resetImage(self, nil /*imageContainer*/);
+}
+
+static void _handleViewResizeEvent(SELF_ARG)
+{
+    if (!self) {
+        return;
+    }
+
+    if (!self.fetchRequest || _resizeRequestIfNeeded(self)) {
+        id<TIPImageFetchRequest> peekRequest = nil;
+        if (self->_flags.isLoadedImageFinal) {
+            // downgrade what we have from being "final" to a "preview"
+            self->_flags.isLoadedImageFinal = 0;
+            self->_flags.isLoadedImagePreview = 1;
+            _cancelFetch(self);
+        } else if (self->_fetchOperation) {
+            id<TIPImageViewFetchHelperDataSource> dataSource = self.dataSource;
+            peekRequest = _extractRequest(self, dataSource);
+
+            if (peekRequest && [self->_fetchOperation.request.imageURL isEqual:peekRequest.imageURL]) {
+                // We're about to fetch the same image as our current op.
+                // Don't cancel the current op, just make it headless (no delegate).
+                // That way, the resize doesn't force the request to stop and start again.
+                [self->_fetchOperation discardDelegate];
+            } else {
+                [self->_fetchOperation cancelAndDiscardDelegate];
+            }
+            self->_fetchOperation = nil;
+        }
+        _refetch(self, peekRequest);
+    }
 }
 
 static BOOL _resizeRequestIfNeeded(SELF_ARG)

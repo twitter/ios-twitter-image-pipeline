@@ -84,7 +84,7 @@ NS_INLINE CGSize TIPDimensionsFromView(UIView * __nullable view)
         return CGSizeZero;
     }
 
-    return TIPDimensionsFromSizeScaled(view.bounds.size, [UIScreen mainScreen].scale);
+    return TIPDimensionsFromSizeScaled(view.bounds.size, view.traitCollection.displayScale);
 }
 
 //! Get dimensions (in pixels) from `UIImage`
@@ -255,4 +255,13 @@ FOUNDATION_EXTERN CGSize TIPDetectImageDataDimensions(NSData * __nullable data);
  */
 FOUNDATION_EXTERN CGSize TIPDetectImageFileDimensions(NSString * __nullable filePath);
 
+/**
+ Detect the dimensions of the given image source at a specific image index
+ @param imageSource the `CGImageSourceRef` to check
+ @param index the index of the image in the _imageSource_ to check
+ @return the dimensions of the image or `CGSizeZero` if the dimensions could not be determined
+ */
+FOUNDATION_EXTERN CGSize TIPDetectImageSourceDimensionsAtIndex(CGImageSourceRef __nullable imageSource, size_t index);
+
 NS_ASSUME_NONNULL_END
+

@@ -130,8 +130,7 @@ NS_ASSUME_NONNULL_BEGIN
 
         // some assertions to preserve the state of our assumptions
         if (gTwitterImagePipelineAssertEnabled) {
-            const BOOL wellKnownType = [imageType isEqualToString:TIPImageTypeJPEG2000] ||
-                                       [imageType isEqualToString:TIPImageTypeTIFF] ||
+            const BOOL wellKnownType = [imageType isEqualToString:TIPImageTypeTIFF] ||
                                        [imageType isEqualToString:TIPImageTypeBMP] ||
                                        [imageType isEqualToString:TIPImageTypeTARGA];
             if (wellKnownType) {
@@ -156,6 +155,8 @@ NS_ASSUME_NONNULL_BEGIN
                 // it's a crapshoot when the encoder/decoder are present or not
             } else if ([imageType isEqualToString:TIPImageTypeAVCI]) {
                 // it's a crapshoot when the encoder/decoder are present or not
+            } else if ([imageType isEqualToString:TIPImageTypeJPEG2000]) {
+                // Apple deprecated JPEG 2000 support so we'll defer to the system on if the codecs are present or not
             }
         }
     }

@@ -280,6 +280,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     XCTAssertNotNil(image, @"extension = '%@'", extension);
     NSTimeInterval decompressTime = [self decompressImage:image];
     NSLog(@"%@ decompress time: %fs", file.lastPathComponent, decompressTime);
+    XCTAssertEqual(container.isAnimated, animated);
     if (animated) {
         XCTAssertGreaterThan(image.images.count, (NSUInteger)1);
         XCTAssertEqual(image.images.count, container.frameCount);
@@ -313,7 +314,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     for (NSUInteger i = 0; i < 5; i++) {
         @autoreleasepool {
             float quality = 1.0f - ((i % 10) / 10.0f);
-#if TARGET_OS_IOS && !TARGET_OS_UIKITFORMAC
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
             if (type == TIPXImageTypeWebP && quality > .99f) {
                 // Lossless WebP is super slow,
                 // drop down to 99% in order to give WebP a fighting chance
@@ -622,11 +623,14 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     XCTAssertEqualObjects(detectedType, imageType, @"%@", imagePath);
     XCTAssertEqual(0, detectedOptions);
     XCTAssertEqual(NO, (detectedAnimatedFrameCount > 1), @"%@", imagePath);
-    CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)data, NULL);
-    TIPDeferRelease(imageSource);
-    UIImage *image = [UIImage imageWithData:data];
-    NSTimeInterval decompressTime = [self decompressImage:image];
-    XCTAssertNotNil(image, @"%@", imagePath);
+    TIPImageContainer *container = [TIPImageContainer imageContainerWithData:data decoderConfigMap:nil codecCatalogue:nil];
+    NSTimeInterval decompressTime = [self decompressImage:container.image];
+    XCTAssertNotNil(container, @"%@", imagePath);
+    if (detectedAnimatedFrameCount > 1) {
+        XCTAssertTrue(container.isAnimated, @"Format: %@, imageType: %@", format, detectedType);
+    } else {
+        XCTAssertFalse(container.isAnimated, @"Format: %@, imageType: %@", format, detectedType);
+    }
     NSLog(@"%@ decompress time: %fs", imagePath.lastPathComponent, decompressTime);
 }
 
@@ -676,7 +680,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testXLoadPICT
 {
-#if TARGET_OS_UIKITFORMAC
+#if TARGET_OS_MACCATALYST
     [self runLoadTestForReadOnlyFormat:@"pict" imageType:TIPImageTypePICT];
 #else
     [self runLoadTestForUnreadableFormat:@"pict"];
@@ -711,12 +715,12 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testXLoadICO
 {
-    if (TIPImageTypeCanReadWithImageIO(TIPImageTypeICNS)) {
+    if (TIPImageTypeCanReadWithImageIO(TIPImageTypeICO)) {
         [self runMeasurement:@"load" format:@"*ico" block:^{
             [self runLoadTestForReadOnlyFormat:@"ico" imageType:TIPImageTypeICO];
         }];
     } else {
-        [self runLoadTestForUnreadableFormat:@"icns"];
+        [self runLoadTestForUnreadableFormat:@"ico"];
     }
 }
 
@@ -767,7 +771,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     // unsupported with read only format
 }
 
-#if TARGET_OS_IOS && !TARGET_OS_UIKITFORMAC
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
 - (void)testSaveWebP
 {
     XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:TIPXImageTypeWebP]);
@@ -783,7 +787,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 }
 #endif
 
-#if TARGET_OS_IOS && !TARGET_OS_UIKITFORMAC
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
 - (void)testXLoadWebP
 {
     [self runLoadTestForUnreadableFormat:@"webp"];
@@ -799,7 +803,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 }
 #endif
 
-#if TARGET_OS_IOS && !TARGET_OS_UIKITFORMAC
+#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
 - (void)testSpeedWebP
 {
     XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:@"webp"]);
@@ -1033,7 +1037,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(@"com.canon.cr2-raw-image"));
 #endif
 
-#if TARGET_OS_UIKITFORMAC
+#if TARGET_OS_MACCATALYST
     XCTAssertTrue(TIPImageTypeCanReadWithImageIO(TIPImageTypePICT));
 #else
     XCTAssertFalse(TIPImageTypeCanReadWithImageIO(TIPImageTypePICT));

@@ -52,7 +52,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         tipConfig.isClearMemoryCachesOnApplicationBackgroundEnabled = true
         tipConfig.add(self)
 
-#if !targetEnvironment(UIKitForMac)
+#if !targetEnvironment(macCatalyst)
         let catalogue = TIPImageCodecCatalogue.sharedInstance()
         catalogue.setCodec(TIPXWebPCodec.init(), forImageType: TIPXImageTypeWebP)
 #endif

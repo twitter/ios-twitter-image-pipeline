@@ -37,6 +37,7 @@ static const NSTimeInterval kFireworksAnimationDurations[10] =
 @property (nonatomic) NSURL *imageURL;
 @property (nonatomic, copy, nullable) NSString *imageIdentifier;
 @property (nonatomic, copy, nullable) TIPImageFetchHydrationBlock imageRequestHydrationBlock;
+@property (nonatomic, copy, nullable) TIPImageFetchAuthorizationBlock imageRequestAuthorizationBlock;
 @property (nonatomic) CGSize targetDimensions;
 @property (nonatomic) UIViewContentMode targetContentMode;
 @property (nonatomic) NSTimeInterval timeToLive;

@@ -232,7 +232,7 @@ static NSString *ModelName()
                     } else if (RenderBehaviorModernForcePrefersWideColorYes == behavior) {
                         format.preferredRange = UIGraphicsImageRendererFormatRangeExtended;
                     }
-#if !TARGET_OS_UIKITFORMAC
+#if !TARGET_OS_MACCATALYST
                 } else {
                     if (RenderBehaviorModernForcePrefersWideColorNo == behavior) {
                         format.prefersExtendedRange = NO;

@@ -2,13 +2,21 @@
 
 ## Info
 
-**Document version:** 2.12.2
+**Document version:** 2.13.0
 
-**Last updated:** 03/03/2019
+**Last updated:** 07/04/2019
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.13.0
+
+- Separate out authentication support for image requests from hydration support
+  - Hydration now just serves populating the image fetch's URL request
+  - Authorization now serves to generate an _Authorization_ header's value to be applied as a separate step
+  - Works better with multi step networking frameworks such as __TwitterNetworkLayer__
+  - See `[TIPImageFetchRequest imageRequestAuthorizationBlock]`
 
 ### 2.12.2
 

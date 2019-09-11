@@ -23,6 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
     id<TIPImageFetchTransformer> _transformer;
     TIPImageFetchLoadingSources _loadingSources;
     TIPImageFetchHydrationBlock _imageRequestHydrationBlock;
+    TIPImageFetchAuthorizationBlock _imageRequestAuthorizationBlock;
     NSDictionary<NSString *, id> *_decoderConfigMap;
 }
 
@@ -36,6 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 @synthesize transformer = _transformer;
 @synthesize loadingSources = _loadingSources;
 @synthesize imageRequestHydrationBlock = _imageRequestHydrationBlock;
+@synthesize imageRequestAuthorizationBlock = _imageRequestAuthorizationBlock;
 @synthesize decoderConfigMap = _decoderConfigMap;
 
 - (instancetype)initWithImageURL:(NSURL *)imageURL
@@ -87,6 +89,7 @@ NS_ASSUME_NONNULL_BEGIN
     request.transformer = self.transformer;
     request.loadingSources = self.loadingSources;
     request.imageRequestHydrationBlock = self.imageRequestHydrationBlock;
+    request.imageRequestAuthorizationBlock = self.imageRequestAuthorizationBlock;
     request.decoderConfigMap = self.decoderConfigMap;
     return request;
 }
@@ -105,6 +108,7 @@ NS_ASSUME_NONNULL_BEGIN
 @dynamic transformer;
 @dynamic loadingSources;
 @dynamic imageRequestHydrationBlock;
+@dynamic imageRequestAuthorizationBlock;
 @dynamic decoderConfigMap;
 
 - (void)setImageURL:(NSURL *)imageURL
@@ -157,6 +161,11 @@ NS_ASSUME_NONNULL_BEGIN
     _imageRequestHydrationBlock = [imageRequestHydrationBlock copy];
 }
 
+- (void)setImageRequestAuthorizationBlock:(nullable TIPImageFetchAuthorizationBlock)imageRequestAuthorizationBlock
+{
+    _imageRequestAuthorizationBlock = [imageRequestAuthorizationBlock copy];
+}
+
 - (void)setDecoderConfigMap:(nullable NSDictionary<NSString *,id> *)decoderConfigMap
 {
     _decoderConfigMap = [decoderConfigMap copy];
@@ -174,6 +183,7 @@ NS_ASSUME_NONNULL_BEGIN
     request->_transformer = self.transformer;
     request->_loadingSources = self.loadingSources;
     request->_imageRequestHydrationBlock = self.imageRequestHydrationBlock;
+    request->_imageRequestAuthorizationBlock = self.imageRequestAuthorizationBlock;
     request->_decoderConfigMap = self.decoderConfigMap;
     return request;
 }

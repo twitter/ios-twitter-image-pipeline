@@ -8,7 +8,7 @@
 
 #include <TargetConditionals.h>
 
-#if !TARGET_OS_UIKITFORMAC
+#if !TARGET_OS_MACCATALYST
 
 #import <TwitterImagePipeline/TIPImageCodecs.h>
 
@@ -32,4 +32,4 @@ FOUNDATION_EXTERN NSString * const TIPXImageTypeWebP;
 
 NS_ASSUME_NONNULL_END
 
-#endif // #if !TARGET_OS_UIKITFORMAC
+#endif // #if !TARGET_OS_MACCATALYST

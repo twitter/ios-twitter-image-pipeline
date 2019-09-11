@@ -144,6 +144,59 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation TIPImageContainer (Convenience)
 
+//! returns negative value if all the images are the same size (aka is an animation)
+static CFIndex _DetectLargestNonAnimatedImageIndex(CGImageSourceRef imageSource)
+{
+    const size_t count = CGImageSourceGetCount(imageSource);
+    TIPAssert(count > 0);
+
+    if (count == 1) {
+        // definitely not animated
+        return 0;
+    }
+
+    /**
+     We have multiple frames...
+     If all the frames are the same size, we have an animation.
+     If any of the frames differ in size, we have a set of images in a single container, use the largest one.
+
+        Look at the first 5 frames (or count of frames, whichever is less).
+        If first frames are all the same size, treat image as an animation (return -1)
+        Else if the size in first frames differs, continue through all frames to find largest (return that index)
+     */
+
+    BOOL allEqual = YES;
+    CFIndex largestIndex = -1;
+    CGSize largestSize = CGSizeZero;
+    static const size_t kMaxFramesAllEqualCountLimit = 5;
+    const size_t maxFramesAllEqualCount = MIN(count, kMaxFramesAllEqualCountLimit);
+
+    for (size_t i = 0; (allEqual ? (i < maxFramesAllEqualCount) : (i < count)); i++) {
+        const CGSize size = TIPDetectImageSourceDimensionsAtIndex(imageSource, i);
+        if (CGSizeEqualToSize(size, CGSizeZero)) {
+            // no dimensions, skip
+            continue;
+        }
+
+        if (size.width > largestSize.width && size.height > largestSize.height) {
+            largestSize = size;
+            if (largestIndex < 0) {
+                // never had a largest size yet
+                largestIndex = (CFIndex)i;
+            } else {
+                // already had a largest size
+                allEqual = NO;
+                largestIndex = (CFIndex)i;
+            }
+        } else if (size.width < largestSize.width && size.height < largestSize.height) {
+            TIPAssert(largestIndex >= 0);
+            allEqual = NO;
+        }
+    }
+
+    return (allEqual) ? -1 : largestIndex;
+}
+
 + (nullable instancetype)imageContainerWithImageSource:(CGImageSourceRef)imageSource
 {
     if (!imageSource) {
@@ -153,12 +206,18 @@ NS_ASSUME_NONNULL_BEGIN
     const size_t count = CGImageSourceGetCount(imageSource);
     if (!count) {
         return nil;
-    } else if (count == 1) {
-        CGImageRef cgImage = CGImageSourceCreateImageAtIndex(imageSource, 0, NULL);
+    }
+
+    const CFIndex index = _DetectLargestNonAnimatedImageIndex(imageSource);
+    if (index >= 0) {
+        // not animated
+        CGImageRef cgImage = CGImageSourceCreateImageAtIndex(imageSource, (size_t)index, NULL);
         TIPDeferRelease(cgImage);
         UIImage *image = (cgImage) ? [UIImage imageWithCGImage:cgImage scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp] : nil;
         return (image) ? [(TIPImageContainer *)[[self class] alloc] initWithImage:image] : nil;
     }
+
+    // made it here, means we are animated
 
     NSArray *durations;
     NSUInteger loopCount;

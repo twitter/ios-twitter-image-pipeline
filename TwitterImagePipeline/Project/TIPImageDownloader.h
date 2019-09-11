@@ -57,6 +57,7 @@ typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedByt
 // Request behavior info
 - (NSOperationQueuePriority)imageDownloadPriority;
 - (nullable TIPImageFetchHydrationBlock)imageDownloadHydrationBlock;
+- (nullable TIPImageFetchAuthorizationBlock)imageDownloadAuthorizationBlock;
 - (nullable NSDictionary<NSString *, id> *)decoderConfigMap;
 
 // Loaded image behavior info

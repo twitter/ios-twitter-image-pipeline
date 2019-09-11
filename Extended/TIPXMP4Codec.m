@@ -276,7 +276,11 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
         AVAssetReader *reader = [AVAssetReader assetReaderWithAsset:self->_avAsset error:&error];
         if (!reader) {
             [[TIPGlobalConfiguration sharedInstance].logger tip_logWithLevel:TIPLogLevelWarning
+#if defined(__FILE_NAME__)
+                                                                        file:@(__FILE_NAME__)
+#else
                                                                         file:@(__FILE__)
+#endif
                                                                     function:@(__FUNCTION__)
                                                                         line:__LINE__
                                                                      message:error.description];

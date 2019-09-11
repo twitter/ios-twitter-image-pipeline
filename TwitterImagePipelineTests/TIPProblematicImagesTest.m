@@ -414,10 +414,18 @@ static NSString *sProblematicAvatarPath = nil;
         [self.context.client imageFetchDownloadDidStart:self];
         [self.context.client imageFetchDownload:self
                                  hydrateRequest:self.context.originalRequest
-                                     completion:^(NSError * _Nullable error) {
-            if (error) {
-                [self.context.client imageFetchDownload:self didCompleteWithError:error];
-            } else {
+                                     completion:^(NSError * _Nullable hError) {
+            if (hError) {
+                [self.context.client imageFetchDownload:self didCompleteWithError:hError];
+                return;
+            }
+
+            [self.context.client imageFetchDownload:self authorizeRequest:self.context.hydratedRequest completion:^(NSError * _Nullable aError) {
+                if (aError) {
+                    [self.context.client imageFetchDownload:self didCompleteWithError:aError];
+                    return;
+                }
+
                 NSMutableDictionary *headers = [[NSMutableDictionary alloc] init];
                 headers[@"Content-Length"] = [@(self.downloadData.length) stringValue];
                 headers[@"Content-Type"] = @"image/jpeg";
@@ -434,7 +442,7 @@ static NSString *sProblematicAvatarPath = nil;
                         [self.context.client imageFetchDownload:self didCompleteWithError:self.downloadError];
                     });
                 });
-            }
+            }];
         }];
     });
 }

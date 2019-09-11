@@ -115,7 +115,7 @@
 {
 }
 
-#if TARGET_OS_UIKITFORMAC
+#if TARGET_OS_MACCATALYST
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText
 {
     [NSObject cancelPreviousPerformRequestsWithTarget:self];

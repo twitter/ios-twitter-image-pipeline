@@ -36,19 +36,25 @@ NSArray<NSString *> * __nullable TIPContentsAtPath(NSString *path,
     });
 
     NSMutableArray *entries = [[NSMutableArray alloc] init];
-    struct dirent *dirEntity = NULL;
-    while ((dirEntity = readdir(dir)) != NULL) {
-        if (0 == strcmp(".", dirEntity->d_name) || 0 == strcmp("..", dirEntity->d_name)) {
-            continue;
-        }
+    @autoreleasepool {
+        struct dirent *dirEntity = NULL;
+        while ((dirEntity = readdir(dir)) != NULL) {
+            if (dirEntity->d_namlen == 1) {
+                if (0 == strncmp(".", dirEntity->d_name, 1)) {
+                    continue;
+                }
+            } else if (dirEntity->d_namlen == 2) {
+                if (0 == strncmp("..", dirEntity->d_name, 2)) {
+                    continue;
+                }
+            }
 
-        @autoreleasepool {
             NSString *fileName = [[NSString alloc] initWithUTF8String:dirEntity->d_name];
             if (fileName) {
                 [entries addObject:fileName];
             }
         }
-    }
+    } // @autoreleasepool
     return entries;
 }
 
