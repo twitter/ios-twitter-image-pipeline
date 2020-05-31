@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 5/25/19.
-//  Copyright © 2019 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 // Configuration settings file format documentation can be found at:
@@ -18,9 +18,5 @@ SDKROOT = appletvos
 TARGETED_DEVICE_FAMILY = 3
 TVOS_DEPLOYMENT_TARGET = 9.0
 
-// Search Paths
-
-// while there is an XCTest.framework at the appropriate location in
-// Developer/AppleTVOS.platform/Developer/Library/Frameworks, the compiler
-// can't find it without the following setting:
-FRAMEWORK_SEARCH_PATHS = $(inherited) $(SDKROOT)/../../Library/Frameworks
+// Packaging
+INFOPLIST_FILE = TIPTests/Info.plist

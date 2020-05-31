@@ -3,13 +3,15 @@
 //  TwitterImagePipeline
 //
 //  Created on 11/9/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
 #import <TwitterImagePipeline/TIPImageCodecs.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+typedef NSDictionary<NSString *, id<TIPImageCodec>> * _Nullable (^TIPImageCodecCatalogueCodecsProvider)(void);
 
 /**
  Catalogue of image codecs (encoder/decoder pairs)
@@ -36,6 +38,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param codecs the dictionary of codecs by image type
  */
 - (instancetype)initWithCodecs:(nullable NSDictionary<NSString *, id<TIPImageCodec>> *)codecs NS_DESIGNATED_INITIALIZER;
+
+/**
+ Designated initializer
+ @param codecsProvider a block that returns the codecs by image type. Useful for avoiding pausing the calling thread while the codecs are built.
+ */
+- (instancetype)initWithCodecsProvider:(TIPImageCodecCatalogueCodecsProvider)codecsProvider NS_DESIGNATED_INITIALIZER;
 
 /**
  All codecs in this catalogue

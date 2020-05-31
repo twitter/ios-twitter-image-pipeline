@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 11/7/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <CoreImage/CoreImage.h>
@@ -473,8 +473,15 @@ static TIPImageContainer *__nullable _getCachedImage(PRIVATE_SELF(TIPCGImageSour
     TIPImageContainer *imageContainer = nil;
     if (self->_cachedImageContainer) {
         if (TIPImageDecoderRenderModeCompleteImage == self->_cachedImageRenderMode) {
+
+            // already have the completed image
+
             imageContainer = self->_cachedImageContainer;
+
         } else if (self->_cachedImageRenderMode == mode) {
+
+            // incomplete image, but we are matching our render mode
+
             if (self->_tip_isAnimated) {
                 if (!self->_flags.didCompleteLoading) {
                     imageContainer = self->_cachedImageContainer;
@@ -490,6 +497,18 @@ static TIPImageContainer *__nullable _getCachedImage(PRIVATE_SELF(TIPCGImageSour
                     }
                 } else {
                     TIPAssertNever();
+                }
+            }
+
+        } else if (TIPImageDecoderRenderModeCompleteImage == mode) {
+
+            // wanting the complete image, check to see if the last image we cached happened to have all the bytes (only for animated images though)
+
+            if (self->_tip_isAnimated) {
+                if (self->_frameCount == self->_cachedImageContainer.frameCount) {
+                    if (self->_data.length == self->_cachedImageByteCount) {
+                        imageContainer = self->_cachedImageContainer;
+                    }
                 }
             }
         }

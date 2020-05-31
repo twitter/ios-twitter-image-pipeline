@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 4/3/17.
-//  Copyright © 2017 Twitter, Inc. All rights reserved.
+//  Copyright © 2020 Twitter, Inc. All rights reserved.
 //
 
 #import "TIPImageViewFetchHelper.h"

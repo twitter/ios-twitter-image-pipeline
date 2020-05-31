@@ -367,7 +367,7 @@ void TIPExecuteCGContextBlock(dispatch_block_t __attribute__((noescape)) block)
         const BOOL serialize = config.serializeCGContextAccess;
 
         if (serialize && (dispatch_queue_get_label(sContextQueue) != dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL))) {
-            tip_dispatch_sync_autoreleasing(sContextQueue, block);
+            dispatch_sync(sContextQueue, block);
         } else {
             block();
         }

@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 10/1/15.
-//  Copyright © 2015 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #include <pthread.h>
@@ -35,12 +35,12 @@ SInt16 const TIPMaxCountForAllDiskCachesDefault = INT16_MAX >> 4;
 NSInteger const TIPMaxConcurrentImagePipelineDownloadCountDefault = 4;
 NSUInteger const TIPMaxRatioSizeOfCacheEntryDefault = 6;
 
-// Cap the default max memory bytes at 160MB for Rendered and Memory caches -- large enough for cache size / TIPMaxRatioSizeOfCacheEntryDefault to be large enough for full screen images on iPhone XS Max (2688x1242) or iPad Pro 12.9 (2732x2048)
-#define MAX_MEMORY_BYTES_CAP        (160ull * 1024ull * 1024ull)
-// Default the max bytes for in memory caching to 1/12th the devices RAM (1/6th if you consider rendered cache cap plus memory cache cap)
-#define MAX_MEMORY_BYTES_DIVISOR    (12ull)
+// Cap the default max memory bytes at 160MB (to be split equally betweet Rendered and Memory caches) -- a reasonable limit for devices with lots of RAM since iOS still enforces memory warnings even if the device has much more RAM available
+#define DEFAULT_MAX_MEMORY_BYTES_CAP        (160ull * 1024ull * 1024ull)
+// Default the max bytes for in memory caching to 1/12th the devices RAM (to be split equally betweet Rendered and Memory caches)
+#define DEFAULT_MAX_MEMORY_BYTES_DIVISOR    (12ull)
 // Arbitrarily default the max bytes for on disk caching to 128MBs (roughly 64 large images or 1,600 small images or 32,000 73x73 avatars)
-#define MAX_DISK_BYTES              (128ull * 1024ull * 1024ull)
+#define DEFAULT_MAX_DISK_BYTES              (128ull * 1024ull * 1024ull)
 
 static pthread_mutex_t sUITraitCollectionMutex = PTHREAD_MUTEX_INITIALIZER;
 static BOOL sUITraitCollectionIsSwizzled = NO;
@@ -51,17 +51,17 @@ static BOOL sUITraitCollectionIsSwizzled = NO;
 
 NS_INLINE SInt64 _MaxBytesForAllRenderedCachesDefaultValue()
 {
-    return (SInt64)MIN([[NSProcessInfo processInfo] physicalMemory] / MAX_MEMORY_BYTES_DIVISOR, MAX_MEMORY_BYTES_CAP);
+    return (SInt64)MIN([[NSProcessInfo processInfo] physicalMemory] / DEFAULT_MAX_MEMORY_BYTES_DIVISOR, DEFAULT_MAX_MEMORY_BYTES_CAP) / 2;
 }
 
 NS_INLINE SInt64 _MaxBytesForAllMemoryCachesDefaultValue()
 {
-    return (SInt64)MIN([[NSProcessInfo processInfo] physicalMemory] / MAX_MEMORY_BYTES_DIVISOR, MAX_MEMORY_BYTES_CAP);
+    return (SInt64)MIN([[NSProcessInfo processInfo] physicalMemory] / DEFAULT_MAX_MEMORY_BYTES_DIVISOR, DEFAULT_MAX_MEMORY_BYTES_CAP) / 2;
 }
 
 NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
 {
-    return (SInt64)MAX_DISK_BYTES;
+    return (SInt64)DEFAULT_MAX_DISK_BYTES;
 }
 
 @implementation TIPGlobalConfiguration
@@ -255,7 +255,7 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
 - (SInt64)maxBytesForAllDiskCaches
 {
     __block SInt64 maxBytes;
-    dispatch_sync(_queueForDiskCaches, ^{
+    tip_dispatch_sync_autoreleasing(_queueForDiskCaches, ^{
         maxBytes = self.internalMaxBytesForAllDiskCaches;
     });
     return maxBytes;
@@ -336,48 +336,51 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
 
 - (void)clearAllDiskCaches
 {
-    NSArray *pipelines = [TIPImagePipeline allRegisteredImagePipelines].allValues;
-    for (TIPImagePipeline *pipeline in pipelines) {
+    [[TIPImagePipeline allRegisteredImagePipelines] enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, TIPImagePipeline * _Nonnull pipeline, BOOL * _Nonnull stop) {
         [pipeline clearDiskCache];
-    }
+    }];
 }
 
 - (void)clearAllMemoryCaches
 {
-    NSArray *pipelines = [TIPImagePipeline allRegisteredImagePipelines].allValues;
-    for (TIPImagePipeline *pipeline in pipelines) {
+    [[TIPImagePipeline allRegisteredImagePipelines] enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, TIPImagePipeline * _Nonnull pipeline, BOOL * _Nonnull stop) {
         [pipeline clearMemoryCaches];
-    }
+    }];
 }
 
 - (void)clearAllRenderedMemoryCaches
 {
-    NSArray *pipelines = [TIPImagePipeline allRegisteredImagePipelines].allValues;
-    for (TIPImagePipeline *pipeline in pipelines) {
+    [[TIPImagePipeline allRegisteredImagePipelines] enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, TIPImagePipeline * _Nonnull pipeline, BOOL * _Nonnull stop) {
         [pipeline.renderedCache clearAllImages:NULL];
-    }
+    }];
 }
 
 - (void)clearAllRenderedMemoryCacheImagesWithIdentifier:(NSString *)identifier
 {
-    NSArray *pipelines = [TIPImagePipeline allRegisteredImagePipelines].allValues;
-    for (TIPImagePipeline *pipeline in pipelines) {
+    [[TIPImagePipeline allRegisteredImagePipelines] enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, TIPImagePipeline * _Nonnull pipeline, BOOL * _Nonnull stop) {
         [pipeline clearRenderedMemoryCacheImageWithIdentifier:identifier];
-    }
+    }];
+}
+
+- (void)dirtyAllRenderedMemoryCacheImagesWithIdentifier:(NSString *)identifier
+{
+    [[TIPImagePipeline allRegisteredImagePipelines] enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, TIPImagePipeline * _Nonnull pipeline, BOOL * _Nonnull stop) {
+        [pipeline dirtyRenderedMemoryCacheImageWithIdentifier:identifier];
+    }];
 }
 
 #pragma mark Observing
 
 - (void)addImagePipelineObserver:(id<TIPImagePipelineObserver>)observer
 {
-    dispatch_barrier_async(_globalObserversQueue, ^{
+    tip_dispatch_barrier_async_autoreleasing(_globalObserversQueue, ^{
         [self->_globalObservers addObject:observer];
     });
 }
 
 - (void)removeImagePipelineObserver:(id<TIPImagePipelineObserver>)observer
 {
-    dispatch_barrier_async(_globalObserversQueue, ^{
+    tip_dispatch_barrier_async_autoreleasing(_globalObserversQueue, ^{
         [self->_globalObservers removeObject:observer];
     });
 }

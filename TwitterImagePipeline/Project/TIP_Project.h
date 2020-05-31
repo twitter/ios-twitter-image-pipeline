@@ -29,6 +29,7 @@ NS_INLINE BOOL tip_never(void)
 }
 
 FOUNDATION_EXTERN BOOL TIPImageTypeSupportsLossyQuality(NSString * __nullable type);
+FOUNDATION_EXTERN BOOL TIPImageTypeSupportsIndexedPalette(NSString * __nullable type);
 
 FOUNDATION_EXTERN void TIPSwizzle(Class cls, SEL originalSelector, SEL swizzledSelector);
 FOUNDATION_EXTERN void TIPClassSwizzle(Class cls, SEL originalSelector, SEL swizzledSelector);
@@ -70,6 +71,6 @@ FOUNDATION_EXTERN dispatch_block_t __nullable TIPStartBackgroundTask(NSString * 
 dispatch_block_t clearTaskBlock##__LINE__ = TIPStartBackgroundTask([NSString stringWithFormat:@"[%@ %@]", NSStringFromClass([self class]), @( #name )]); \
 tip_defer(^{ if (clearTaskBlock##__LINE__) { clearTaskBlock##__LINE__(); } });
 
-#pragma twitter stopignorestylecheck
+#pragma twitter endignorestylecheck
 
 NS_ASSUME_NONNULL_END

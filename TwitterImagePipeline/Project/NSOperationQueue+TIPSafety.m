@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 8/14/15.
-//  Copyright (c) 2015 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import "NSOperationQueue+TIPSafety.h"
@@ -84,16 +84,18 @@ static NSTimeInterval const TIPOperationSafetyGuardCheckForAlreadyFinishedOperat
         return;
     }
 
-    dispatch_async(_queue, ^{
+    tip_dispatch_async_autoreleasing(_queue, ^{
         [self->_operations addObject:op];
         [op addObserver:self forKeyPath:@"isFinished" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial context:NULL];
 
         // There are race conditions where the isFinished KVO may never be observed.
         // Use this async check to weed out any early finishing operations that we didn't observe finishing.
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(TIPOperationSafetyGuardCheckForAlreadyFinishedOperationDelay * NSEC_PER_SEC)), self->_queue, ^{
-            if (op.isFinished) {
-                // Call our KVO observer to unify the code path for removing the observer
-                [self observeValueForKeyPath:@"isFinished" ofObject:op change:@{ NSKeyValueChangeNewKey : @YES } context:NULL];
+            @autoreleasepool {
+                if (op.isFinished) {
+                    // Call our KVO observer to unify the code path for removing the observer
+                    [self observeValueForKeyPath:@"isFinished" ofObject:op change:@{ NSKeyValueChangeNewKey : @YES } context:NULL];
+                }
             }
         });
     });
@@ -119,7 +121,9 @@ static NSTimeInterval const TIPOperationSafetyGuardCheckForAlreadyFinishedOperat
     if ([keyPath isEqualToString:@"isFinished"] && [change[NSKeyValueChangeNewKey] boolValue]) {
         NSOperation *op = object;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(TIPOperationSafetyGuardRemoveOperationAfterFinishedDelay * NSEC_PER_SEC)), _queue, ^{
-            [self _tip_background_removeOperation:op];
+            @autoreleasepool {
+                [self _tip_background_removeOperation:op];
+            }
         });
     }
 }

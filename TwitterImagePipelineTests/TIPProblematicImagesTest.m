@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 6/1/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import "TIP_Project.h"
@@ -22,6 +22,14 @@
 @import ImageIO;
 @import MobileCoreServices;
 @import XCTest;
+
+NS_INLINE NSData * __nullable UIImagePNGRepresentationUndeprecated(UIImage * __nonnull image)
+{
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    return UIImagePNGRepresentation(image);
+#pragma clang diagnostic pop
+}
 
 @interface TIPImagePipelineTestSuccessWithErrorDownloadProvider : NSObject <TIPImageFetchDownloadProvider>
 @property (nonatomic) NSData *downloadData;
@@ -218,8 +226,8 @@ static NSString *sProblematicAvatarPath = nil;
 
     XCTAssertTrue(CGSizeEqualToSize([image1 tip_dimensions], [image2 tip_dimensions]));
 
-    NSData *pngData1 = UIImagePNGRepresentation(image1);
-    NSData *pngData2 = UIImagePNGRepresentation(image2);
+    NSData *pngData1 = UIImagePNGRepresentationUndeprecated(image1);
+    NSData *pngData2 = UIImagePNGRepresentationUndeprecated(image2);
 
     // (╯°□°)╯︵ ┻━┻
     // On iOS 10, these images will serialize to different bytes...
@@ -233,7 +241,7 @@ static NSString *sProblematicAvatarPath = nil;
             XCTAssertTrue(CGSizeEqualToSize(roundTrip1.size, roundTrip2.size));
 
             image1 = [UIImage imageWithData:sProblematicAvatarData scale:image2.scale];
-            pngData1 = UIImagePNGRepresentation(image1);
+            pngData1 = UIImagePNGRepresentationUndeprecated(image1);
 
             UIImage *imageTest = [UIImage imageWithData:pngData1 scale:image2.scale];
             XCTAssertTrue(CGSizeEqualToSize(imageTest.size, image2.size));

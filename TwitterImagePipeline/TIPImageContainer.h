@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 10/8/15.
-//  Copyright © 2015 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <ImageIO/CGImageSource.h>
@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark Properties
 
-/** The `UIImage` being encapsualated by the container */
+/** The `UIImage` being encapsulated by the container */
 @property (nonatomic, readonly) UIImage *image;
 /**
  `YES` if the _image_ is animated.

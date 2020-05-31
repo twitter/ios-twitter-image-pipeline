@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 5/25/19.
-//  Copyright © 2019 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 // Configuration settings file format documentation can be found at:
@@ -57,7 +57,7 @@ CLANG_MODULES_AUTOLINK = NO
 // Apple Clang - Language - Objective C
 CLANG_ENABLE_OBJC_ARC = YES
 CLANG_ENABLE_OBJC_WEAK = YES
-gCLANG_LINK_OBJC_RUNTIME = YES
+CLANG_LINK_OBJC_RUNTIME = YES
 
 // Apple Clang - Preprocessing
 ENABLE_NS_ASSERTIONS = NO
@@ -96,6 +96,7 @@ GCC_WARN_64_TO_32_BIT_CONVERSION = YES
 
 // Apple Clang - Warnings - C++
 CLANG_WARN_RANGE_LOOP_ANALYSIS = YES
+CLANG_WARN_SUSPICIOUS_MOVE = YES
 GCC_WARN_NON_VIRTUAL_DESTRUCTOR = YES
 GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES
 

@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 3/5/15.
-//  Copyright (c) 2015 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 // This header is kept in sync with other *_Common.h headers from sibling projects.
@@ -68,15 +68,17 @@ FOUNDATION_EXTERN BOOL gTwitterImagePipelineAssertEnabled;
 #define TIPCAssert(condition, desc, ...) \
 do {                \
     __PRAGMA_PUSH_NO_EXTRA_ARG_WARNINGS \
-    if (__builtin_expect(!(condition), 0)) {        \
-            NSString *__assert_fn__ = [NSString stringWithUTF8String:__PRETTY_FUNCTION__]; \
-            __assert_fn__ = __assert_fn__ ? __assert_fn__ : @"<Unknown Function>"; \
-            NSString *__assert_file__ = [NSString stringWithUTF8String:TIP_FILE_NAME]; \
-            __assert_file__ = __assert_file__ ? __assert_file__ : @"<Unknown File>"; \
+    if (__builtin_expect(!(condition), 0)) { \
+        __TIPAssertTriggering(); \
+        NSString *__assert_fn__ = [NSString stringWithUTF8String:__PRETTY_FUNCTION__]; \
+        __assert_fn__ = __assert_fn__ ? __assert_fn__ : @"<Unknown Function>"; \
+        NSString *__assert_file__ = [NSString stringWithUTF8String:TIP_FILE_NAME]; \
+        __assert_file__ = __assert_file__ ? __assert_file__ : @"<Unknown File>"; \
         [[NSAssertionHandler currentHandler] handleFailureInFunction:__assert_fn__ \
-        file:__assert_file__ \
-            lineNumber:__LINE__ description:(desc), ##__VA_ARGS__]; \
-    }                \
+                                                                file:__assert_file__ \
+                                                          lineNumber:__LINE__ \
+                                                         description:(desc), ##__VA_ARGS__]; \
+    } \
     __PRAGMA_POP_NO_EXTRA_ARG_WARNINGS \
 } while(0)
 
@@ -89,14 +91,12 @@ do {                \
 #define TIPAssert(expression) \
 ({ if (gTwitterImagePipelineAssertEnabled) { \
     const BOOL __expressionValue = !!(expression); (void)__expressionValue; \
-    __TIPAssert(__expressionValue); \
     TIPCAssert(__expressionValue, @"assertion failed: (" #expression ")"); \
 } })
 
 #define TIPAssertMessage(expression, format, ...) \
 ({ if (gTwitterImagePipelineAssertEnabled) { \
     const BOOL __expressionValue = !!(expression); (void)__expressionValue; \
-    __TIPAssert(__expressionValue); \
     TIPCAssert(__expressionValue, @"assertion failed: (" #expression ") message: %@", [NSString stringWithFormat:format, ##__VA_ARGS__]); \
 } })
 
@@ -141,13 +141,13 @@ do { \
 #pragma mark - Debugging Tools
 
 #if DEBUG
-FOUNDATION_EXTERN void __TIPAssert(BOOL expression);
+FOUNDATION_EXTERN void __TIPAssertTriggering(void);
 FOUNDATION_EXTERN BOOL TIPIsDebuggerAttached(void);
 FOUNDATION_EXTERN void TIPTriggerDebugSTOP(void);
 FOUNDATION_EXTERN BOOL TIPIsDebugSTOPOnAssertEnabled(void);
 FOUNDATION_EXTERN void TIPSetDebugSTOPOnAssertEnabled(BOOL stopOnAssert);
 #else
-#define __TIPAssert(exp) ((void)0)
+#define __TIPAssertTriggering() ((void)0)
 #define TIPIsDebuggerAttached() (NO)
 #define TIPTriggerDebugSTOP() ((void)0)
 #define TIPIsDebugSTOPOnAssertEnabled() (NO)
@@ -192,7 +192,7 @@ __strong tip_defer_block_t tip_macro_concat(tip_stack_defer_block_, __LINE__) __
 
 #define TIPDeferRelease(ref) tip_defer(^{ if (ref) { CFRelease(ref); } })
 
-#pragma twitter stopignorestylecheck
+#pragma twitter endignorestylecheck
 
 #pragma mark - GCD helpers
 
@@ -227,6 +227,7 @@ __strong tip_defer_block_t tip_macro_concat(tip_stack_defer_block_, __LINE__) __
 //          }
 //      }
 
+// Should pretty much ALWAYS use this for async dispatch
 NS_INLINE void tip_dispatch_async_autoreleasing(dispatch_queue_t queue, dispatch_block_t block)
 {
     dispatch_async(queue, ^{
@@ -236,7 +237,18 @@ NS_INLINE void tip_dispatch_async_autoreleasing(dispatch_queue_t queue, dispatch
     });
 }
 
-NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t queue, dispatch_block_t __attribute__((noescape)) block)
+// Should pretty much ALWAYS use this for async barrier dispatch
+NS_INLINE void tip_dispatch_barrier_async_autoreleasing(dispatch_queue_t queue, dispatch_block_t block)
+{
+    dispatch_barrier_async(queue, ^{
+        @autoreleasepool {
+            block();
+        }
+    });
+}
+
+// Only need this in a tight loop, existing autorelease pool will take effect for dispatch_sync
+NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t __attribute__((noescape)) queue, dispatch_block_t block)
 {
     dispatch_sync(queue, ^{
         @autoreleasepool {
@@ -326,4 +338,5 @@ NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t queue, dispatch_
 #endif
 
 NS_ASSUME_NONNULL_END
+
 

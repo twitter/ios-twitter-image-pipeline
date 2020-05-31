@@ -21,10 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
                                     transformerIdentifier:(nullable NSString *)transformerIdentifier
                                          targetDimensions:(CGSize)size
                                         targetContentMode:(UIViewContentMode)mode
-                                    sourceImageDimensions:(out CGSize * __nullable)sourceDimsOut; // main thread only
+                                    sourceImageDimensions:(out CGSize * __nullable)sourceDimsOut
+                                                    dirty:(out BOOL * __nullable)dirtyOut; // main thread only
 - (void)storeImageEntry:(TIPImageCacheEntry *)entry
   transformerIdentifier:(nullable NSString *)transformerIdentifier
   sourceImageDimensions:(CGSize)sourceDims;
+- (void)dirtyImagesWithIdentifier:(NSString *)identifier;
 - (void)clearImagesWithIdentifier:(NSString *)identifier;
 - (void)clearAllImages:(nullable void (^)(void))completion;
 

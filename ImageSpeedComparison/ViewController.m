@@ -16,7 +16,7 @@
 typedef struct {
     __unsafe_unretained NSString *type;
     const char *name;
-    const char *file;
+    const char *file; // provide a URL to load from the inet instead of simulating the load
     BOOL isProgressive;
     BOOL isAnimated;
 } ImageTypeStruct;
@@ -28,6 +28,7 @@ static const ImageTypeStruct sImageTypes[] = {
     { @"public.png",            "PNG",          "twitterfied.png",          NO,     NO  },
     { @"public.tiff",           "TIFF",         "twitterfied.tiff",         NO,     NO  },
     { @"com.compuserve.gif",    "GIF",          "fireworks_original.gif",   NO,     YES },
+    // { @"com.compuserve.gif",    "Static GIF",   "https://media3.giphy.com/media/d3F2Dj8zECyDLFpm/v1.Y2lkPWU4MjZjOWZjOGViZWNhZmJmMjk0NDIyZGQzZjM2ZjhkMzhlNGRhZTk5OTYzZjliMQ/200_s.gif",               NO,     NO  },
     { @"com.google.webp",       "WEBP",         "twitterfied.webp",         NO,     NO  },
     { @"public.heic",           "HEIC",         "twitterfied.heic",         NO,     NO  },
     { @"public.jpeg",           "Small-PJPEG",  "twitterfied.small.pjpg",   YES,    NO  },
@@ -78,6 +79,9 @@ static const NSUInteger kDefaultBitrateIndex = 5;
     CFAbsoluteTime _firstImageTime;
     CFAbsoluteTime _finalImageTime;
     NSUInteger _size;
+
+    CGSize _cachedBounds;
+    UIViewContentMode _cachedContentMode;
 }
 
 - (void)viewDidLoad
@@ -146,6 +150,8 @@ static const NSUInteger kDefaultBitrateIndex = 5;
     }
 
     _startButton.enabled = NO;
+    _cachedBounds = _imageView.bounds.size;
+    _cachedContentMode = _imageView.contentMode;
     _fetchOperation = [_imagePipeline operationWithRequest:self context:nil delegate:self];
     [self registerCannedImage];
     [_imagePipeline fetchImageWithOperation:_fetchOperation];
@@ -215,11 +221,15 @@ static const NSUInteger kDefaultBitrateIndex = 5;
 
 - (void)registerCannedImage
 {
-    NSString *cannedImagePath = [self cannedImageFilePath];
+    NSURL *cannedImageURL = [self cannedImageFileURL];
     NSURL *imageURL = self.imageURL;
 
-    NSData *imageData = [NSData dataWithContentsOfFile:cannedImagePath options:NSDataReadingMappedIfSafe error:NULL];
-    [_downloadProvider addDownloadStubForRequestURL:imageURL responseData:imageData responseMIMEType:nil shouldSupportResuming:NO suggestedBitrate:sBitrates[_speedIndex]];
+    if (cannedImageURL.isFileURL) {
+        NSData *imageData = [NSData dataWithContentsOfURL:cannedImageURL
+                                                  options:NSDataReadingMappedIfSafe
+                                                    error:NULL];
+        [_downloadProvider addDownloadStubForRequestURL:imageURL responseData:imageData responseMIMEType:nil shouldSupportResuming:NO suggestedBitrate:sBitrates[_speedIndex]];
+    }
 }
 
 - (void)unregisterCannedImage
@@ -314,19 +324,24 @@ static const NSUInteger kDefaultBitrateIndex = 5;
 - (NSURL *)imageURL
 {
     NSString *imageName = @(sImageTypes[_imageTypeIndex].file);
-    NSString *imageURLString = [NSString stringWithFormat:@"https://www.twitterfied.com/%@", imageName];
+    NSString *imageURLString;
+    if ([imageName hasPrefix:@"http"]) {
+        imageURLString = imageName;
+    } else {
+        imageURLString = [NSString stringWithFormat:@"https://www.twitterfied.com/%@", imageName];
+    }
     NSURL *imageURL = [NSURL URLWithString:imageURLString];
     return imageURL;
 }
 
 - (CGSize)targetDimensions
 {
-    return _imageView.bounds.size;
+    return _cachedBounds;
 }
 
 - (UIViewContentMode)targetContentMode
 {
-    return _imageView.contentMode;
+    return _cachedContentMode;
 }
 
 - (id<TIPImageFetchTransformer>)transformer
@@ -400,9 +415,13 @@ static const NSUInteger kDefaultBitrateIndex = 5;
 //    return nil;
 //}
 
-- (NSString *)cannedImageFilePath
+- (NSURL *)cannedImageFileURL
 {
-    return [[NSBundle mainBundle] pathForResource:@(sImageTypes[_imageTypeIndex].file) ofType:nil];
+    NSString *file = @(sImageTypes[_imageTypeIndex].file);
+    if ([file hasPrefix:@"http"]) {
+        return [NSURL URLWithString:file];
+    }
+    return [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:file ofType:nil]];
 }
 
 #pragma mark Image Fetch Operation

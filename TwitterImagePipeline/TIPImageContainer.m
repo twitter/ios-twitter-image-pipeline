@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 10/8/15.
-//  Copyright © 2015 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import "TIP_Project.h"
@@ -211,9 +211,7 @@ static CFIndex _DetectLargestNonAnimatedImageIndex(CGImageSourceRef imageSource)
     const CFIndex index = _DetectLargestNonAnimatedImageIndex(imageSource);
     if (index >= 0) {
         // not animated
-        CGImageRef cgImage = CGImageSourceCreateImageAtIndex(imageSource, (size_t)index, NULL);
-        TIPDeferRelease(cgImage);
-        UIImage *image = (cgImage) ? [UIImage imageWithCGImage:cgImage scale:[UIScreen mainScreen].scale orientation:UIImageOrientationUp] : nil;
+        UIImage *image = [UIImage tip_imageWithImageSource:imageSource atIndex:(NSUInteger)index];
         return (image) ? [(TIPImageContainer *)[[self class] alloc] initWithImage:image] : nil;
     }
 

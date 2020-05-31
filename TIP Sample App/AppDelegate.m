@@ -3,7 +3,7 @@
 //  TIP Sample App
 //
 //  Created on 2/3/17.
-//  Copyright © 2017 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
@@ -40,9 +40,7 @@
     [TIPGlobalConfiguration sharedInstance].serializeCGContextAccess = YES;
     [TIPGlobalConfiguration sharedInstance].clearMemoryCachesOnApplicationBackgroundEnabled = YES;
     [[TIPGlobalConfiguration sharedInstance] addImagePipelineObserver:self];
-#if !TARGET_OS_MACCATALYST
     [[TIPImageCodecCatalogue sharedInstance] setCodec:[[TIPXWebPCodec alloc] init] forImageType:TIPXImageTypeWebP];
-#endif
     _imagePipeline = [[TIPImagePipeline alloc] initWithIdentifier:@"Twitter.Example"];
     _imagePipeline.additionalCaches = @[self];
     [TwitterAPI sharedInstance].delegate = self;

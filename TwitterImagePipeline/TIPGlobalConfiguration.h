@@ -3,9 +3,10 @@
 //  TwitterImagePipeline
 //
 //  Created on 10/1/15.
-//  Copyright © 2015 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
+#import <CoreGraphics/CGContext.h>
 #import <Foundation/Foundation.h>
 
 @class TIPImageFetchOperation;
@@ -160,6 +161,9 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
 /** Quickly purge a specific rendered image */
 - (void)clearAllRenderedMemoryCacheImagesWithIdentifier:(NSString *)identifier;
 
+/** Mark a specific rendered image as dirty */
+- (void)dirtyAllRenderedMemoryCacheImagesWithIdentifier:(NSString *)identifier;
+
 #pragma mark Downloads
 
 /**
@@ -237,6 +241,12 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
  Default == `NO`
  */
 @property (nonatomic, readwrite, getter=isClearMemoryCachesOnApplicationBackgroundEnabled) BOOL clearMemoryCachesOnApplicationBackgroundEnabled;
+
+/**
+ The default `CGInterpolationQuality` when scaling an image if a quality was not provided.
+ Default == `CGInterpolationQualityDefault`
+ */
+@property (nonatomic, readwrite) CGInterpolationQuality defaultInterpolationQuality;
 
 #pragma mark Singleton Accessor
 

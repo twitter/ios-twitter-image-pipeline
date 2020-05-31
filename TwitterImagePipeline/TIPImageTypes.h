@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 8/1/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
@@ -123,8 +123,47 @@ typedef NS_OPTIONS(NSInteger, TIPImageEncodingOptions)
     TIPImageEncodingProgressive = 1 << 0,
     /** Force no-alpha, even if the image has alpha */
     TIPImageEncodingNoAlpha = 1 << 1,
-    /** Encode as grayscale (does not work with animated images) */
+    /** Encoded as grayscale (does not work with animated images) */
     TIPImageEncodingGrayscale = 1 << 2,
+    /** Encoded using indexed color palette (default encoders do not support writing indexed color palette images, must have a custome encoder that handles this option) */
+    TIPImageEncodingIndexedColorPalette = 1 << 3,
+};
+
+/**
+ Options for encoding an image with an indexed palette
+ */
+typedef NS_OPTIONS(NSInteger, TIPIndexedPaletteEncodingOptions)
+{
+    /** no options */
+    TIPIndexedPaletteEncodingNoOptions = 0,
+
+    /** 8-bit depth, 256 colors (default) */
+    TIPIndexedPaletteEncodingBitDepth8 = (8-8) << 0,
+    /** 7-bit depth, 128 colors */
+    TIPIndexedPaletteEncodingBitDepth7 = (8-7) << 0,
+    /** 6-bit depth, 64 colors */
+    TIPIndexedPaletteEncodingBitDepth6 = (8-6) << 0,
+    /** 5-bit depth, 32 colors */
+    TIPIndexedPaletteEncodingBitDepth5 = (8-5) << 0,
+    /** 4-bit depth, 16 colors */
+    TIPIndexedPaletteEncodingBitDepth4 = (8-4) << 0,
+    /** 3-bit depth, 8 colors */
+    TIPIndexedPaletteEncodingBitDepth3 = (8-3) << 0,
+    /** 2-bit depth, 4 colors */
+    TIPIndexedPaletteEncodingBitDepth2 = (8-2) << 0,
+    /** 1-bit depth, 2 colors */
+    TIPIndexedPaletteEncodingBitDepth1 = (8-1) << 0,
+    /** 0-bit depth, Invalid */
+    TIPIndexedPaletteEncodingBitDepthInvalid = (8-0) << 0,
+
+    /** Transparency can support any alpha, like PNG8 (default) */
+    TIPIndexedPaletteEncodingTransparencyAnyAlpha = 0b00 << 8,
+    /** Transparency is not supported */
+    TIPIndexedPaletteEncodingTransparencyNoAlpha = 0b01 << 8,
+    /** Transparency can support only full transparency, like GIF */
+    TIPIndexedPaletteEncodingTransparencyFullAlphaOnly = 0b10 << 8,
+    /** Invalid transparency option */
+    TIPIndexedPaletteEncodingTransparencyInvalid = 0b11 << 8,
 };
 
 #pragma mark - TIPRecommendedImageTypeOptions
@@ -146,16 +185,21 @@ typedef NS_OPTIONS(NSInteger, TIPRecommendedImageTypeOptions) {
     TIPRecommendedImageTypePreferProgressive = 1 << 3
 };
 
+#pragma mark - Constants
+
+//! Max length of a magic number for identifying an image type
+FOUNDATION_EXTERN NSUInteger const TIPMagicNumbersForImageTypeMaximumLength;
+
 #pragma mark - Functions
 
 #pragma mark Type Checking
 
 /** Determine if the provided image type can be read/decoded into a `UIImage` by _TIP_ */
-FOUNDATION_EXPORT BOOL TIPImageTypeCanReadWithImageIO(NSString * __nullable type);
+FOUNDATION_EXTERN BOOL TIPImageTypeCanReadWithImageIO(NSString * __nullable type);
 /** Determine if the provided image type can be writtend/encoded from a `UIImage` by _TIP_ */
-FOUNDATION_EXPORT BOOL TIPImageTypeCanWriteWithImageIO(NSString * __nullable type);
+FOUNDATION_EXTERN BOOL TIPImageTypeCanWriteWithImageIO(NSString * __nullable type);
 
-#pragma mark TIP type vs Uniform Type Identifier (UTI) conversion
+#pragma mark TIP type vs Uniform Type Identifier (UTI) vs File Extension
 
 /**
  Convert a UTI to a TIP image type.
@@ -167,8 +211,18 @@ FOUNDATION_EXTERN NSString * __nullable TIPImageTypeFromUTType(NSString * __null
  See `MobileCoreServices/UTCoreTypes.h`
  */
 FOUNDATION_EXTERN NSString * __nullable TIPImageTypeToUTType(NSString * __nullable type);
+/**
+ Convert a UTI to a file extension.
+ See `MobileCoreServices/UTCoreType.h`
+ */
+FOUNDATION_EXTERN NSString * __nullable TIPFileExtensionFromUTType(NSString * __nullable utType);
+/**
+ Convert a file extension to a UTI.
+ See `MobileCoreServices/UTCoreType.h`
+*/
+FOUNDATION_EXTERN NSString * __nullable TIPFileExtensionToUTType(NSString * __nullable fileExtension, BOOL mustBeImageUTType);
 
-#pragma mark Debug/Inspection Utilities
+#pragma mark Inspection Utilities
 
 /**
  Detect the image type from raw encoded data.
@@ -183,12 +237,25 @@ FOUNDATION_EXTERN NSString * __nullable TIPDetectImageType(NSData *data,
                                                            TIPImageEncodingOptions * __nullable optionsOut,
                                                            NSUInteger * __nullable animationFrameCountOut,
                                                            BOOL hasCompleteImageData);
+
+/**
+Detect the image type from raw encoded data.
+@param filePath The file to detect
+@param optionsOut The `TIPImageEncodingOptions` to detect (`NULL` if detection isn't desired)
+@param animationFrameCountOut The number of animations frames (`NULL` if detection isn't desired)
+@return The image type detected or `nil` if no type could be detected
+*/
+FOUNDATION_EXTERN NSString * __nullable TIPDetectImageTypeFromFile(NSURL *filePath,
+                                                                   TIPImageEncodingOptions * __nullable optionsOut,
+                                                                   NSUInteger * __nullable animationFrameCountOut);
+
 /**
  Detect the image type from raw encoded data via magic numbers.
  @param data The `NSData`
  @return the detected image type or `nil` if no type could be detected
  */
 FOUNDATION_EXTERN NSString * __nullable TIPDetectImageTypeViaMagicNumbers(NSData *data);
+
 /**
  Detect the number of progressive scans in the provided `NSData`.
  Currently only supports progressive JPEG.

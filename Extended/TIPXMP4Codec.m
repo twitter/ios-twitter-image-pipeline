@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 3/16/17.
-//  Copyright © 2017 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
@@ -36,7 +36,7 @@ __strong tipx_defer_block_t tipx_macro_concat(tipx_stack_defer_block_, __LINE__)
 
 #define TIPXDeferRelease(ref) tipx_defer(^{ if (ref) { CFRelease(ref); } })
 
-#pragma twitter stopignorestylecheck
+#pragma twitter endignorestylecheck
 
 #pragma mark - Constants
 
@@ -286,7 +286,7 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
                                                                      message:error.description];
             return;
         }
-        
+
         CGSize naturalSize = self->_avTrack.naturalSize;
 
         NSDictionary *outputSettings = @{

@@ -81,7 +81,7 @@ static void _memoryCache_updateByteCounts(SELF_ARG,
     const SInt64 totalSize = self.atomicTotalCost;
     const SInt16 totalCount = (SInt16)_manifest.numberOfEntries;
     TIPGlobalConfiguration *config = _globalConfig;
-    dispatch_async(config.queueForMemoryCaches, ^{
+    tip_dispatch_async_autoreleasing(config.queueForMemoryCaches, ^{
         config.internalTotalBytesForAllMemoryCaches -= totalSize;
         config.internalTotalCountForAllMemoryCaches -= totalCount;
     });
@@ -100,7 +100,7 @@ static void _memoryCache_updateByteCounts(SELF_ARG,
     }
 
     __block TIPImageMemoryCacheEntry *entry;
-    tip_dispatch_sync_autoreleasing(_globalConfig.queueForMemoryCaches, ^{
+    dispatch_sync(_globalConfig.queueForMemoryCaches, ^{
         // Get entry
         entry = (TIPImageMemoryCacheEntry *)[self->_manifest entryWithIdentifier:identifier];
         if (entry) {

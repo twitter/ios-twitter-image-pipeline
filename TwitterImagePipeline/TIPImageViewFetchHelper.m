@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 4/18/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
@@ -103,10 +103,13 @@ static void _didReset(SELF_ARG);
         BOOL isLoadedImagePreview:1;
         BOOL isLoadedImageScaled:1;
         BOOL treatAsPlaceholder:1;
+        BOOL isObservingCacheImageUpdates:1;
     } _flags;
     NSString *_loadedImageType;
     UIColor *_debugImageHighlightColor;
     UIColor *_debugInfoTextColor;
+
+    NSString * _Nullable _observedPipelineIdentifier;
 }
 
 - (instancetype)init
@@ -327,7 +330,9 @@ static void _markAsIfPlaceholder(SELF_ARG)
         // we want the old operation be coalesced with the new one (from the new fetch helper),
         // so defer the cancellation until after a coalescing can happen
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [oldOp cancel];
+            @autoreleasepool {
+                [oldOp cancel];
+            }
         });
     }
     fromHelper.fetchView = nil;
@@ -627,6 +632,32 @@ static void _didReset(SELF_ARG)
 
 #pragma mark Fetch Delegate
 
+- (void)tip_imageFetchOperation:(TIPImageFetchOperation *)op
+       didLoadDirtyPreviewImage:(id<TIPImageFetchResult>)result
+{
+    if (op != _fetchOperation) {
+        return;
+    }
+
+    const BOOL shouldUpdate = _shouldUpdateImage(self, result);
+    if (shouldUpdate) {
+        _update(self,
+                result.imageContainer,
+                result.imageOriginalDimensions,
+                result.imageURL,
+                result.imageSource,
+                nil /*image type*/,
+                0.0f /*progress*/,
+                nil /*error*/,
+                nil /*metrics*/,
+                NO /*final*/,
+                NO /*scaled*/,
+                NO /*progressive*/,
+                YES /*preview*/,
+                !!result.imageIsTreatedAsPlaceholder);
+    }
+}
+
 - (void)tip_imageFetchOperationDidStart:(TIPImageFetchOperation *)op
 {
     if (op != _fetchOperation) {
@@ -810,14 +841,8 @@ static void _tearDown(SELF_ARG)
     }
 
     _cancelFetch(self);
-    _startObservingImagePipeline(self, nil /* image pipeline */);
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-    [nc removeObserver:self
-                  name:TIPImageViewDidUpdateDebugInfoVisibilityNotification
-                object:nil];
-    [nc removeObserver:self
-                  name:kRetryFailedLoadsNotification
-                object:nil];
+    [nc removeObserver:self];
     [self->_debugInfoView removeFromSuperview];
 }
 
@@ -1114,21 +1139,42 @@ static void _startObservingImagePipeline(SELF_ARG,
 
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
 
-    // Clear related observing
-    [nc removeObserver:self name:TIPImagePipelineDidStoreCachedImageNotification object:nil];
-
-    // Start observing
-    if (pipeline) {
-        [nc addObserver:self
-               selector:@selector(_tip_imageDidUpdate:)
-                   name:TIPImagePipelineDidStoreCachedImageNotification
-                 object:pipeline];
+    if (!pipeline) {
+        // Clear our observing
+        if (self->_flags.isObservingCacheImageUpdates) {
+            [nc removeObserver:self
+                          name:TIPImagePipelineDidStoreCachedImageNotification
+                        object:nil];
+            self->_flags.isObservingCacheImageUpdates = NO;
+        }
+        self->_observedPipelineIdentifier = nil;
+    } else {
+        // Ensure observing
+        if (!self->_flags.isObservingCacheImageUpdates) {
+            [nc addObserver:self
+                   selector:@selector(_tip_imageDidUpdate:)
+                       name:TIPImagePipelineDidStoreCachedImageNotification
+                     object:nil];
+            self->_flags.isObservingCacheImageUpdates = YES;
+        }
+        self->_observedPipelineIdentifier = [pipeline.identifier copy];
     }
 }
 
 - (void)_tip_imageDidUpdate:(NSNotification *)note
 {
     if (!_fetchOperation) {
+
+        TIPImagePipeline *pipeline = note.object;
+
+        if (![pipeline isKindOfClass:[TIPImagePipeline class]]) {
+            return;
+        }
+
+        if (![pipeline.identifier isEqualToString:_observedPipelineIdentifier]) {
+            return;
+        }
+
         id<TIPImageFetchRequest> request = self.fetchRequest;
         NSString *requestIdentifier = TIPImageFetchRequestGetImageIdentifier(request);
 
@@ -1159,8 +1205,9 @@ static void _startObservingImagePipeline(SELF_ARG,
                 _startObservingImagePipeline(self, nil /*image pipeline*/);
                 self->_flags.isLoadedImageFinal = 0;
                 tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
-                    // clear the render cache, but async so other render cache stores can complete first
-                    [[TIPGlobalConfiguration sharedInstance] clearAllRenderedMemoryCacheImagesWithIdentifier:identifier];
+                    // Dirty the render cache, but async so other render cache stores can complete first
+                    [[TIPGlobalConfiguration sharedInstance] dirtyAllRenderedMemoryCacheImagesWithIdentifier:identifier];
+                    // Async refetch
                     _refetch(self, nil /*peeked request*/);
                 });
             }
@@ -1230,7 +1277,7 @@ static NSString *_getDebugInfoString(SELF_ARG,
 
 + (void)notifyAllFetchHelpersToRetryFailedLoads
 {
-    dispatch_async(dispatch_get_main_queue(), ^{
+    tip_dispatch_async_autoreleasing(dispatch_get_main_queue(), ^{
         [[NSNotificationCenter defaultCenter] postNotificationName:kRetryFailedLoadsNotification
                                                             object:nil
                                                           userInfo:nil];
@@ -1240,7 +1287,7 @@ static NSString *_getDebugInfoString(SELF_ARG,
 - (void)_tip_retryFailedLoadsNotification:(NSNotification *)note
 {
     if (self.fetchError != nil && !self.isLoading) {
-        _refetch(self, nil);
+        _refetch(self, nil /* peeked request */);
     }
 }
 

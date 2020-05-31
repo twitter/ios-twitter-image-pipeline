@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 9/6/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <ImageIO/ImageIO.h>
@@ -66,6 +66,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (NSUInteger)tip_estimatedSizeInBytes;
 
+/**
+ Return whether the image has few enough colors to use an indexed palette or not.
+ @param options the options to use when checking if the image can be losslessly encoded with an indexed palette.  See `TIPIndexedPaletteEncodingOptions`.
+ @return `YES` if the image could use an indexed palette.  `NO` otherwise.
+ @warning This method is very expensive.  It iterates through every single pixel of the image and on every pixel evaluates against all the previously "hit" colors.
+ */
+- (BOOL)tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:(TIPIndexedPaletteEncodingOptions)options;
+
 #pragma mark Inspection Methods
 
 /**
@@ -102,12 +110,14 @@ NS_ASSUME_NONNULL_BEGIN
  Return a copy of the image scaled
  @param targetDimensions the target size in pixels to scale to.
  @param targetContentMode the target `UIViewContentMode` used to confine the scaling
+ @param interpolationQuality the `CGInterpolationQuality` wrapped in an `NSNumber` or `nil` to use `[TIPGlobalConfiguration defaultInterpolationQuality]` (aka default)
  @param decode decode the image to memory, default is `YES`
  @note only _targetContentMode_ values that have `UIViewContentModeScale*` will be scaled (others are just positional and do not scale)
  @warning there is a bug in Apple's frameworks that can yield a `nil` image when scaling.  The issue is years old and there are many radars against it (for example #33057552 and #22097047).  Rather than expose a pain point of this method potentially returning `nil`, this method will just return `self` in the case that the bug is triggered.
  */
 - (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions
                                      contentMode:(UIViewContentMode)targetContentMode
+                            interpolationQuality:(nullable NSNumber *)interpolationQuality
                                           decode:(BOOL)decode;
 - (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions
                                      contentMode:(UIViewContentMode)targetContentMode;
@@ -218,7 +228,7 @@ NS_ASSUME_NONNULL_BEGIN
  Write the target `UIImage` to an `NSData` instance
  @param type the image type to encode with.  Pass `nil` for automatic behavior.
  @param encodingOptions the `TIPImageEncodingOptions` to encode with
- @param quality the quality to encode with.  Pass `1.f` for lossless.  See `TIPImageTypes.h` for
+ @param quality the quality to encode with.  Pass `1.f` for lossless.  See `TIPImageUtils.h` for
  some constants that are better suited for encoding _JPEG_ images with.
  @param animationLoopCount the number of animation loops (if the image is animated).
  @param animationFrameDurations the durations for each frame (if the image is animated).  If the
@@ -240,7 +250,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param filePath the path to write the image to
  @param type the image type to encode with.  Pass `nil` for automatic behavior.
  @param encodingOptions the `TIPImageEncodingOptions` to encode with
- @param quality the quality to encode with.  Pass `1.f` for lossless.  See `TIPImageTypes.h` for
+ @param quality the quality to encode with.  Pass `1.f` for lossless.  See `TIPImageUtils.h` for
  some constants that are better suited for encoding _JPEG_ images with.
  @param animationLoopCount the number of animation loops (if the image is animated).
  @param animationFrameDurations the durations for each frame (if the image is animated).
@@ -274,6 +284,15 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
 @interface UIImage (TIPAdditions_CGImage)
 
 /**
+ Create a new UIImage from the image at the specified index in the `CGImageSourceRef`
+ @param imageSource the `CGImageSourceRef` to load from
+ @param index index of the image in the image source
+ @return new UIImage or `nil` if there was an error or no image at the specified index
+ */
++ (nullable UIImage *)tip_imageWithImageSource:(CGImageSourceRef)imageSource
+                                       atIndex:(NSUInteger)index;
+
+/**
  Construct an animated image with a `CGImageSourceRef`
  @param imageSource the `CGImageSourceRef` to load from
  @param durationsOut the durations of the animated image that was loaded (`NULL` to ignore)
@@ -302,6 +321,34 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
                    animationLoopCount:(NSUInteger)animationLoopCount
               animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
                                 error:(out NSError * __nullable * __nullable)error;
+@end
+
+// Use `-[UIImage tip_PNGRepresentation]` instead of `UIImagePNGRepresentation(...)`
+UIKIT_EXTERN  NSData * __nullable UIImagePNGRepresentation(UIImage * __nonnull image) __attribute__((deprecated("Use `-[UIImage tip_PNGRepresentation]` instead of `UIImagePNGRepresentation(...)`")));
+// Use `-[UIImage tip_JPEGRepresentationWithQuality:progressive:]` instead of `UIImageJPEGRepresentation(...)`
+UIKIT_EXTERN  NSData * __nullable UIImageJPEGRepresentation(UIImage * __nonnull image, CGFloat compressionQuality) __attribute__((deprecated("Use `-[UIImage tip_JPEGRepresentationWithQuality:progressive:]` instead of `UIImageJPEGRepresentation(...)`")));
+
+@interface UIImage (TIPConvenienceEncoding)
+
+/**
+ Convenience method to return the PNG data representation of the image.
+ Use this instead of `UIImagePNGRepresentation` UIKit function.
+ @return the image as PNG data. May return `nil` if image could not be encoded.
+ @note equivalent to calling `tip_writeToDataWithType:encodingOptions:quality:animationLoopCount:animationFrameDurations:error:` with appropriate arguments.
+ */
+- (nullable NSData *)tip_PNGRepresentation;
+
+/**
+ Convenience method to return the JPEG data representation of the image.
+ Use this instead of `UIImageJPEGRepresentation` UIKit function.
+ @param quality the quality to encode with.  Pass `1.f` for lossless.  See `TIPImageUtils.h` for
+ some constants that are better suited for encoding _JPEG_ images with.
+ @param progressive whether to encode as a progressive JPEG or not.
+ @return the image as JPEG data. May return `nil` if image could not be encoded.
+ @note equivalent to calling `tip_writeToDataWithType:encodingOptions:quality:animationLoopCount:animationFrameDurations:error:` with appropriate arguments.
+ */
+- (nullable NSData *)tip_JPEGRepresentationWithQuality:(float)quality progressive:(BOOL)progressive;
+
 @end
 
 @interface UIImage (TIPDeprecations)

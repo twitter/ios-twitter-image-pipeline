@@ -3,12 +3,13 @@
 //  TwitterImagePipeline
 //
 //  Created on 11/9/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import "TIP_Project.h"
 #import "TIPDefaultImageCodecs.h"
 #import "TIPError.h"
+#import "TIPGlobalConfiguration.h"
 #import "TIPImageCodecCatalogue.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -58,7 +59,9 @@ NS_ASSUME_NONNULL_BEGIN
     static TIPImageCodecCatalogue *sCatalogue = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        sCatalogue = [[TIPImageCodecCatalogue alloc] initWithCodecs:[self defaultCodecs]];
+        sCatalogue = [[TIPImageCodecCatalogue alloc] initWithCodecsProvider:^NSDictionary<NSString *,id<TIPImageCodec>> * _Nullable{
+            return [self defaultCodecs];
+        }];
     });
     return sCatalogue;
 }
@@ -66,6 +69,17 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init
 {
     return [self initWithCodecs:nil];
+}
+
+- (instancetype)initWithCodecsProvider:(TIPImageCodecCatalogueCodecsProvider)codecProvider
+{
+    if (self = [super init]) {
+        _codecQueue = dispatch_queue_create("TIPImageCodecCatalogue.queue", DISPATCH_QUEUE_CONCURRENT);
+        dispatch_barrier_async(_codecQueue, ^{
+            self->_codecs = [NSMutableDictionary dictionaryWithDictionary:codecProvider()];
+        });
+    }
+    return self;
 }
 
 - (instancetype)initWithCodecs:(nullable NSDictionary<NSString *,id<TIPImageCodec>> *)codecs
@@ -80,7 +94,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSDictionary<NSString *, id<TIPImageCodec>> *)allCodecs
 {
     __block NSDictionary<NSString *, id<TIPImageCodec>> * allCodecs;
-    tip_dispatch_sync_autoreleasing(_codecQueue, ^{
+    dispatch_sync(_codecQueue, ^{
         allCodecs = [self->_codecs copy];
     });
     return allCodecs;
@@ -100,7 +114,7 @@ NS_ASSUME_NONNULL_BEGIN
             [self->_codecs removeObjectForKey:imageType];
         });
     } else {
-        dispatch_barrier_async(_codecQueue, ^{
+        tip_dispatch_barrier_async_autoreleasing(_codecQueue, ^{
             [self->_codecs removeObjectForKey:imageType];
         });
     }
@@ -108,7 +122,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setCodec:(id<TIPImageCodec>)codec forImageType:(NSString *)imageType
 {
-    dispatch_barrier_async(_codecQueue, ^{
+    tip_dispatch_barrier_async_autoreleasing(_codecQueue, ^{
         self->_codecs[imageType] = codec;
     });
 }
@@ -116,7 +130,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable id<TIPImageCodec>)codecForImageType:(NSString *)imageType
 {
     __block id<TIPImageCodec> codec;
-    tip_dispatch_sync_autoreleasing(_codecQueue, ^{
+    dispatch_sync(_codecQueue, ^{
         codec = self->_codecs[imageType];
     });
     return codec;
@@ -168,7 +182,7 @@ NS_ASSUME_NONNULL_BEGIN
 {
     __block id<TIPImageCodec> codec = nil;
     if (type) {
-        tip_dispatch_sync_autoreleasing(_codecQueue, ^{
+        dispatch_sync(_codecQueue, ^{
             codec = self->_codecs[type];
         });
     }

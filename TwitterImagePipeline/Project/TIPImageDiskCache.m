@@ -50,12 +50,25 @@ static NSDictionary<NSString *, Class> *_XAttributesKeysToKindsMap()
                  kXAttributeContextTreatAsPlaceholderKey : [NSNumber class], // BOOL
                  kXAttributeContextURLKey : [NSURL class],
                  kXAttributeContextLastAccessKey : [NSDate class],
-                 kXAttributeContextLastModifiedKey : [NSString class],
-                 kXAttributeContextExpectedSizeKey : [NSNumber class],
+                 kXAttributeContextLastModifiedKey : [NSString class], // Only used for partial entries
+                 kXAttributeContextExpectedSizeKey : [NSNumber class], // Only used for partial entries
                  kXAttributeContextDimensionXKey : [NSNumber class],
                  kXAttributeContextDimensionYKey : [NSNumber class],
                  kXAttributeContextAnimated : [NSNumber class], // BOOL
                  };
+    });
+    return sMap;
+}
+
+static NSDictionary<NSString *, Class> *_XAttributesKeysToKindsMapForCompleteEntry(void);
+static NSDictionary<NSString *, Class> *_XAttributesKeysToKindsMapForCompleteEntry()
+{
+    static NSDictionary *sMap;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSMutableDictionary *attributes = [_XAttributesKeysToKindsMap() mutableCopy];
+        [attributes removeObjectsForKeys:@[kXAttributeContextLastModifiedKey, kXAttributeContextExpectedSizeKey]];
+        sMap = [attributes copy];
     });
     return sMap;
 }
@@ -253,7 +266,7 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
     const SInt64 totalSize = self.atomicTotalSize;
     const SInt16 totalCount = (SInt16)_manifest.numberOfEntries;
     TIPGlobalConfiguration *config = _globalConfig;
-    dispatch_async(config.queueForDiskCaches, ^{
+    tip_dispatch_async_autoreleasing(config.queueForDiskCaches, ^{
         config.internalTotalBytesForAllDiskCaches -= totalSize;
         config.internalTotalCountForAllDiskCaches -= totalCount;
     });
@@ -548,7 +561,7 @@ static NSString * __nullable _diskCache_copyImageEntryToTemporaryFile(SELF_ARG,
         if ([fm fileExistsAtPath:filePath]) {
             const NSUInteger size = TIPFileSizeAtPath(filePath, NULL);
             if (size) {
-                NSDictionary *xattributes = TIPGetXAttributesForFile(filePath, _XAttributesKeysToKindsMap());
+                NSDictionary *xattributes = TIPGetXAttributesForFile(filePath, _XAttributesKeysToKindsMapForCompleteEntry());
                 context = (id)_ContextFromXAttributes(xattributes, NO);
                 if (![context isKindOfClass:[TIPCompleteImageEntryContext class]]) {
                     context = nil;
@@ -1684,7 +1697,9 @@ _ImageDiskCacheManifestLoadOperation(NSMutableDictionary<NSString *, TIPImageDis
             TIPLogError(@"Could not get stat() of '%@': %@", entryPath, error);
         } else {
             rawIdentifier = TIPRawFromSafe(safeIdentifier);
-            context = (rawIdentifier) ? _ContextFromXAttributes(TIPGetXAttributesForFile(entryPath, _XAttributesKeysToKindsMap()), isTmp) : nil;
+
+            NSDictionary *xattrMap = isTmp ? _XAttributesKeysToKindsMap() : _XAttributesKeysToKindsMapForCompleteEntry();
+            context = (rawIdentifier) ? _ContextFromXAttributes(TIPGetXAttributesForFile(entryPath, xattrMap), isTmp) : nil;
             if (isTmp && ![context isKindOfClass:[TIPPartialImageEntryContext class]]) {
                 context = nil;
             } else if (!isTmp && [context isKindOfClass:[TIPPartialImageEntryContext class]]) {

@@ -39,6 +39,17 @@ typedef void(^TIPImageFetchDidLoadPreviewCallback)(TIPImageFetchPreviewLoadedBeh
 @optional
 
 /**
+ Called if a dirty render cache preview was encountered _before_ the fetch even starts.
+ Use this to pre-populate the target view with the given result if desired.
+ This is the only callback that can happen prior to `tip_imageFetchOperationDidStart:`
+
+ @param op The image fetch operation
+ @param result The preview image result that is dirty
+ */
+- (void)tip_imageFetchOperation:(nonnull TIPImageFetchOperation *)op
+       didLoadDirtyPreviewImage:(nonnull id<TIPImageFetchResult>)result;
+
+/**
  Called when the fetch starts
  @param op The image fetch operation
  */
