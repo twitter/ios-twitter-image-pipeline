@@ -668,7 +668,7 @@ static void _extractBasicRequestInfo(SELF_ARG)
     [self willEnqueue];
     _flags.didStart = 1;
     _flags.isEarlyCompletion = 1;
-    TIPLogDebug(@"%@%@, id=%@", NSStringFromSelector(_cmd), entry.completeImage, entry.identifier);
+    TIPLogDebug(@"%@ %@, id=%@", NSStringFromSelector(_cmd), entry.completeImage, entry.identifier);
 
     _startTime = mach_absolute_time();
     self.state = TIPImageFetchOperationStateLoadingFromMemory;
@@ -711,6 +711,31 @@ static void _extractBasicRequestInfo(SELF_ARG)
         _background_postDidFinish(self);
     });
     self.state = TIPImageFetchOperationStateSucceeded;
+}
+
+- (void)handleEarlyLoadOfDirtyImageEntry:(TIPImageCacheEntry *)entry
+                             transformed:(BOOL)transformed
+                   sourceImageDimensions:(CGSize)sourceDims
+{
+    TIPAssert([NSThread isMainThread]);
+    TIPAssert(!_flags.didStart);
+    TIPAssert(entry.completeImage != nil);
+    TIPAssert(_metrics == nil);
+    TIPAssert(_metricsInternal != nil);
+
+    TIPLogDebug(@"%@ %@, id=%@", NSStringFromSelector(_cmd), entry.completeImage, entry.identifier);
+
+    id<TIPImageFetchDelegate> delegate = self.delegate;
+    if ([delegate respondsToSelector:@selector(tip_imageFetchOperation:didLoadDirtyPreviewImage:)]) {
+        id<TIPImageFetchResult> result = _CreateFetchResultInternal(entry.completeImage,
+                                                                    entry.identifier,
+                                                                    TIPImageLoadSourceMemoryCache,
+                                                                    entry.completeImageContext.URL,
+                                                                    sourceDims,
+                                                                    entry.completeImageContext.treatAsPlaceholder,
+                                                                    transformed);
+        [delegate tip_imageFetchOperation:self didLoadDirtyPreviewImage:result];
+    }
 }
 
 - (void)willEnqueue

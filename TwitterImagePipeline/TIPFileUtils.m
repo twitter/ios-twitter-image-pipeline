@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 7/14/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #include <dirent.h>
@@ -100,14 +100,14 @@ NSDate * __nullable TIPLastModifiedDateAtPathURL(NSURL *pathURL)
 
 void TIPSetLastModifiedDateAtPath(NSString * path, NSDate *date)
 {
-    [[NSFileManager defaultManager] setAttributes:@{NSFileModificationDate : date}
-                                     ofItemAtPath:path
-                                            error:NULL];
+    TIPSetLastModifiedDateAtPathURL([NSURL fileURLWithPath:path], date);
 }
 
 void TIPSetLastModifiedDateAtPathURL(NSURL *pathURL, NSDate *date)
 {
-    TIPSetLastModifiedDateAtPath(pathURL.path, date);
+    [pathURL setResourceValue:date
+                       forKey:NSURLContentModificationDateKey
+                        error:NULL];
 }
 
 #pragma mark - File Extended Attribute Helpers

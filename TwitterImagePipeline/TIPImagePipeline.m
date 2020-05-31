@@ -236,24 +236,34 @@ static void TIPFireFetchCompletionBlock(TIPImagePipelineFetchCompletionBlock __n
     NSString *imageId = op.imageIdentifier;
     NSString *transformerId = op.transformerIdentifier;
     CGSize sourceImageDimensions = CGSizeZero;
+    BOOL isDirty = NO;
     if ([NSThread isMainThread] && [op supportsLoadingFromRenderedCache] && (imageId != nil)) {
         // Sync Access, for optimization
         entry = [_renderedCache imageEntryWithIdentifier:imageId
                                    transformerIdentifier:transformerId
                                         targetDimensions:targetDimensions
                                        targetContentMode:targetContentMode
-                                   sourceImageDimensions:&sourceImageDimensions];
+                                   sourceImageDimensions:&sourceImageDimensions
+                                                   dirty:&isDirty];
     }
 
     if (entry.completeImage) {
-        // Sync Completion
-        [op completeOperationEarlyWithImageEntry:entry
-                                     transformed:(transformerId != nil)
-                           sourceImageDimensions:sourceImageDimensions];
-    } else {
-        // Async Operation
-        TIPEnqueueOperation(op);
+        if (!isDirty) {
+            // Sync Completion
+            [op completeOperationEarlyWithImageEntry:entry
+                                         transformed:(transformerId != nil)
+                               sourceImageDimensions:sourceImageDimensions];
+            return;
+        }
+
+        // Sync early preview
+        [op handleEarlyLoadOfDirtyImageEntry:entry
+                                 transformed:(transformerId != nil)
+                       sourceImageDimensions:sourceImageDimensions];
     }
+
+    // Async Operation
+    TIPEnqueueOperation(op);
 }
 
 #pragma mark Store / Move
@@ -323,6 +333,12 @@ static TIPImageStoreHydrationOperation * __nullable _createHydrationOperation(PR
 {
     TIPAssert(imageIdentifier != nil);
     [_renderedCache clearImagesWithIdentifier:imageIdentifier];
+}
+
+- (void)dirtyRenderedMemoryCacheImageWithIdentifier:(NSString *)imageIdentifier
+{
+    TIPAssert(imageIdentifier != nil);
+    [_renderedCache dirtyImagesWithIdentifier:imageIdentifier];
 }
 
 - (void)clearMemoryCaches
@@ -519,7 +535,7 @@ static BOOL TIPRegisterImagePipelineWithIdentifier(TIPImagePipeline *pipeline, N
     } flags;
     flags.didRegister = flags.alreadyRegistered = flags.isInvalidIdentifier = 0;
 
-    tip_dispatch_sync_autoreleasing(sRegistrationQueue, ^{
+    dispatch_sync(sRegistrationQueue, ^{
 
         if (TIPImagePipelineIdentifierIsValid(identifier)) {
 

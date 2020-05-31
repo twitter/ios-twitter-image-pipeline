@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 3/2/17.
-//  Copyright © 2017 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 import TwitterImagePipeline
@@ -43,8 +43,8 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
         super.viewDidLoad()
         var targetSize = self.tweetImageInfo!.originalDimensions
         let scale = UIScreen.main.scale
-        targetSize.height /= scale;
-        targetSize.width /= scale;
+        targetSize.height /= scale
+        targetSize.width /= scale
 
         self.progressView = UIProgressView.init(frame: CGRect(x: 0, y: 0, width: self.view.bounds.size.width, height: 4.0))
         self.progressView!.autoresizingMask = [.flexibleWidth, .flexibleBottomMargin]
@@ -62,7 +62,7 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
 
         let tapSelector: Selector = #selector(self.doubleTapTriggered(_:))
         self.doubleTapGestureRecognizer = UITapGestureRecognizer.init(target: self, action: tapSelector)
-        self.doubleTapGestureRecognizer!.numberOfTapsRequired = 2;
+        self.doubleTapGestureRecognizer!.numberOfTapsRequired = 2
 
         self.imageView!.image = nil
         self.imageView!.addGestureRecognizer(self.doubleTapGestureRecognizer!)
@@ -79,7 +79,7 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
         self.scrollView!.zoom(to: self.imageView!.frame, animated: false)
         self.scrollView!.minimumZoomScale = self.scrollView!.zoomScale // readjust minimum
         if (self.scrollView!.minimumZoomScale > self.scrollView!.maximumZoomScale) {
-            self.scrollView!.maximumZoomScale = self.scrollView!.minimumZoomScale;
+            self.scrollView!.maximumZoomScale = self.scrollView!.minimumZoomScale
         }
 
         self.scrollViewDidZoom(self.scrollView!)
@@ -141,15 +141,15 @@ class ZoomingTweetImageViewController: UIViewController, UIScrollViewDelegate, T
 
     func tip_imageFetchOperation(_ op: TIPImageFetchOperation, willAttemptToLoadFrom source: TIPImageLoadSource)
     {
-        print("...attempting load from next source: \(source)...");
+        print("...attempting load from next source: \(source)...")
     }
 
     func tip_imageFetchOperation(_ op: TIPImageFetchOperation, didLoadPreviewImage previewResult: TIPImageFetchResult, completion: @escaping TIPImageFetchDidLoadPreviewCallback)
     {
-        print("...preview loaded...");
+        print("...preview loaded...")
         self.progressView!.tintColor = UIColor.blue
-        self.imageView!.image = previewResult.imageContainer.image;
-        completion(.continueLoading);
+        self.imageView!.image = previewResult.imageContainer.image
+        completion(.continueLoading)
     }
 
     func tip_imageFetchOperation(_ op: TIPImageFetchOperation, shouldLoadProgressivelyWithIdentifier identifier: String, url URL: URL, imageType: String, originalDimensions: CGSize) -> Bool

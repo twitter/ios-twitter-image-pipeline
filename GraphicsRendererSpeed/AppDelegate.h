@@ -2,7 +2,7 @@
 //  AppDelegate.h
 //  GraphicsRendererSpeed
 //
-//  Copyright © 2018 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

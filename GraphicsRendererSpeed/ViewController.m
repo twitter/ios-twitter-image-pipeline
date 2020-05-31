@@ -2,7 +2,7 @@
 //  ViewController.m
 //  GraphicsRendererSpeed
 //
-//  Copyright © 2018 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #include <sys/utsname.h>
@@ -96,6 +96,7 @@ static NSString *ModelName()
             text = [existingText stringByAppendingString:text];
         }
         _textView.text = text;
+        [_textView scrollRangeToVisible:NSMakeRange(text.length - 1, 1)];
     }
 }
 
@@ -116,14 +117,20 @@ static NSString *ModelName()
     NSArray<NSString *> *imageNames = @[
                                         @"iceland_P3.jpg",
                                         @"iceland_sRGB.jpg",
+                                        @"iceland_png8.png",
                                         @"italy_P3.jpg",
                                         @"italy_sRGB.jpg",
                                         @"parrot_wide.jpg",
                                         @"parrot_srgb.jpg",
+                                        @"parrot_png8.png",
                                         @"shoes_adobeRGB.jpg",
                                         @"shoes_sRGB.jpg",
                                         @"webkit_P3.png",
                                         @"webkit_sRGB.png",
+                                        @"carnival.png",
+                                        @"carnival_less_color.png",
+                                        @"carnival_less_color_alpha_pixels.png",
+                                        @"carnival_less_color_transparent_pixels.png",
                                         ];
 
     [self _appendText:TIPMainScreenSupportsWideColorGamut() ? @"is" : @"is not"];
@@ -171,6 +178,16 @@ static NSString *ModelName()
             averages[behavior] = [self _q_testImage:image targetDimensions:resizeDims behavior:behavior];
             const double ratio = (averages[behavior] / averages[0]);
             [self _appendText:[NSString stringWithFormat:@" - %.2f:1", ratio]];
+        }
+
+        [self _appendText:@"\n\tindexable="];
+        CFAbsoluteTime start = CFAbsoluteTimeGetCurrent();
+        BOOL indexable = [image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingNoOptions];
+        CFAbsoluteTime end = CFAbsoluteTimeGetCurrent();
+        [self _appendText:(indexable) ? @"YES" : @"NO"];
+        [self _appendText:[NSString stringWithFormat:@": %.2fms", (end - start) * 1000.0]];
+        if (indexable) {
+            [self _appendText:[NSString stringWithFormat:@", %.1fpx/ms", (dims.width * dims.height) / ((end - start) * 1000.)]];
         }
     });
 }
@@ -253,6 +270,8 @@ static NSString *ModelName()
         _cachedRenderer = nil;
 #endif
     }
+
+    (void)renderedImage;
     return CFAbsoluteTimeGetCurrent() - start;
 }
 

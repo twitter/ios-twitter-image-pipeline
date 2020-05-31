@@ -14,7 +14,7 @@
 #import "TIPImageUtils.h"
 #import "TIPTests.h"
 #import "TIPXMP4Codec.h"
-#if TARGET_OS_IOS
+#if !TARGET_OS_TV
 #import "TIPXWebPCodec.h"
 #endif
 #import "UIImage+TIPAdditions.h"
@@ -36,7 +36,7 @@
 #define PARAM_SET_FLOAT(ai, bo) [TestParamSet floatParamSetWithAlphaInfo:(ai) byteOrder:(bo)]
 #define PARAM_SET_INT(ai, bo)   [TestParamSet integerParamSetWithAlphaInfo:(ai) byteOrder:(bo) bytesPerComponent:1]
 
-#if TARGET_OS_IOS
+#if !TARGET_OS_TV
 #define PLUG_IN_WEBP() \
 TIPXWebPCodec *webpCodec = [[TIPXWebPCodec alloc] init]; \
 [[TIPImageCodecCatalogue sharedInstance] setCodec:webpCodec forImageType:TIPXImageTypeWebP]; \
@@ -51,6 +51,19 @@ TIPXMP4Codec *mp4Codec = [[TIPXMP4Codec alloc] init]; \
 tip_defer(^{ \
     [[TIPImageCodecCatalogue sharedInstance] removeCodecForImageType:TIPXImageTypeMP4]; \
 });
+
+#define SLOW_IMAGE_CHECK 0
+
+#if SLOW_IMAGE_CHECK
+NS_INLINE NSData * __nullable UIImagePNGRepresentationUndeprecated(UIImage * __nonnull image)
+{
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    return UIImagePNGRepresentation(image);
+#pragma clang diagnostic pop
+}
+#endif
+
 
 @implementation TestParamSet
 
@@ -129,11 +142,9 @@ tip_defer(^{ \
 #define JPEG2000_QUALITY_GOOD (kTIPAppleQualityValueRepresentingJFIFQuality85)
 #define JPEG2000_QUALITY_OK (0.15f)
 
-#if TARGET_OS_IOS
 #define WEBP_QUALITY_PERFECT (.99f) /* use .99 because 1. is lossless and slower than molasses in Edmonton in January */
 #define WEBP_QUALITY_GOOD (0.6f)
 #define WEBP_QUALITY_OK (0.3f)
-#endif
 
 #define TEST_IMAGE_WIDTH ((CGFloat)1880.0)
 #define TEST_IMAGE_HEIGHT ((CGFloat)1253.0)
@@ -249,11 +260,10 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 #pragma mark Test Read/Write of different formats
 
-- (void)runSaveTest:(NSString *)type options:(TIPImageEncodingOptions)options extension:(NSString *)extension quality:(float)quality useAnimatedImage:(BOOL)useAnimated
+- (void)runSaveTest:(NSString *)type options:(TIPImageEncodingOptions)options extension:(NSString *)extension quality:(float)quality image:(TIPImageContainer *)imageContainer
 {
     NSString *file = [[[NSTemporaryDirectory() stringByAppendingPathComponent:@"test"] stringByAppendingPathExtension:[@((NSUInteger)(quality * 100.0f)) stringValue]] stringByAppendingPathExtension:extension];
     NSError *error = nil;
-    TIPImageContainer * imageContainer = (useAnimated) ? sAnimatedImageContainer : sImageContainer;
     const BOOL writeToFileSuccess = [imageContainer saveToFilePath:file type:type codecCatalogue:nil options:options quality:quality atomic:YES error:&error];
     XCTAssertTrue(writeToFileSuccess, @"file=`%@`, error=%@", file, error);
     XCTAssertTrue([[NSFileManager defaultManager] fileExistsAtPath:file isDirectory:NULL], @"%@", file);
@@ -309,12 +319,11 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 - (void)runSpeedTest:(NSString *)type options:(TIPImageEncodingOptions)options
 {
     TIPImageCodecCatalogue *catalogue = [TIPImageCodecCatalogue sharedInstance];
-    // const BOOL animated = [catalogue codecWithImageTypeSupportsAnimation:type];
-    TIPImageContainer *imageContainer = (NO) ? sAnimatedImageContainer : sImageContainer;
+    TIPImageContainer *imageContainer = sImageContainer;
     for (NSUInteger i = 0; i < 5; i++) {
         @autoreleasepool {
             float quality = 1.0f - ((i % 10) / 10.0f);
-#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+#if !TARGET_OS_TV
             if (type == TIPXImageTypeWebP && quality > .99f) {
                 // Lossless WebP is super slow,
                 // drop down to 99% in order to give WebP a fighting chance
@@ -347,11 +356,11 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testSaveJPEG
 {
-    [self runSaveTest:TIPImageTypeJPEG options:0 extension:@"jpg" quality:JPEG_QUALITY_PERFECT useAnimatedImage:NO];
-    [self runSaveTest:TIPImageTypeJPEG options:0 extension:@"jpg" quality:JPEG_QUALITY_GOOD useAnimatedImage:NO];
+    [self runSaveTest:TIPImageTypeJPEG options:0 extension:@"jpg" quality:JPEG_QUALITY_PERFECT image:sImageContainer];
+    [self runSaveTest:TIPImageTypeJPEG options:0 extension:@"jpg" quality:JPEG_QUALITY_GOOD image:sImageContainer];
 
     [self runMeasurement:@"save" format:@"jpg" block:^{
-        [self runSaveTest:TIPImageTypeJPEG options:0 extension:@"jpg" quality:JPEG_QUALITY_OK useAnimatedImage:NO];
+        [self runSaveTest:TIPImageTypeJPEG options:0 extension:@"jpg" quality:JPEG_QUALITY_OK image:sImageContainer];
     }];
 }
 
@@ -374,11 +383,11 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testSavePJPEG
 {
-    [self runSaveTest:TIPImageTypeJPEG options:TIPImageEncodingProgressive extension:@"pjpg" quality:JPEG_QUALITY_PERFECT useAnimatedImage:NO];
-    [self runSaveTest:TIPImageTypeJPEG options:TIPImageEncodingProgressive extension:@"pjpg" quality:JPEG_QUALITY_GOOD useAnimatedImage:NO];
+    [self runSaveTest:TIPImageTypeJPEG options:TIPImageEncodingProgressive extension:@"pjpg" quality:JPEG_QUALITY_PERFECT image:sImageContainer];
+    [self runSaveTest:TIPImageTypeJPEG options:TIPImageEncodingProgressive extension:@"pjpg" quality:JPEG_QUALITY_GOOD image:sImageContainer];
 
     [self runMeasurement:@"save" format:@"pjpg" block:^{
-        [self runSaveTest:TIPImageTypeJPEG options:TIPImageEncodingProgressive extension:@"pjpg" quality:JPEG_QUALITY_OK useAnimatedImage:NO];
+        [self runSaveTest:TIPImageTypeJPEG options:TIPImageEncodingProgressive extension:@"pjpg" quality:JPEG_QUALITY_OK image:sImageContainer];
     }];
 }
 
@@ -401,11 +410,11 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testSaveJPEG2000
 {
-    [self runSaveTest:TIPImageTypeJPEG2000 options:0 extension:@"j2k" quality:JPEG2000_QUALITY_PERFECT useAnimatedImage:NO];
-    [self runSaveTest:TIPImageTypeJPEG2000 options:0 extension:@"j2k" quality:JPEG2000_QUALITY_GOOD useAnimatedImage:NO];
+    [self runSaveTest:TIPImageTypeJPEG2000 options:0 extension:@"j2k" quality:JPEG2000_QUALITY_PERFECT image:sImageContainer];
+    [self runSaveTest:TIPImageTypeJPEG2000 options:0 extension:@"j2k" quality:JPEG2000_QUALITY_GOOD image:sImageContainer];
 
     [self runMeasurement:@"save" format:@"j2k" block:^{
-        [self runSaveTest:TIPImageTypeJPEG2000 options:0 extension:@"j2k" quality:JPEG2000_QUALITY_OK useAnimatedImage:NO];
+        [self runSaveTest:TIPImageTypeJPEG2000 options:0 extension:@"j2k" quality:JPEG2000_QUALITY_OK image:sImageContainer];
     }];
 }
 
@@ -429,7 +438,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 - (void)testSavePNG
 {
     [self runMeasurement:@"save" format:@"png" block:^{
-        [self runSaveTest:TIPImageTypePNG options:0 extension:@"png" quality:1.0f useAnimatedImage:NO];
+        [self runSaveTest:TIPImageTypePNG options:0 extension:@"png" quality:1.0f image:sImageContainer];
     }];
 }
 
@@ -450,7 +459,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 - (void)testSaveIPNG
 {
     [self runMeasurement:@"save" format:@"ipng" block:^{
-        [self runSaveTest:TIPImageTypePNG options:TIPImageEncodingProgressive extension:@"i.png" quality:1.0f useAnimatedImage:NO];
+        [self runSaveTest:TIPImageTypePNG options:TIPImageEncodingProgressive extension:@"i.png" quality:1.0f image:sImageContainer];
     }];
 }
 
@@ -471,7 +480,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 - (void)testSaveTIFF
 {
     [self runMeasurement:@"save" format:@"tiff" block:^{
-        [self runSaveTest:TIPImageTypeTIFF options:0 extension:@"tiff" quality:1.0f useAnimatedImage:NO];
+        [self runSaveTest:TIPImageTypeTIFF options:0 extension:@"tiff" quality:1.0f image:sImageContainer];
     }];
 }
 
@@ -492,7 +501,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 - (void)testSaveBMP
 {
     [self runMeasurement:@"save" format:@"bmp" block:^{
-        [self runSaveTest:TIPImageTypeBMP options:0 extension:@"bmp" quality:1.0f useAnimatedImage:NO];
+        [self runSaveTest:TIPImageTypeBMP options:0 extension:@"bmp" quality:1.0f image:sImageContainer];
     }];
 }
 
@@ -513,7 +522,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 - (void)testSaveTGA
 {
     [self runMeasurement:@"save" format:@"tga" block:^{
-        [self runSaveTest:TIPImageTypeTARGA options:0 extension:@"tga" quality:1.0f useAnimatedImage:NO];
+        [self runSaveTest:TIPImageTypeTARGA options:0 extension:@"tga" quality:1.0f image:sImageContainer];
     }];
 }
 
@@ -537,11 +546,11 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         return;
     }
 
-    [self runSaveTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_PERFECT useAnimatedImage:NO];
-    [self runSaveTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_GOOD useAnimatedImage:NO];
+    [self runSaveTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_PERFECT image:sImageContainer];
+    [self runSaveTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_GOOD image:sImageContainer];
 
     [self runMeasurement:@"save" format:@"heic" block:^{
-        [self runSaveTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_OK useAnimatedImage:NO];
+        [self runSaveTest:TIPImageTypeHEIC options:0 extension:@"heic" quality:HEIF_QUALITY_OK image:sImageContainer];
     }];
 }
 
@@ -576,11 +585,11 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         return;
     }
 
-    [self runSaveTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_PERFECT useAnimatedImage:NO];
-    [self runSaveTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_GOOD useAnimatedImage:NO];
+    [self runSaveTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_PERFECT image:sImageContainer];
+    [self runSaveTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_GOOD image:sImageContainer];
 
     [self runMeasurement:@"save" format:@"avci" block:^{
-        [self runSaveTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_OK useAnimatedImage:NO];
+        [self runSaveTest:TIPImageTypeAVCI options:0 extension:@"avci" quality:HEIF_QUALITY_OK image:sImageContainer];
     }];
 }
 
@@ -771,23 +780,23 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     // unsupported with read only format
 }
 
-#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+#if !TARGET_OS_TV
 - (void)testSaveWebP
 {
     XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:TIPXImageTypeWebP]);
 
     PLUG_IN_WEBP();
 
-    [self runSaveTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_PERFECT useAnimatedImage:NO];
-    [self runSaveTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_GOOD useAnimatedImage:NO];
+    [self runSaveTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_PERFECT image:sImageContainer];
+    [self runSaveTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_GOOD image:sImageContainer];
 
     [self runMeasurement:@"save" format:@"webp" block:^{
-        [self runSaveTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_OK useAnimatedImage:NO];
+        [self runSaveTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_OK image:sImageContainer];
     }];
 }
 #endif
 
-#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+#if !TARGET_OS_TV
 - (void)testXLoadWebP
 {
     [self runLoadTestForUnreadableFormat:@"webp"];
@@ -803,7 +812,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 }
 #endif
 
-#if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+#if !TARGET_OS_TV
 - (void)testSpeedWebP
 {
     XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:@"webp"]);
@@ -821,7 +830,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 - (void)testSaveAnimatedGIF
 {
     [self runMeasurement:@"save" format:@"gif" block:^{
-        [self runSaveTest:TIPImageTypeGIF options:0 extension:@"gif" quality:1.0f useAnimatedImage:YES];
+        [self runSaveTest:TIPImageTypeGIF options:0 extension:@"gif" quality:1.0f image:sAnimatedImageContainer];
     }];
 }
 
@@ -842,7 +851,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 - (void)testSaveAnimatedPNG
 {
     [self runMeasurement:@"save" format:@"apng" block:^{
-        [self runSaveTest:TIPImageTypePNG options:0 extension:@"apng" quality:1.0f useAnimatedImage:YES];
+        [self runSaveTest:TIPImageTypePNG options:0 extension:@"apng" quality:1.0f image:sAnimatedImageContainer];
     }];
 }
 
@@ -1341,11 +1350,9 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testFixOrientation
 {
-#define SLOW_IMAGE_CHECK 0
-
     UIImage *sourceImage = [sImageContainer.image tip_scaledImageWithTargetDimensions:CGSizeMake(1024, 768) contentMode:UIViewContentModeScaleToFill];
 #if SLOW_IMAGE_CHECK
-    NSData *originalImagePNGData = UIImagePNGRepresentation(sourceImage);
+    NSData *originalImagePNGData = UIImagePNGRepresentationUndeprecated(sourceImage);
 #endif
     UIImage *modifiedImage = nil;
     UIImage *fixedImage = nil;
@@ -1358,8 +1365,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         XCTAssertEqualObjects(modifiedImage, fixedImage);
         XCTAssertEqual(fixedImage.imageOrientation, sourceImage.imageOrientation);
 #if SLOW_IMAGE_CHECK
-        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentation(modifiedImage));
-        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentation(fixedImage));
+        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(modifiedImage));
+        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(fixedImage));
 #endif
         modifiedImage = nil;
         fixedImage = nil;
@@ -1372,8 +1379,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         XCTAssertNotEqual(modifiedImage.imageOrientation, sourceImage.imageOrientation);
         XCTAssertEqual(fixedImage.imageOrientation, sourceImage.imageOrientation);
 #if SLOW_IMAGE_CHECK
-        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentation(modifiedImage));
-        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentation(fixedImage));
+        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(modifiedImage));
+        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(fixedImage));
 #endif
         modifiedImage = nil;
         fixedImage = nil;
@@ -1386,8 +1393,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         XCTAssertNotEqual(modifiedImage.imageOrientation, sourceImage.imageOrientation);
         XCTAssertEqual(fixedImage.imageOrientation, sourceImage.imageOrientation);
 #if SLOW_IMAGE_CHECK
-        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentation(modifiedImage));
-        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentation(fixedImage));
+        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(modifiedImage));
+        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(fixedImage));
 #endif
         modifiedImage = nil;
         fixedImage = nil;
@@ -1400,8 +1407,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         XCTAssertNotEqual(modifiedImage.imageOrientation, sourceImage.imageOrientation);
         XCTAssertEqual(fixedImage.imageOrientation, sourceImage.imageOrientation);
 #if SLOW_IMAGE_CHECK
-        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentation(modifiedImage));
-        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentation(fixedImage));
+        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(modifiedImage));
+        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(fixedImage));
 #endif
         modifiedImage = nil;
         fixedImage = nil;
@@ -1414,8 +1421,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         XCTAssertNotEqual(modifiedImage.imageOrientation, sourceImage.imageOrientation);
         XCTAssertEqual(fixedImage.imageOrientation, sourceImage.imageOrientation);
 #if SLOW_IMAGE_CHECK
-        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentation(modifiedImage));
-        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentation(fixedImage));
+        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(modifiedImage));
+        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(fixedImage));
 #endif
         modifiedImage = nil;
         fixedImage = nil;
@@ -1428,8 +1435,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         XCTAssertNotEqual(modifiedImage.imageOrientation, sourceImage.imageOrientation);
         XCTAssertEqual(fixedImage.imageOrientation, sourceImage.imageOrientation);
 #if SLOW_IMAGE_CHECK
-        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentation(modifiedImage));
-        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentation(fixedImage));
+        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(modifiedImage));
+        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(fixedImage));
 #endif
         modifiedImage = nil;
         fixedImage = nil;
@@ -1442,8 +1449,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         XCTAssertNotEqual(modifiedImage.imageOrientation, sourceImage.imageOrientation);
         XCTAssertEqual(fixedImage.imageOrientation, sourceImage.imageOrientation);
 #if SLOW_IMAGE_CHECK
-        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentation(modifiedImage));
-        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentation(fixedImage));
+        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(modifiedImage));
+        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(fixedImage));
 #endif
         modifiedImage = nil;
         fixedImage = nil;
@@ -1456,14 +1463,12 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         XCTAssertNotEqual(modifiedImage.imageOrientation, sourceImage.imageOrientation);
         XCTAssertEqual(fixedImage.imageOrientation, sourceImage.imageOrientation);
 #if SLOW_IMAGE_CHECK
-        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentation(modifiedImage));
-        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentation(fixedImage));
+        XCTAssertNotEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(modifiedImage));
+        XCTAssertEqualObjects(originalImagePNGData, UIImagePNGRepresentationUndeprecated(fixedImage));
 #endif
         modifiedImage = nil;
         fixedImage = nil;
     }
-
-#undef SLOW_IMAGE_CHECK
 }
 
 - (UIImage *)imageByRotatingImage:(UIImage *)image andSettingOrientation:(UIImageOrientation)orientation

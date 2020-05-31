@@ -130,7 +130,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
 {
     __block TIPImageDecoderAppendResult result = TIPImageDecoderAppendResultDidProgress;
 
-    tip_dispatch_sync_autoreleasing(_renderQueue, ^{
+    dispatch_sync(_renderQueue, ^{
         result = _appendData(self, data, final);
     });
 

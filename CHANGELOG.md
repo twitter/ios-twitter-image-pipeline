@@ -2,13 +2,45 @@
 
 ## Info
 
-**Document version:** 2.13.0
+**Document version:** 2.13.5
 
-**Last updated:** 07/04/2019
+**Last updated:** 04/12/2020
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.13.5
+
+- Add _WebP_ support to Catalyst builds
+  - See `WEBP_README.md`
+- Miscellaneous performance improvements
+  - Async load the default codes to avoid main thread blockage on app launch
+  - Tighter memory management with autorelease pools
+  - `TIPImageFetchHelper` will now register for all image cache updates and filter on observation vs registering against specific pipelines, which avoids register/unregister locking performance impact
+  - Add `TIPDetectImageTypeFromFile(...)` for efficient and effective image type detection from a file
+- Add replacements for `UIImagePNGRepresentation` and `UIImageJPEGRepresentation`
+  - Unifies to the __TIP__ codec based encoding rather than the __UIKit__ implementation which can be unreliable for consistency.
+  - Provides progressive support for JPEG variant of functionality.
+  - See `-[UIImage tip_PNGRepresentation]` and `-[UIImage tip_JPEGRepresentationWithQuality:progressive:]`
+- Add some palette based image utilities
+  - `-[UIImage tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:]`
+- Fix bug where a GIF load may be incomplete in response but complete in data loaded failing to load in __TIP__
+  - Mostly an issue with some CDN vendors terminating the HTTP response incorrectly
+  
+
+### 2.13.2
+
+- Add `[TIPGlobalConfiguration defaultInterpolationQuality]`
+  - By default, will use `CGInterpolationQualityDefault` which is same behavior as before
+  - Add quality arg to image scaling with `[UIImage tip_scaledImageWithTargetDimensions:contentMode:interpolationQuality:decode:]`
+
+### 2.13.1
+
+- Add `[TIPImageFetchDelegate tip_imageFetchOperation:didLoadDirtyPreviewImage:]` support
+  - This allows for the rendered cache to mark a specific entry dirty (by identifier)
+  - On fetch operation load, the dirty preview can be synchronously loaded while the op continues on async
+  - This helps systems where a larger version of an image with a shared identifier loads and matching fetch helpers that are not visible in the UI take note in order to refresh with the better resolution image, but without the risk of clearing that image's render cache which can lead to a 1 or 2 frame "flash" of the image loading async from cache
 
 ### 2.13.0
 

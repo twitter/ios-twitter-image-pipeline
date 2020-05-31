@@ -363,7 +363,7 @@ built in UI and tools that use the inspection support of *TIP* for internal buil
 
 # License
 
-Copyright 2015-2018 Twitter, Inc.
+Copyright 2015-2020 Twitter, Inc.
 
 Licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
 

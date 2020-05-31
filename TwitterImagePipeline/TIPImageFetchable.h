@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 11/27/17.
-//  Copyright © 2017 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

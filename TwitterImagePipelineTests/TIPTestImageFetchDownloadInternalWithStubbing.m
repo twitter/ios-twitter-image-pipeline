@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 8/28/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import "TIPTestImageFetchDownloadInternalWithStubbing.h"

@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 3/5/15.
-//  Copyright (c) 2015 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import "TIP_ProjectCommon.h"
@@ -112,12 +112,10 @@ void TIPSetDebugSTOPOnAssertEnabled(BOOL stopOnAssert)
     sIsDebugSTOPEnabled = stopOnAssert;
 }
 
-void __TIPAssert(BOOL expression)
+void __TIPAssertTriggering()
 {
-    if (!expression) {
-        if (TIPIsDebugSTOPOnAssertEnabled() && TIPIsDebuggerAttached()) {
-            TIPTriggerDebugSTOP(); // trigger debug stop
-        }
+    if (TIPIsDebugSTOPOnAssertEnabled() && TIPIsDebuggerAttached()) {
+        TIPTriggerDebugSTOP(); // trigger debug stop
     }
 }
 

@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 9/9/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import "NSData+TIPAdditions.h"
@@ -70,21 +70,21 @@ static void _executeClientBlock(SELF_ARG,
                                                                                userInfo:(config) ? @{ @"config" : [config copy] } : nil
                                                                           storagePolicy:NSURLCacheStorageAllowed];
 
-    dispatch_barrier_async(sOriginQueue, ^{
+    tip_dispatch_barrier_async_autoreleasing(sOriginQueue, ^{
         sOriginToResponseDictionary[_UnderlyingURLString(endpoint)] = cachedResponse;
     });
 }
 
 + (void)unregisterEndpoint:(NSURL *)endpoint
 {
-    dispatch_barrier_async(sOriginQueue, ^{
+    tip_dispatch_barrier_async_autoreleasing(sOriginQueue, ^{
         [sOriginToResponseDictionary removeObjectForKey:_UnderlyingURLString(endpoint)];
     });
 }
 
 + (void)unregisterAllEndpoints
 {
-    dispatch_barrier_async(sOriginQueue, ^{
+    tip_dispatch_barrier_async_autoreleasing(sOriginQueue, ^{
         [sOriginToResponseDictionary removeAllObjects];
     });
 }
@@ -143,7 +143,7 @@ static void _executeClientBlock(SELF_ARG,
 - (void)startLoading
 {
     self.protocolRunLoop = CFRunLoopGetCurrent();
-    dispatch_async(_protocolQueue, ^{
+    tip_dispatch_async_autoreleasing(_protocolQueue, ^{
         ABORT_IF_NECESSARY();
 
         NSURLRequest *request = self.request;
@@ -156,12 +156,12 @@ static void _executeClientBlock(SELF_ARG,
 
         if (response) {
             if (self.cachedResponse) {
-                dispatch_async(self->_protocolQueue, ^{
+                tip_dispatch_async_autoreleasing(self->_protocolQueue, ^{
                     ABORT_IF_NECESSARY();
                     _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
                         [client URLProtocol:self cachedResponseIsValid:self.cachedResponse];
                     });
-                    dispatch_async(self->_protocolQueue, ^{
+                    tip_dispatch_async_autoreleasing(self->_protocolQueue, ^{
                         ABORT_IF_NECESSARY();
                         self.stopped = YES;
                         _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
@@ -186,70 +186,74 @@ static void _executeClientBlock(SELF_ARG,
                 latency = ((double)config.latency) / 1000.0;
 
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((delay + latency) * NSEC_PER_SEC)), self->_protocolQueue, ^{
-                    ABORT_IF_NECESSARY();
+                    @autoreleasepool {
+                        ABORT_IF_NECESSARY();
 
-                    if (config.failureError) {
-                        self.stopped = YES;
-                        _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
-                            [client URLProtocol:self didFailWithError:config.failureError];
-                        });
-                        return;
-                    }
-
-                    NSHTTPURLResponse *httpResponse = (id)response.response;
-                    NSData *data = response.data;
-                    NSInteger statusCode = (config.statusCode > 0) ? config.statusCode : httpResponse.statusCode;
-
-                    // See if we need to change to a 206
-                    if (200 == statusCode && config.canProvideRange) {
-
-                        const NSRange range = _RangeForRequest(request, data.length, config.stringForIfRange);
-                        if (range.location != NSNotFound) {
-                            // subrange requested, provide it
-                            statusCode = 206;
-                            data = [data subdataWithRange:range];
-                        }
-
-                    }
-
-                    // On 3xx (when `Location` is provided), execute redirection based on config behavior.
-                    if (statusCode >= 300 && statusCode < 400) {
-                        const TIPTestURLProtocolRedirectBehavior behavior = (config) ? config.redirectBehavior : TIPTestURLProtocolRedirectBehaviorFollowLocation;
-                        if (_handleRedirect(self, request, httpResponse, behavior)) {
-                            // was handled, return
+                        if (config.failureError) {
+                            self.stopped = YES;
+                            _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
+                                [client URLProtocol:self didFailWithError:config.failureError];
+                            });
                             return;
                         }
-                    }
 
-                    httpResponse = _UpdateResponse(httpResponse, data.length, statusCode);
+                        NSHTTPURLResponse *httpResponse = (id)response.response;
+                        NSData *data = response.data;
+                        NSInteger statusCode = (config.statusCode > 0) ? config.statusCode : httpResponse.statusCode;
 
-                    dispatch_async(self->_protocolQueue, ^{
-                        ABORT_IF_NECESSARY();
-                        _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
-                            [client URLProtocol:self
-                             didReceiveResponse:httpResponse
-                             cacheStoragePolicy:response.storagePolicy];
-                        });
+                        // See if we need to change to a 206
+                        if (200 == statusCode && config.canProvideRange) {
 
-                        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(latency * NSEC_PER_SEC)), self->_protocolQueue, ^{
-                            ABORT_IF_NECESSARY();
-
-                            NSUInteger bps = NSUIntegerMax;
-                            if (config.bps > 0) {
-                                bps = (NSUInteger)MIN(config.bps / 8ULL, (uint64_t)NSUIntegerMax);
+                            const NSRange range = _RangeForRequest(request, data.length, config.stringForIfRange);
+                            if (range.location != NSNotFound) {
+                                // subrange requested, provide it
+                                statusCode = 206;
+                                data = [data subdataWithRange:range];
                             }
 
-                            _chunkData(self,
-                                       data,
-                                       bps,
-                                       0 /*bytesSent*/,
-                                       MAX(latency, 0.25));
+                        }
+
+                        // On 3xx (when `Location` is provided), execute redirection based on config behavior.
+                        if (statusCode >= 300 && statusCode < 400) {
+                            const TIPTestURLProtocolRedirectBehavior behavior = (config) ? config.redirectBehavior : TIPTestURLProtocolRedirectBehaviorFollowLocation;
+                            if (_handleRedirect(self, request, httpResponse, behavior)) {
+                                // was handled, return
+                                return;
+                            }
+                        }
+
+                        httpResponse = _UpdateResponse(httpResponse, data.length, statusCode);
+
+                        tip_dispatch_async_autoreleasing(self->_protocolQueue, ^{
+                            ABORT_IF_NECESSARY();
+                            _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
+                                [client URLProtocol:self
+                                 didReceiveResponse:httpResponse
+                                 cacheStoragePolicy:response.storagePolicy];
+                            });
+
+                            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(latency * NSEC_PER_SEC)), self->_protocolQueue, ^{
+                                @autoreleasepool {
+                                    ABORT_IF_NECESSARY();
+
+                                    NSUInteger bps = NSUIntegerMax;
+                                    if (config.bps > 0) {
+                                        bps = (NSUInteger)MIN(config.bps / 8ULL, (uint64_t)NSUIntegerMax);
+                                    }
+
+                                    _chunkData(self,
+                                               data,
+                                               bps,
+                                               0 /*bytesSent*/,
+                                               MAX(latency, 0.25));
+                                }
+                            });
                         });
-                    });
+                    }
                 });
             }
         } else {
-            dispatch_async(self->_protocolQueue, ^{
+            tip_dispatch_async_autoreleasing(self->_protocolQueue, ^{
                 ABORT_IF_NECESSARY();
                 self.stopped = YES;
                 _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
@@ -356,7 +360,7 @@ static void _chunkData(SELF_ARG,
     }
 
     if (bytesSent >= data.length) {
-        dispatch_async(self->_protocolQueue, ^{
+        tip_dispatch_async_autoreleasing(self->_protocolQueue, ^{
             ABORT_IF_NECESSARY();
             self.stopped = YES;
             _executeClientBlock(self, ^(id<NSURLProtocolClient> client){
@@ -365,8 +369,10 @@ static void _chunkData(SELF_ARG,
         });
     } else {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(latency * NSEC_PER_SEC)), self->_protocolQueue, ^{
-            ABORT_IF_NECESSARY();
-            _chunkData(self, data, bps, bytesSent, latency);
+            @autoreleasepool {
+                ABORT_IF_NECESSARY();
+                _chunkData(self, data, bps, bytesSent, latency);
+            }
         });
     }
 }
@@ -397,7 +403,9 @@ static void _executeClientBlock(SELF_ARG,
     }
 
     CFRunLoopPerformBlock(self->_protocolRunLoop, kCFRunLoopDefaultMode, ^{
-        block(self.client);
+        @autoreleasepool {
+            block(self.client);
+        }
     });
     CFRunLoopWakeUp(self->_protocolRunLoop);
 }

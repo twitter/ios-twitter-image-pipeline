@@ -3,7 +3,7 @@
 //  TIP Swift Sample App
 //
 //  Created on 3/2/17.
-//  Copyright © 2017 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 import TwitterImagePipeline
@@ -52,10 +52,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         tipConfig.isClearMemoryCachesOnApplicationBackgroundEnabled = true
         tipConfig.add(self)
 
-#if !targetEnvironment(macCatalyst)
         let catalogue = TIPImageCodecCatalogue.sharedInstance()
         catalogue.setCodec(TIPXWebPCodec.init(), forImageType: TIPXImageTypeWebP)
-#endif
 
         self.imagePipeline = TIPImagePipeline(identifier: "Twitter.Example")
         self.imagePipeline?.additionalCaches = [self]
@@ -93,7 +91,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         self.window?.backgroundColor = UIColor.orange
         self.window?.makeKeyAndVisible()
 
-        return true;
+        return true
     }
 
     // MARK: private functions
@@ -198,7 +196,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
                 image = self.placeholder
             }
         }
-        completion(image);
+        completion(image)
     }
 }
 

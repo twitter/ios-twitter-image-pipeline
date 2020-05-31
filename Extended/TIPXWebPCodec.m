@@ -3,18 +3,26 @@
 //  TwitterImagePipeline
 //
 //  Created on 11/9/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
-#include <TargetConditionals.h>
-
-#if !TARGET_OS_MACCATALYST
+#pragma mark imports
 
 #import <Accelerate/Accelerate.h>
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
+
+#import "TIPXWebPCodec.h"
+
+#pragma mark WebP includes
+
+#if TARGET_OS_MACCATALYST
+#import <webp/webp.h>
+#else
 #import <WebP/decode.h>
 #import <WebP/encode.h>
-#import "TIPXWebPCodec.h"
+#endif
+
+#pragma mark -
 
 #ifndef PRIVATE_SELF
 #define PRIVATE_SELF(type) type * __nullable const self
@@ -24,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - Constants
 
-NSString * const TIPXImageTypeWebP = @"google.webp";
+NSString * const TIPXImageTypeWebP = @"public.webp";
 
 #pragma mark - Defer support
 
@@ -45,7 +53,7 @@ __strong tipx_defer_block_t tipx_macro_concat(tipx_stack_defer_block_, __LINE__)
 
 #define TIPXDeferRelease(ref) tipx_defer(^{ if (ref) { CFRelease(ref); } })
 
-#pragma twitter stopignorestylecheck
+#pragma twitter endignorestylecheck
 
 #pragma mark - Declarations
 
@@ -588,4 +596,3 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 
 NS_ASSUME_NONNULL_END
 
-#endif // #if !TARGET_OS_MACCATALYST

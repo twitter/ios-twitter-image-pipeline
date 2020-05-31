@@ -3,7 +3,7 @@
 //  TwitterImagePipelineTests
 //
 //  Created on 5/3/19.
-//  Copyright © 2019 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <XCTest/XCTest.h>

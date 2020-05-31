@@ -3,7 +3,7 @@
 //  TIP Sample App
 //
 //  Created on 2/3/17.
-//  Copyright © 2017 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

@@ -166,7 +166,8 @@
     @autoreleasepool {
         scaledImageFromFullImage = [UIImage imageWithData:[NSData dataWithContentsOfFile:imagePath]];
         [scaledImageFromFullImage tip_decode];
-        scaledImageFromFullImage = [scaledImageFromFullImage tip_scaledImageWithTargetDimensions:targetDimensions contentMode:targetContentMode decode:YES];
+        scaledImageFromFullImage = [scaledImageFromFullImage tip_scaledImageWithTargetDimensions:targetDimensions
+                                                                                     contentMode:targetContentMode];
     }
 
     UIImage *thumbnailImageFromData;
@@ -188,6 +189,56 @@
 
     XCTAssertEqualWithAccuracy(scaledImageFromFullImage.tip_dimensions.width, thumbnailImageFromFile.tip_dimensions.width, 1.5);
     XCTAssertEqualWithAccuracy(scaledImageFromFullImage.tip_dimensions.height, thumbnailImageFromFile.tip_dimensions.height, 1.5);
+}
+
+- (void)testPaletteCheck
+{
+    TIPImageContainer *fullColorImage, *limitedColorImage, *alphaLimitedColorImage, *transparencyLimitedColorImage;
+
+    // 32 bit color
+    fullColorImage = [TIPImageContainer imageContainerWithFilePath:[TIPTestsResourceBundle() pathForResource:@"carnival" ofType:@"png"]
+                                                  decoderConfigMap:nil
+                                                    codecCatalogue:nil
+                                                         memoryMap:NO];
+
+    // 8 bit color palette (254 colors in this image)
+    limitedColorImage = [TIPImageContainer imageContainerWithFilePath:[TIPTestsResourceBundle() pathForResource:@"carnival_less_color" ofType:@"png"]
+                                                     decoderConfigMap:nil
+                                                       codecCatalogue:nil
+                                                            memoryMap:NO];
+
+    // 7 bit color palette (110 colors in this image)
+    alphaLimitedColorImage = [TIPImageContainer imageContainerWithFilePath:[TIPTestsResourceBundle() pathForResource:@"carnival_less_color_alpha_pixels" ofType:@"png"]
+                                                          decoderConfigMap:nil
+                                                            codecCatalogue:nil
+                                                                 memoryMap:NO];
+
+    // 7 bit color palette (89 colors in this image)
+    transparencyLimitedColorImage = [TIPImageContainer imageContainerWithFilePath:[TIPTestsResourceBundle() pathForResource:@"carnival_less_color_transparent_pixels" ofType:@"png"]
+                                                                 decoderConfigMap:nil
+                                                                   codecCatalogue:nil
+                                                                        memoryMap:NO];
+
+    XCTAssertFalse([fullColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyAnyAlpha]);
+    XCTAssertFalse([fullColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyNoAlpha]);
+    XCTAssertFalse([fullColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyFullAlphaOnly]);
+
+    XCTAssertTrue([limitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyAnyAlpha]);
+    XCTAssertTrue([limitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyNoAlpha]);
+    XCTAssertTrue([limitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyFullAlphaOnly]);
+    XCTAssertFalse([limitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingBitDepth7]);
+
+    XCTAssertTrue([alphaLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyAnyAlpha]);
+    XCTAssertFalse([alphaLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyNoAlpha]);
+    XCTAssertFalse([alphaLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyFullAlphaOnly]);
+    XCTAssertTrue([alphaLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingBitDepth7]);
+    XCTAssertFalse([alphaLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingBitDepth6]);
+
+    XCTAssertTrue([transparencyLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyAnyAlpha]);
+    XCTAssertFalse([transparencyLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyNoAlpha]);
+    XCTAssertTrue([transparencyLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingTransparencyFullAlphaOnly]);
+    XCTAssertTrue([transparencyLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingBitDepth7]);
+    XCTAssertFalse([transparencyLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingBitDepth6]);
 }
 
 @end

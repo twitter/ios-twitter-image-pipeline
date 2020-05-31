@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 8/1/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <ImageIO/ImageIO.h>
@@ -19,6 +19,15 @@ static const UInt8 kBMP1MagicNumbers[]      = { 0x42, 0x4D };
 static const UInt8 kJPEGMagicNumbers[]      = { 0xFF, 0xD8, 0xFF };
 static const UInt8 kGIFMagicNumbers[]       = { 0x47, 0x49, 0x46 };
 static const UInt8 kPNGMagicNumbers[]       = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+
+#define BIGGER(x, y) ((x) > (y) ? (x) : (y))
+
+// statically assign the largest magic number at compile time
+const NSUInteger TIPMagicNumbersForImageTypeMaximumLength =
+(NSUInteger)BIGGER(sizeof(kPNGMagicNumbers),
+                   BIGGER(sizeof(kGIFMagicNumbers),
+                          BIGGER(sizeof(kJPEGMagicNumbers),
+                                    sizeof(kBMP1MagicNumbers))));
 
 #define MAGIC_NUMBERS_ARE_EQUAL(bytes, magicNumber) \
 (memcmp(bytes, magicNumber, sizeof( magicNumber )) == 0)
@@ -135,6 +144,16 @@ BOOL TIPImageTypeSupportsLossyQuality(NSString * __nullable type)
     return hasLossy;
 }
 
+BOOL TIPImageTypeSupportsIndexedPalette(NSString * __nullable type)
+{
+    const BOOL supportsPalette = [type isEqualToString:TIPImageTypePNG]
+                              || [type isEqualToString:TIPImageTypeGIF];
+
+    // GIF actually _only_ supports indexed palette encoding.
+
+    return supportsPalette;
+}
+
 NSString * __nullable TIPImageTypeToUTType(NSString * __nullable type)
 {
     TIPWorkAroundCoreGraphicsUTTypeLoadBug();
@@ -186,6 +205,27 @@ NSString * __nullable TIPImageTypeFromUTType(NSString * __nullable utType)
     return nil;
 }
 
+NSString * __nullable TIPFileExtensionFromUTType(NSString * __nullable utType)
+{
+    if (!utType) {
+        return nil;
+    }
+
+    return (NSString *)CFBridgingRelease(UTTypeCopyPreferredTagWithClass((__bridge CFStringRef)utType,
+                                                                         kUTTagClassFilenameExtension));
+}
+
+NSString * __nullable TIPFileExtensionToUTType(NSString * __nullable fileExtension, BOOL mustBeImageUTType)
+{
+    if (!fileExtension) {
+        return nil;
+    }
+
+    return (NSString *)CFBridgingRelease(UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension,
+                                                                               (__bridge CFStringRef)fileExtension,
+                                                                               (mustBeImageUTType) ? kUTTypeImage : NULL));
+}
+
 BOOL TIPImageTypeCanReadWithImageIO(NSString * __nullable imageType)
 {
     return (imageType) ? [TIPReadableImageTypes() containsObject:imageType] : NO;
@@ -211,25 +251,19 @@ TIPRecommendedImageTypeOptions TIPRecommendedImageTypeOptionsFromEncodingOptions
     return options;
 }
 
+#pragma mark Inspection stuff
 
-#pragma mark Debug Stuff
-
-NSString * __nullable TIPDetectImageType(NSData *data,
-                                         TIPImageEncodingOptions * __nullable optionsOut,
-                                         NSUInteger * __nullable animationFrameCountOut,
-                                         BOOL hasCompleteImageData)
+static NSString * __nullable _DetectImageTypeFromImageSource(CGImageSourceRef imageSourceRef,
+                                                             TIPImageEncodingOptions * __nullable optionsOut,
+                                                             NSUInteger * __nullable animationFrameCountOut)
 {
     NSString *type = nil;
+    TIPImageEncodingOptions optionsRead = TIPImageEncodingNoOptions;
+    NSUInteger animationFrameCount = 1;
 
     TIPWorkAroundCoreGraphicsUTTypeLoadBug();
 
-    TIPImageEncodingOptions optionsRead = TIPImageEncodingNoOptions;
-    NSUInteger animationFrameCount = 1;
-    NSDictionary *options = @{ (NSString *)kCGImageSourceShouldCache : @NO };
-    CGImageSourceRef imageSourceRef = CGImageSourceCreateIncremental((__bridge CFDictionaryRef)options);
-    TIPDeferRelease(imageSourceRef);
-    if (imageSourceRef != NULL && data != nil) {
-        CGImageSourceUpdateData(imageSourceRef, (__bridge CFDataRef)data, hasCompleteImageData);
+    if (imageSourceRef != NULL) {
 
         // Read type
         CFStringRef imageTypeStringRef = CGImageSourceGetType(imageSourceRef);
@@ -257,6 +291,10 @@ NSString * __nullable TIPDetectImageType(NSData *data,
                 TIPDeferRelease(imageProperties);
                 if (imageProperties != NULL) {
 
+                    if ([(NSNumber *)CFDictionaryGetValue(imageProperties, kCGImagePropertyIsIndexed) boolValue]) {
+                        optionsRead |= TIPImageEncodingIndexedColorPalette;
+                    }
+
                     BOOL progressive = NO;
                     if ([type isEqualToString:TIPImageTypeJPEG]) {
                         CFDictionaryRef jfifProperties = CFDictionaryGetValue(imageProperties, kCGImagePropertyJFIFDictionary);
@@ -273,6 +311,8 @@ NSString * __nullable TIPDetectImageType(NSData *data,
                                 progressive = YES;
                             }
                         }
+                    } else if (TIP_BITMASK_EXCLUDES_FLAGS(optionsRead, TIPImageEncodingIndexedColorPalette) && [type isEqualToString:TIPImageTypeGIF]) {
+                        optionsRead |= TIPImageEncodingIndexedColorPalette;
                     }
 
                     if (progressive) {
@@ -291,11 +331,6 @@ NSString * __nullable TIPDetectImageType(NSData *data,
 
     }
 
-    if (!type) {
-        // Couldn't detect, try magic numbers
-        type = TIPDetectImageTypeViaMagicNumbers(data);
-    }
-
     if (optionsOut) {
         *optionsOut = optionsRead;
     }
@@ -304,6 +339,65 @@ NSString * __nullable TIPDetectImageType(NSData *data,
     }
 
     return type;
+}
+
+NSString * __nullable TIPDetectImageTypeFromFile(NSURL *filePath,
+                                                 TIPImageEncodingOptions * __nullable optionsOut,
+                                                 NSUInteger * __nullable animationFrameCountOut)
+{
+    if (filePath.isFileURL) {
+        NSDictionary *options = @{ (NSString *)kCGImageSourceShouldCache : @NO };
+        CGImageSourceRef imageSourceRef = CGImageSourceCreateWithURL((CFURLRef)filePath, (CFDictionaryRef)options);
+        TIPDeferRelease(imageSourceRef);
+        if (imageSourceRef != NULL) {
+            return _DetectImageTypeFromImageSource(imageSourceRef, optionsOut, animationFrameCountOut);
+        }
+    }
+
+    if (optionsOut) {
+        *optionsOut = TIPImageEncodingNoOptions;
+    }
+    if (animationFrameCountOut) {
+        *animationFrameCountOut = 1;
+    }
+
+    // Couldn't detect, try magic numbers
+    if (filePath.isFileURL) {
+        FILE *file = fopen(filePath.path.UTF8String, "r");
+        if (file) {
+            tip_defer(^{ fclose(file); });
+            char buffer[TIPMagicNumbersForImageTypeMaximumLength] = { 0 };
+            fread(buffer, 1, TIPMagicNumbersForImageTypeMaximumLength, file);
+            NSData *data = [NSData dataWithBytesNoCopy:buffer length:TIPMagicNumbersForImageTypeMaximumLength freeWhenDone:NO];
+            return TIPDetectImageTypeViaMagicNumbers(data);
+        }
+    }
+
+    return nil;
+}
+
+NSString * __nullable TIPDetectImageType(NSData *data,
+                                         TIPImageEncodingOptions * __nullable optionsOut,
+                                         NSUInteger * __nullable animationFrameCountOut,
+                                         BOOL hasCompleteImageData)
+{
+    NSDictionary *options = @{ (NSString *)kCGImageSourceShouldCache : @NO };
+    CGImageSourceRef imageSourceRef = CGImageSourceCreateIncremental((__bridge CFDictionaryRef)options);
+    TIPDeferRelease(imageSourceRef);
+    if (imageSourceRef != NULL && data != nil) {
+        CGImageSourceUpdateData(imageSourceRef, (__bridge CFDataRef)data, hasCompleteImageData);
+        return _DetectImageTypeFromImageSource(imageSourceRef, optionsOut, animationFrameCountOut);
+    }
+
+    if (optionsOut) {
+        *optionsOut = TIPImageEncodingNoOptions;
+    }
+    if (animationFrameCountOut) {
+        *animationFrameCountOut = 1;
+    }
+
+    // Couldn't detect, try magic numbers
+    return TIPDetectImageTypeViaMagicNumbers(data);
 }
 
 NSUInteger TIPImageDetectProgressiveScanCount(NSData *data)

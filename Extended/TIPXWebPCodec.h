@@ -3,18 +3,15 @@
 //  TwitterImagePipeline
 //
 //  Created on 11/9/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
-
-#include <TargetConditionals.h>
-
-#if !TARGET_OS_MACCATALYST
 
 #import <TwitterImagePipeline/TIPImageCodecs.h>
 
+
 NS_ASSUME_NONNULL_BEGIN
 
-//! Custom image type for WebP, `@"google.webp"`
+//! Custom image type for WebP, `@"public.webp"`
 FOUNDATION_EXTERN NSString * const TIPXImageTypeWebP;
 
 /**
@@ -32,4 +29,3 @@ FOUNDATION_EXTERN NSString * const TIPXImageTypeWebP;
 
 NS_ASSUME_NONNULL_END
 
-#endif // #if !TARGET_OS_MACCATALYST

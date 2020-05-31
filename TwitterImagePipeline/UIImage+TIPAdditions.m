@@ -3,7 +3,7 @@
 //  TwitterImagePipeline
 //
 //  Created on 9/6/16.
-//  Copyright © 2016 Twitter. All rights reserved.
+//  Copyright © 2020 Twitter. All rights reserved.
 //
 
 #import <Accelerate/Accelerate.h>
@@ -26,6 +26,18 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
                                                NSNumber * __nullable animationDuration,
                                                BOOL isGlobalProperties);
 static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable imageRef);
+
+struct tip_color_pixel {
+    Byte r, g, b, a;
+};
+
+struct tip_color_entry {
+    struct tip_color_entry * __nullable nextEntry;
+    struct tip_color_pixel pixel;
+};
+
+static const size_t kRGBAByteCount = 4;
+TIPStaticAssert(sizeof(struct tip_color_pixel) == kRGBAByteCount, MISSMATCH_PIXEL_SIZE);
 
 @implementation UIImage (TIPAdditions)
 
@@ -113,6 +125,188 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
     return YES;
 }
 
+- (BOOL)tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:(TIPIndexedPaletteEncodingOptions)options
+{
+    /// Options
+
+    const BOOL supportsTransparency = TIP_BITMASK_EXCLUDES_FLAGS(options, TIPIndexedPaletteEncodingTransparencyNoAlpha);
+    const BOOL supportsAnyAlpha = supportsTransparency && TIP_BITMASK_EXCLUDES_FLAGS(options, TIPIndexedPaletteEncodingTransparencyFullAlphaOnly);
+    const NSUInteger bitDepth = (8 - (options & 0b1111)) ?: 8lu; // get bit depth while coersing zero depth to 8 bit depth
+
+    // Compute the max color count:
+    // The bit math is very simple.  Count of 2^x is always "0b1 << x" (and max value of 2^x bits is always "(0b1 << x) - 0b1").  Much faster than using `pow` function(s).
+    const NSUInteger maxColorCount = 0b1 << bitDepth;
+
+    /// Prevalidate
+
+    UIImage *image = self;
+    if (image.CIImage) {
+        image = [self tip_CGImageBackedImageAndReturnError:NULL];
+    }
+
+    CGImageRef imageRef = image.CGImage;
+    if (!imageRef) {
+        return NO;
+    }
+
+    // Get the sRGB colorspace we will normalize into
+    CGColorSpaceRef sRGBColorSpace = CGColorSpaceCreateWithName(kCGColorSpaceLinearSRGB);
+    TIPDeferRelease(sRGBColorSpace);
+
+    /// Prepare the state
+
+    // we are limited to `maxColorCount` colors (default is 256), track the count as we progress
+    size_t numberOfColors = 0;
+
+    // we need a pixel buffer to render into for inspecting each pixel, needs to be zero'd out for premultiplication to work
+    struct tip_color_pixel *pixels = calloc(1, CGImageGetWidth(imageRef) * CGImageGetHeight(imageRef) * kRGBAByteCount);
+
+    // we will pre-allocate "max-colors" empty/zero'd-out "color entries" (default is 256)...
+    // this will be where pull from to add more indexed colors to our tracking
+    struct tip_color_entry * entryPool = calloc(1, sizeof(struct tip_color_entry) * maxColorCount);
+
+    /****
+        This comment presumes max of 256 color palette, but other (smaller) color palette limits work just as well
+     ****/
+    // this is the lookup table, it is a very simple hashmap for finding entries faster than
+    // iterating through all past seen entries (will initially be empty/zero'd-out).
+    //      best case: ~16x faster
+    //      worst case: ~1x speed (no worse than brute force)
+    //      average case: ~6x faster (2.5 megapixel image: ~150ms on iPhone 6, ~70ms on iPhone XR)
+    //
+    // how it works:
+    //     As we inspect every pixel, we need to check if the color already exists and if not, track
+    //       the newly seen color.
+    //     Instead of on every pixel iterating through every past seen color, we can bucket colors
+    //       so that we only have to iterate through all seen colors in that bucket.
+    //     For fast hashing, we will take the 4 significant bits of each of the R, G, B and A
+    //       components and combine those into a 16 bit lookup hash.
+    //     This means we can preallocate the lookup table to have 65,535 buckets.
+    //     Doing more buckets would cost us more RAM at minimal speed gain (already 514KB in
+    //       overhead... 512KB for the lookup table and 2KB for the 256 color entries).
+    //     Doing fewer buckets would save on RAM, but see notable speed reduction.
+    struct tip_color_entry ** lookup_entries = calloc(1, UINT16_MAX * sizeof(struct tip_color_entry *));
+
+    // defer `free` calls for easy cleanup (preallocation makes cleanup fast and easy)
+    tip_defer(^{
+        free(pixels);
+        free(lookup_entries);
+        free(entryPool);
+    });
+
+    // Track the next available color entry from our pre-allocated pool
+    struct tip_color_entry * nextEntryPtr = entryPool;
+
+    // Create our bitmap context
+    CGContextRef context = CGBitmapContextCreate(
+        (void *)pixels,
+        CGImageGetWidth(imageRef),
+        CGImageGetHeight(imageRef),
+        8,
+        CGImageGetWidth(imageRef) * kRGBAByteCount,
+        sRGBColorSpace,
+        kCGImageAlphaPremultipliedLast
+    );
+    TIPDeferRelease(context);
+    if (!context) {
+        return NO;
+    }
+
+    /// Do the work
+
+    // Draw the image in the bitmap
+    CGContextDrawImage(context,
+                       CGRectMake(0.0f, 0.0f, CGImageGetWidth(imageRef), CGImageGetHeight(imageRef)),
+                       imageRef);
+
+    // Loop over pixels to compute the color table
+    struct tip_color_pixel * pixelPtr = pixels;
+    struct tip_color_pixel * endPixelPtr = pixelPtr + (CGImageGetHeight(imageRef) * CGImageGetWidth(imageRef));
+    for (; pixelPtr < endPixelPtr; pixelPtr++) {
+
+        if (pixelPtr->a == 0xff) {
+            // fully opaque is always OK
+        } else {
+            // has transparency
+
+            if (!supportsTransparency) {
+                return NO;
+            }
+
+            if (pixelPtr->a == 0x00) {
+                // coerse fully transparent pixels to all match
+                // NOTE: not all transcoders will coerse fully transparent pixels to the same value!
+                // The Twitter Media Pipeline PNG8 transcoder _is_ smart enought though (I wrote it),
+                // so we will maintain that this image CAN be transcoded to an indexed color palette
+                // and it is on whomever is doing the transcoding to be responsible for that.
+                pixelPtr->r = pixelPtr->g = pixelPtr->b = 0x00;
+            } else {
+                // partial alpha (a != 0x00 and a != 0xff)
+                if (!supportsAnyAlpha) {
+                    return NO;
+                }
+            }
+        }
+
+        // Compute our lookup index (hash)
+        // NOTE: this can be written in more compact way but reduces legibility and ultimately the
+        // compiler will optimize it down anyway, so we're preserving legibility.
+        uint16_t lookupIdx = pixelPtr->r >> 4;
+        lookupIdx <<= 4;
+        lookupIdx |= (pixelPtr->g >> 4);
+        lookupIdx <<= 4;
+        lookupIdx |= (pixelPtr->b >> 4);
+        lookupIdx <<= 4;
+        lookupIdx |= (pixelPtr->a >> 4);
+
+        // Get the entry from our hashed lookup
+        struct tip_color_entry *pLastEntry = NULL;
+        struct tip_color_entry *pEntry = lookup_entries[lookupIdx];
+        while (pEntry != NULL) {
+            if (pixelPtr->r == pEntry->pixel.r &&
+                pixelPtr->g == pEntry->pixel.g &&
+                pixelPtr->b == pEntry->pixel.b &&
+                pixelPtr->a == pEntry->pixel.a) {
+                // we have a match! break to indicate we have a match and can continue to the next pixel.
+                break;
+            }
+            pLastEntry = pEntry;
+            pEntry = pLastEntry->nextEntry;
+        }
+
+        if (pEntry != NULL) {
+            // had a match
+            continue;
+        }
+
+        // not found
+        if (numberOfColors >= maxColorCount) {
+            // too many colors!  cannot index this image
+            return NO;
+        }
+
+        // We have room for another color.  Add it to our lookup table.
+        pEntry = nextEntryPtr;
+        nextEntryPtr++;
+        pEntry->pixel = *pixelPtr;
+        if (pLastEntry) {
+            // already had an entry, add to the linked list
+            pLastEntry->nextEntry = pEntry;
+        } else {
+            // no entries for this hash yet, start the linked list
+            lookup_entries[lookupIdx] = pEntry;
+        }
+        numberOfColors++;
+    }
+
+    // we made it here without an early return, means this image has few enough colors to be indexed
+    return YES;
+
+//////    Ideally, we would be able to actually save the image using an indexed colorspace but
+//////    indexed color spaces are "read-only" on Apple platforms.  For now, we just return if the
+//////    the image can be indexed or not.
+}
+
 #pragma mark Inspection Methods
 
 - (NSString *)tip_recommendedImageType:(TIPRecommendedImageTypeOptions)options
@@ -188,7 +382,12 @@ static UIImage * __nullable _CoreGraphicsScale(PRIVATE_SELF(UIImage),
     }
 
     const size_t bitsPerComponent = 8;
-    const CGColorSpaceRef colorSpace = CGImageGetColorSpace(cgImage);
+    const CGColorSpaceRef colorSpace = CGColorSpaceRetain(CGImageGetColorSpace(cgImage));
+    if (!colorSpace || !CGColorSpaceSupportsOutput(colorSpace)) {
+        CGColorSpaceRelease(colorSpace);
+        colorSpace = CGColorSpaceCreateDeviceRGB();
+    }
+    TIPDeferRelease(colorSpace);
     const uint32_t bitmapInfo = [self tip_hasAlpha:NO] ? kCGImageAlphaPremultipliedLast : kCGImageAlphaNoneSkipLast;
     __block UIImage *image = nil;
 
@@ -224,7 +423,8 @@ static UIImage * __nullable _CoreGraphicsScale(PRIVATE_SELF(UIImage),
 
 static UIImage *_UIKitScale(PRIVATE_SELF(UIImage),
                             CGSize scaledDimensions,
-                            CGFloat scale)
+                            CGFloat scale,
+                            CGInterpolationQuality interpolationQuality)
 {
     TIPAssert(self);
     if (0.0 == scale) {
@@ -236,13 +436,14 @@ static UIImage *_UIKitScale(PRIVATE_SELF(UIImage),
                                        scaledDimensions.height / scale);
 
     if (self.images.count > 1) {
-        return _UIKitScaleAnimated(self, drawRect, scale);
+        return _UIKitScaleAnimated(self, drawRect, scale, interpolationQuality);
     }
 
     UIImage *image = [self tip_imageWithRenderFormatting:^(id<TIPRenderImageFormat> format) {
         format.scale = scale;
         format.renderSize = drawRect.size;
     } render:^(UIImage *sourceImage, CGContextRef ctx) {
+        CGContextSetInterpolationQuality(ctx, interpolationQuality);
         [self drawInRect:drawRect];
     }];
     return image ?: (UIImage * _Nonnull)self;
@@ -250,7 +451,8 @@ static UIImage *_UIKitScale(PRIVATE_SELF(UIImage),
 
 static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
                                     CGRect drawRect,
-                                    CGFloat scale)
+                                    CGFloat scale,
+                                    CGInterpolationQuality interpolationQuality)
 {
     TIPAssert(self.images.count > 1);
     TIPAssert(scale != 0.);
@@ -267,6 +469,7 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
             for (UIImage *frame in self.images) {
                 @autoreleasepool {
                     UIImage *newFrame = [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull rendererContext) {
+                        CGContextSetInterpolationQuality(rendererContext.CGContext, interpolationQuality);
                         [frame drawInRect:drawRect];
                     }];
                     if (!newFrame) {
@@ -295,6 +498,7 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
             NSMutableArray *newFrames = [[NSMutableArray alloc] initWithCapacity:self.images.count];
             for (UIImage *frame in self.images) {
                 @autoreleasepool {
+                    CGContextSetInterpolationQuality(UIGraphicsGetCurrentContext(), interpolationQuality);
                     [frame drawInRect:drawRect];
                     UIImage *newFrame = UIGraphicsGetImageFromCurrentImageContext();
                     if (!newFrame) {
@@ -318,11 +522,13 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
 {
     return [self tip_scaledImageWithTargetDimensions:targetDimensions
                                          contentMode:targetContentMode
+                                interpolationQuality:nil
                                               decode:YES];
 }
 
 - (UIImage *)tip_scaledImageWithTargetDimensions:(CGSize)targetDimensions
                                      contentMode:(UIViewContentMode)targetContentMode
+                            interpolationQuality:(nullable NSNumber *)interpolationQuality
                                           decode:(BOOL)decode
 {
     const CGSize dimensions = [self tip_dimensions];
@@ -332,11 +538,12 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
     // If we have a target size and the target size is not the same as our source image's size, draw the resized image
     if (TIPSizeGreaterThanZero(scaledTargetDimensions) && !CGSizeEqualToSize(dimensions, scaledTargetDimensions)) {
 
+        const CGInterpolationQuality interpolationQualityValue = (interpolationQuality) ? (CGInterpolationQuality)interpolationQuality.intValue : [TIPGlobalConfiguration sharedInstance].defaultInterpolationQuality;
 
         // scale with UIKit at screen scale
-        image = _UIKitScale(self, scaledTargetDimensions, 0 /*auto scale*/);
+        image = _UIKitScale(self, scaledTargetDimensions, 0 /*auto scale*/, interpolationQualityValue);
 
-        // image = _CoreGraphicsScale(self, scaledTargetDimensions, 0 /*auto scale*/);
+        // image = _CoreGraphicsScale(self, scaledTargetDimensions, 0 /*auto scale*/, interpolationQualityValue);
 
     } else {
         image = self;
@@ -444,12 +651,18 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
     // Draw
     __block UIImage *image = nil;
     TIPExecuteCGContextBlock(^{
+        CGColorSpaceRef colorSpace = CGColorSpaceRetain(CGImageGetColorSpace(sourceImage.CGImage));
+        if (!colorSpace || !CGColorSpaceSupportsOutput(colorSpace)) {
+            CGColorSpaceRelease(colorSpace);
+            colorSpace = CGColorSpaceCreateDeviceRGB();
+        }
+        TIPDeferRelease(colorSpace);
         CGContextRef ctx = CGBitmapContextCreate(NULL,
                                                  (size_t)dimensions.width,
                                                  (size_t)dimensions.height,
                                                  CGImageGetBitsPerComponent(sourceImage.CGImage),
                                                  0,
-                                                 CGImageGetColorSpace(sourceImage.CGImage),
+                                                 colorSpace,
                                                  CGImageGetBitmapInfo(sourceImage.CGImage));
         TIPDeferRelease(ctx);
         CGContextConcatCTM(ctx, transform);
@@ -481,22 +694,28 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
         return self;
     }
 
+    UIImage *outputImage = nil;
+
     CGImageRef cgImageRef = self.CGImage;
     if (cgImageRef) {
-        return [[UIImage alloc] initWithCGImage:cgImageRef
-                                          scale:scale
-                                    orientation:self.imageOrientation];
+        outputImage = [[UIImage alloc] initWithCGImage:cgImageRef
+                                                 scale:scale
+                                           orientation:self.imageOrientation];
+    } else {
+        CGRect imageRect = CGRectZero;
+        imageRect.size = TIPDimensionsToSizeScaled(self.tip_dimensions, scale);
+
+        outputImage =  [self tip_imageWithRenderFormatting:^(id<TIPRenderImageFormat>  _Nonnull format) {
+            format.scale = scale;
+            format.renderSize = imageRect.size;
+        } render:^(UIImage * _Nullable sourceImage, CGContextRef  _Nonnull ctx) {
+            // interpolation quality doesn't matter since this render will use identical dimensions for the image
+            [sourceImage drawInRect:imageRect];
+        }];
     }
 
-    CGRect imageRect = CGRectZero;
-    imageRect.size = TIPDimensionsToSizeScaled(self.tip_dimensions, scale);
-
-    return [self tip_imageWithRenderFormatting:^(id<TIPRenderImageFormat>  _Nonnull format) {
-        format.scale = scale;
-        format.renderSize = imageRect.size;
-    } render:^(UIImage * _Nullable sourceImage, CGContextRef  _Nonnull ctx) {
-        [sourceImage drawInRect:imageRect];
-    }];
+    TIPAssert(CGSizeEqualToSize(outputImage.tip_dimensions, self.tip_dimensions));
+    return outputImage;
 }
 
 - (nullable UIImage *)tip_CGImageBackedImageAndReturnError:(out NSError * __autoreleasing __nullable * __nullable)error
@@ -989,6 +1208,7 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
         (void)[self tip_imageWithRenderFormatting:^(id<TIPRenderImageFormat> format) {
             format.renderSize = CGSizeMake(1, 1);
         } render:^(UIImage *sourceImage, CGContextRef ctx) {
+            CGContextSetInterpolationQuality(ctx, kCGInterpolationNone);
             [sourceImage drawAtPoint:CGPointZero];
         }];
     }
@@ -1033,7 +1253,7 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
                                                              quality,
                                                              @(animationLoopCount),
                                                              nil,
-                                                             YES);
+                                                             YES /*isGlobal*/);
         CGImageDestinationSetProperties(destinationRef, (__bridge CFDictionaryRef)properties);
 
         for (NSUInteger i = 0; i < count; i++) {
@@ -1049,7 +1269,7 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
                                                    quality,
                                                    @(animationLoopCount),
                                                    animationFrameDurations ? animationFrameDurations[i] : nil,
-                                                   NO);
+                                                   NO /*isGlobal*/);
             CGImageDestinationAddImage(destinationRef, subimage.CGImage, (__bridge CFDictionaryRef)properties);
         }
     } else {
@@ -1057,16 +1277,16 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
 
         const BOOL grayscale = TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageEncodingGrayscale);
         CGImageRef cgImage = self.CGImage ?: [self.images.firstObject CGImage];
+        CGImageRetain(cgImage);
         if (grayscale) {
+            TIPDeferRelease(cgImage);
             cgImage = TIPCGImageCreateGrayscale(cgImage);
         }
+        TIPDeferRelease(cgImage);
 
         if (cgImage) {
             NSDictionary *properties = TIPImageWritingProperties(self, type, options, quality, nil, nil, NO);
             CGImageDestinationAddImage(destinationRef, cgImage, (__bridge CFDictionaryRef)properties);
-            if (grayscale) {
-                CFRelease(cgImage);
-            }
         } else {
             theError = [NSError errorWithDomain:TIPErrorDomain code:TIPErrorCodeMissingCGImage userInfo:nil];
         }
@@ -1077,6 +1297,34 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
     }
 
     return !theError;
+}
+
++ (nullable UIImage *)tip_imageWithImageSource:(CGImageSourceRef)imageSource
+                                       atIndex:(NSUInteger)index
+{
+    if (!imageSource) {
+        return nil;
+    }
+
+    const size_t count = CGImageSourceGetCount(imageSource);
+    if (count == 0 || index >= count) {
+        return nil;
+    }
+
+    UIImageOrientation orientation = UIImageOrientationUp;
+    CFDictionaryRef imageProperties = CGImageSourceCopyPropertiesAtIndex(imageSource, index, NULL);
+    TIPDeferRelease(imageProperties);
+
+    if (imageProperties != NULL) {
+        // If the orientation property is not set, we get 0 which converts to the default value, UIImageOrientationUp
+        const CGImagePropertyOrientation cgOrientation = [[(__bridge NSDictionary *)imageProperties objectForKey:(NSString *)kCGImagePropertyOrientation] unsignedIntValue];
+        orientation = TIPUIImageOrientationFromCGImageOrientation(cgOrientation);
+    }
+
+    CGImageRef cgImage = CGImageSourceCreateImageAtIndex(imageSource, index, NULL);
+    TIPDeferRelease(cgImage);
+
+    return (cgImage) ? [UIImage imageWithCGImage:cgImage scale:[UIScreen mainScreen].scale orientation:orientation] : nil;
 }
 
 + (nullable UIImage *)tip_imageWithAnimatedImageSource:(CGImageSourceRef)source
@@ -1186,6 +1434,30 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
 
 @end
 
+@implementation UIImage (TIPConvenienceEncoding)
+
+- (nullable NSData *)tip_PNGRepresentation
+{
+    return [self tip_writeToDataWithType:TIPImageTypePNG
+                         encodingOptions:TIPImageEncodingNoOptions
+                                 quality:1.f
+                      animationLoopCount:0
+                 animationFrameDurations:nil
+                                   error:NULL];
+}
+
+- (nullable NSData *)tip_JPEGRepresentationWithQuality:(float)quality progressive:(BOOL)progressive
+{
+    return [self tip_writeToDataWithType:TIPImageTypeJPEG
+                         encodingOptions:(progressive) ? TIPImageEncodingProgressive : TIPImageEncodingNoOptions
+                                 quality:quality
+                      animationLoopCount:0
+                 animationFrameDurations:nil
+                                   error:NULL];
+}
+
+@end
+
 static NSDictionary *TIPImageWritingProperties(UIImage *image,
                                                NSString *type,
                                                TIPImageEncodingOptions options,
@@ -1196,6 +1468,7 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
 {
     const BOOL preferProgressive = TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageEncodingProgressive);
     const BOOL isAnimated = image.images.count > 1;
+    /*const BOOL preferPalette = TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageEncodingIndexedColorPalette);*/
     NSMutableDictionary *properties = [NSMutableDictionary dictionary];
 
     // TODO: investigate if we should be using kCGImageDestinationOptimizeColorForSharing
@@ -1214,7 +1487,7 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
         properties[(NSString *)kCGImagePropertyHasAlpha] = (__bridge id)kCFBooleanFalse;
     }
     if (TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageEncodingGrayscale)) {
-        properties[(NSString *)kCGImagePropertyColorModel] = @"Gray";
+        properties[(NSString *)kCGImagePropertyColorModel] = (__bridge id)kCGImagePropertyColorModelGray;
     }
 
     if ([type isEqualToString:TIPImageTypeJPEG]) {
@@ -1274,6 +1547,11 @@ static NSDictionary *TIPImageWritingProperties(UIImage *image,
         }
     }
 
+//    Not supported by CoreGraphics encoders
+//    if (preferPalette && TIPImageTypeSupportsIndexedPalette(type)) {
+//        properties[(id)kCGImagePropertyIsIndexed] = (id)kCFBooleanTrue;
+//    }
+
     return properties;
 }
 
@@ -1304,7 +1582,13 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
     TIPDeferRelease(colorSpace);
 
     // Create bitmap content with current image size and grayscale colorspace
-    CGContextRef context = CGBitmapContextCreate(nil, (size_t)imageRect.size.width, (size_t)imageRect.size.height, 8, 0, colorSpace, kCGImageAlphaNone);
+    CGContextRef context = CGBitmapContextCreate(nil,
+                                                 (size_t)imageRect.size.width,
+                                                 (size_t)imageRect.size.height,
+                                                 8,
+                                                 0,
+                                                 colorSpace,
+                                                 kCGImageAlphaNone);
     TIPDeferRelease(context);
 
     // Draw image into current context, with specified rectangle
@@ -1316,3 +1600,4 @@ static CGImageRef __nullable TIPCGImageCreateGrayscale(CGImageRef __nullable ima
 }
 
 NS_ASSUME_NONNULL_END
+
