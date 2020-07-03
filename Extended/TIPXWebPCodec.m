@@ -15,12 +15,8 @@
 
 #pragma mark WebP includes
 
-#if TARGET_OS_MACCATALYST
-#import <webp/webp.h>
-#else
-#import <WebP/decode.h>
-#import <WebP/encode.h>
-#endif
+#import <libwebp/decode.h>
+#import <libwebp/encode.h>
 
 #pragma mark -
 
