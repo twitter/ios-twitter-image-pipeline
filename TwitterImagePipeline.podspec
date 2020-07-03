@@ -16,5 +16,12 @@ Pod::Spec.new do |s|
     sp.public_header_files = 'TwitterImagePipeline/*.h'
   end
 
+  s.subspec 'WebP' do |sp|
+    sp.source_files = 'Extended/TIPXWebPCodec.{h,m}'
+    sp.public_header_files = 'Extended/TIPXWebPCodec.h'
+    sp.dependency 'TwitterImagePipeline/Default'
+    sp.dependency 'libwebp', '~> 1.0'
+  end
+
   s.default_subspec = 'Default'
 end
