@@ -223,7 +223,7 @@ For concrete coding samples, look at the *TIP Sample App* and *TIP Swift Sample 
 Here's a simple example of using *TIP* with a `UIViewController` that has an array of image views to
 populate with images.
 
-```
+```objc
 
     /* category on TIPImagePipeline */
 
