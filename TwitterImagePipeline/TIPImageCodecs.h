@@ -9,6 +9,7 @@
 #import <CoreGraphics/CGGeometry.h>
 #import <Foundation/Foundation.h>
 #import <TwitterImagePipeline/TIPImageTypes.h>
+#import <UIKit/UIView.h> // UIViewContentMode
 
 @protocol TIPImageEncoder;
 @protocol TIPImageDecoder;
@@ -245,12 +246,21 @@ typedef NS_ENUM(NSInteger, TIPImageDecoderRenderMode)
 
  Can be called anytime after the decoding has initiated including after being finalized.
 
+ The target sizing arguments (_targetDimensions_ and _targetContentMode_) are optional for the decoder.
+ Advanced decoders will decode directly to the target sizing given, reducing RAM overhead of decoding
+ the full size first.  If a codec does not support target size based decoding, they _SHOULD NOT_ scale
+ the decoded full size image and instead just return the full size image for __TIP__ to handle scaling.
+
  @param context the context to use when rendering the image
- @param mode the mode to render with
+ @param renderMode the `TIPImageDecoderRenderMode` mode to render with
+ @param targetDimensions the dimension sizing constraints to decode the image into (`CGSizeZero` for full size) -- can be ignored by codec to simplify implementation
+ @param targetContentMode the content mode sizing constraints to decode the image into (any non-scaling mode for full size) -- can be ignored by codec to simplify implementation
  @return an image (encapsulated in a `TIPImageContainer`) or `nil`.
  */
 - (nullable TIPImageContainer *)tip_renderImage:(id<TIPImageDecoderContext>)context
-                                           mode:(TIPImageDecoderRenderMode)mode;
+                                     renderMode:(TIPImageDecoderRenderMode)renderMode
+                               targetDimensions:(CGSize)targetDimensions
+                              targetContentMode:(UIViewContentMode)targetContentMode;
 
 /**
  Finalize the decoding, only called after all image data has been provided with `tip_append:data:`.
@@ -272,12 +282,18 @@ typedef NS_ENUM(NSInteger, TIPImageDecoderRenderMode)
  Implementing this method will offer that feature to __TIP__.
  Otherwise, the normal decoding pattern will be used (init, append, finalize & render).
  @param imageData the image data to decode
+ @param targetDimensions the dimension sizing constraints to decode the image into (`CGSizeZero` for full size) -- can be ignored by codec to simplify implementation
+ @param targetContentMode the content mode sizing constraints to decode the image into (any non-scaling mode for full size) -- can be ignored by codec to simplify implementation
  @param config an optional opaque object to provide extra customization for how the decoding should operate
- @return the decoded image (wrapped in a `TIPImageContainer`) or `nil` if the image could not be
- decoded
+ @return the decoded image (wrapped in a `TIPImageContainer`) or `nil` if the image could not be decoded
  */
 - (nullable TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData
+                                       targetDimensions:(CGSize)targetDimensions
+                                      targetContentMode:(UIViewContentMode)targetContentMode
                                                  config:(nullable id)config;
+- (nullable TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData
+                                                 config:(nullable id)config __attribute__((deprecated("Implement tip_decodeImageWithData:targetDimensions:targetContentMode:config:")));
+
 
 @end
 
@@ -286,11 +302,15 @@ typedef NS_ENUM(NSInteger, TIPImageDecoderRenderMode)
 //! Convenience function to decode an image from data
 FOUNDATION_EXTERN TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec,
                                                                         id __nullable config,
-                                                                        NSData *imageData) __attribute__((overloadable));
+                                                                        NSData *imageData,
+                                                                        CGSize targetDimensions,
+                                                                        UIViewContentMode targetContentMode) __attribute__((overloadable));
 //! Convenience function to decode an image from data, with a guess at the image type to be decoded
 FOUNDATION_EXTERN TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec,
                                                                         id __nullable config,
                                                                         NSData *imageData,
+                                                                        CGSize targetDimensions,
+                                                                        UIViewContentMode targetContentMode,
                                                                         NSString * __nullable earlyGuessImageType) __attribute__((overloadable));
 //! Convenience function to encode an image to a file
 FOUNDATION_EXTERN BOOL TIPEncodeImageToFile(id<TIPImageCodec> codec,

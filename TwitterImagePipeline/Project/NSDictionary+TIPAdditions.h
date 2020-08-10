@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface NSDictionary (TIPAdditions)
 
 - (nullable NSArray *)tip_objectsForCaseInsensitiveKey:(NSString *)key;
+- (nullable id)tip_objectForCaseInsensitiveKey:(NSString *)key;
 - (nullable NSSet<NSString *> *)tip_keysMatchingCaseInsensitiveKey:(NSString *)key;
 - (id)tip_copyWithLowercaseKeys;
 - (id)tip_copyWithUppercaseKeys;

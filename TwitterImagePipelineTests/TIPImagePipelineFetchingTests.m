@@ -49,12 +49,7 @@ typedef struct _TIPImageFetchTestStruct {
     const BOOL progressiveOn = context.shouldSupportProgressiveLoading;
     const BOOL animatedOn = context.shouldSupportAnimatedLoading;
     const BOOL shouldReachFinal = (TIPImageFetchOperationStateSucceeded == state);
-    BOOL metricsWillBeGathered = NO;
-    if (tip_available_ios_10) {
-        if ([[TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider isKindOfClass:[TIPTestImageFetchDownloadProviderInternalWithStubbing class]]) {
-            metricsWillBeGathered = YES;
-        }
-    }
+    const BOOL metricsWillBeGathered = [[TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider isKindOfClass:[TIPTestImageFetchDownloadProviderInternalWithStubbing class]];
 
     NSString *type = [(TIPImagePipelineTestFetchRequest*)op.request imageType];
     XCTAssertEqual(context.didStart, YES, @"imageType == %@", type);
@@ -177,7 +172,7 @@ typedef struct _TIPImageFetchTestStruct {
         // NSLog(@"First image: %fs, Last image: %fs", op.metrics.firstImageLoadDuration, op.metrics.totalDuration);
 
         // Memory Cache Load
-        [[TIPImagePipelineBaseTests sharedPipeline].renderedCache clearAllImages:NULL];
+        [[[TIPImagePipelineBaseTests sharedPipeline] cacheOfType:TIPImageCacheTypeRendered] clearAllImages:NULL];
         context = [[TIPImagePipelineTestContext alloc] init];
         context.shouldSupportProgressiveLoading = progressive;
         context.shouldSupportAnimatedLoading = animated;
@@ -186,7 +181,7 @@ typedef struct _TIPImageFetchTestStruct {
         [self _validateFetchOperation:op context:context source:TIPImageLoadSourceMemoryCache state:TIPImageFetchOperationStateSucceeded];
 
         // Rendered Cache Load
-        [[TIPImagePipelineBaseTests sharedPipeline].memoryCache clearAllImages:NULL];
+        [[[TIPImagePipelineBaseTests sharedPipeline] cacheOfType:TIPImageCacheTypeMemory] clearAllImages:NULL];
         context = [[TIPImagePipelineTestContext alloc] init];
         context.shouldSupportProgressiveLoading = progressive;
         context.shouldSupportAnimatedLoading = animated;
@@ -195,8 +190,7 @@ typedef struct _TIPImageFetchTestStruct {
         [self _validateFetchOperation:op context:context source:TIPImageLoadSourceMemoryCache state:TIPImageFetchOperationStateSucceeded];
 
         // Disk Cache Load
-        [[TIPImagePipelineBaseTests sharedPipeline].memoryCache clearAllImages:NULL];
-        [[TIPImagePipelineBaseTests sharedPipeline].renderedCache clearAllImages:NULL];
+        [[TIPImagePipelineBaseTests sharedPipeline] clearMemoryCaches];
         context = [[TIPImagePipelineTestContext alloc] init];
         context.shouldSupportProgressiveLoading = progressive;
         context.shouldSupportAnimatedLoading = animated;
@@ -209,9 +203,8 @@ typedef struct _TIPImageFetchTestStruct {
 
 
         // Network Load Cancelled
-        [[TIPImagePipelineBaseTests sharedPipeline].memoryCache clearAllImages:NULL];
-        [[TIPImagePipelineBaseTests sharedPipeline].diskCache clearAllImages:NULL];
-        [[TIPImagePipelineBaseTests sharedPipeline].renderedCache clearAllImages:NULL];
+        [[TIPImagePipelineBaseTests sharedPipeline] clearMemoryCaches];
+        [[TIPImagePipelineBaseTests sharedPipeline] clearDiskCache];
         context = [[TIPImagePipelineTestContext alloc] init];
         context.shouldSupportProgressiveLoading = progressive;
         context.shouldSupportAnimatedLoading = animated;
@@ -240,9 +233,8 @@ typedef struct _TIPImageFetchTestStruct {
 
 
         // Network Load Cancelled
-        [[TIPImagePipelineBaseTests sharedPipeline].memoryCache clearAllImages:NULL];
-        [[TIPImagePipelineBaseTests sharedPipeline].diskCache clearAllImages:NULL];
-        [[TIPImagePipelineBaseTests sharedPipeline].renderedCache clearAllImages:NULL];
+        [[TIPImagePipelineBaseTests sharedPipeline] clearMemoryCaches];
+        [[TIPImagePipelineBaseTests sharedPipeline] clearDiskCache];
         context = [[TIPImagePipelineTestContext alloc] init];
         context.shouldSupportProgressiveLoading = progressive;
         context.shouldSupportAnimatedLoading = animated;

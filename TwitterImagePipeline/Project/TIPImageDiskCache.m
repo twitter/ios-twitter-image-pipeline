@@ -8,7 +8,6 @@
 
 #include <pthread.h>
 
-#import "NSOperationQueue+TIPSafety.h"
 #import "TIP_Project.h"
 #import "TIPError.h"
 #import "TIPFileUtils.h"
@@ -21,9 +20,6 @@
 #import "TIPTiming.h"
 
 NS_ASSUME_NONNULL_BEGIN
-
-// Primary class gets the SELF_ARG convenience
-#define SELF_ARG PRIVATE_SELF(TIPImageDiskCache)
 
 static NSString * const kPartialImageExtension = @"tmp";
 
@@ -81,7 +77,7 @@ _ImageDiskCacheManifestLoadOperation(NSMutableDictionary<NSString *, TIPImageDis
                                      NSMutableArray<NSString *> *falseEntryPaths,
                                      NSMutableArray<TIPImageDiskCacheEntry *> *entries,
                                      unsigned long long *totalSizeInOut,
-                                     NSString *path,
+                                     NSURL *entryURL,
                                      NSString *cachePath,
                                      NSDate *timestamp,
                                      NSOperationQueue *manifestCacheQueue,
@@ -106,60 +102,55 @@ static NSOperationQueue *_ImageDiskCacheManifestIOQueue(void); // concurrent
 static dispatch_queue_t _ImageDiskCacheManifestAccessQueue(void); // serial
 
 @interface TIPImageDiskCache () <TIPLRUCacheDelegate>
-@property (atomic) SInt64 atomicTotalSize;
-- (NSString *)filePathForSafeIdentifier:(NSString *)safeIdentifier;
+@property (tip_atomic_direct) SInt64 atomicTotalSize;
+- (NSString *)filePathForSafeIdentifier:(NSString *)safeIdentifier TIP_OBJC_DIRECT;
 @end
 
+TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImageDiskCache (Background)
 
-static NSString * __nullable _diskCache_copyImageEntryToTemporaryFile(SELF_ARG,
-                                                                      NSString *unsafeIdentifier,
-                                                                      NSError * __nullable * __nullable errorOut);
-static TIPImageDiskCacheEntry * __nullable _diskCache_getImageEntry(SELF_ARG,
-                                                                    NSString *unsafeIdentifier,
-                                                                    TIPImageDiskCacheFetchOptions options,
-                                                                    NSDictionary<NSString *, id> * __nullable decoderConfigMap);
-static TIPImageDiskCacheEntry * __nullable _diskCache_getImageEntryDirectlyFromDisk(SELF_ARG,
-                                                                                    NSString *unsafeIdentifier,
-                                                                                    TIPImageDiskCacheFetchOptions options,
-                                                                                    NSDictionary<NSString *, id> * __nullable decoderConfigMap);
-static TIPImageDiskCacheEntry * __nullable _diskCache_getImageEntryFromManifest(SELF_ARG,
-                                                                                NSString *unsafeIdentifier,
-                                                                                TIPImageDiskCacheFetchOptions options,
-                                                                                NSDictionary<NSString *, id> * __nullable decoderConfigMap);
-static void _diskCache_updateImageEntry(SELF_ARG,
-                                        TIPImageCacheEntry *entry,
-                                        BOOL forciblyReplaceExisting,
-                                        NSString *safeIdentifier);
-static BOOL _diskCache_touchImage(SELF_ARG,
-                                  NSString *safeIdentifier,
-                                  BOOL forced);
-static void _diskCache_touchEntry(SELF_ARG,
-                                  TIPImageDiskCacheEntry * __nullable entry,
-                                  BOOL forced,
-                                  BOOL partial);
-static void _diskCache_finalizeTemporaryFile(SELF_ARG,
-                                             TIPImageDiskCacheTemporaryFile * tempFile,
-                                             TIPImageCacheEntryContext *context);
-static void _diskCache_clearAllImages(SELF_ARG);
-static void _diskCache_ensureCacheDirectoryExists(SELF_ARG);
-static void _diskCache_updateByteCounts(SELF_ARG,
-                                        UInt64 bytesAdded,
-                                        UInt64 bytesRemoved);
-static BOOL _diskCache_renameImageEntry(SELF_ARG,
-                                        NSString *oldIdentifier,
-                                        NSString *newIdentifier,
-                                        NSError * __nullable * __nullable errorOut);
-static void _diskCache_populateEntryWithCompleteImage(SELF_ARG,
-                                                      TIPImageDiskCacheEntry *entry,
-                                                      NSDictionary<NSString *, id> * __nullable decoderConfigMap);
-static void _diskCache_populateEntryWithPartialImage(SELF_ARG,
-                                                     TIPImageDiskCacheEntry *entry,
-                                                     NSDictionary<NSString *, id> * __nullable decoderConfigMap);
-static void _diskCache_populateEntryWithTemporaryFile(SELF_ARG,
-                                                      TIPImageDiskCacheEntry *entry);
-static void _diskCache_inspect(SELF_ARG,
-                               TIPInspectableCacheCallback callback);
+- (nullable NSString *)_diskCache_copyImageEntryToTemporaryFile:(NSString *)unsafeIdentifier
+                                                          error:(out NSError * __nullable * __nullable)errorOut;
+- (nullable TIPImageDiskCacheEntry *)_diskCache_getImageEntry:(NSString *)unsafeIdentifier
+                                                      options:(TIPImageDiskCacheFetchOptions)options
+                                             targetDimensions:(CGSize)targetDimensions
+                                            targetContentMode:(UIViewContentMode)targetContentMode
+                                             decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
+- (nullable TIPImageDiskCacheEntry *)_diskCache_getImageEntryDirectlyFromDisk:(NSString *)unsafeIdentifier
+                                                                      options:(TIPImageDiskCacheFetchOptions)options
+                                                             targetDimensions:(CGSize)targetDimensions
+                                                            targetContentMode:(UIViewContentMode)targetContentMode
+                                                             decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
+- (nullable TIPImageDiskCacheEntry *)_diskCache_getImageEntryFromManifest:(NSString *)unsafeIdentifier
+                                                                  options:(TIPImageDiskCacheFetchOptions)options
+                                                         targetDimensions:(CGSize)targetDimensions
+                                                        targetContentMode:(UIViewContentMode)targetContentMode
+                                                         decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
+- (void)_diskCache_updateImageEntry:(TIPImageCacheEntry *)entry
+            forciblyReplaceExisting:(BOOL)forciblyReplaceExisting
+                     safeIdentifier:(NSString *)safeIdentifier;
+- (BOOL)_diskCache_touchImage:(NSString *)safeIdentifier
+                       forced:(BOOL)forced;
+- (void)_diskCache_touchEntry:(nullable TIPImageDiskCacheEntry *)entry
+                       forced:(BOOL)forced
+                      partial:(BOOL)partial;
+- (void)_diskCache_finalizeTemporaryFile:(TIPImageDiskCacheTemporaryFile *)tempFile
+                                 context:(TIPImageCacheEntryContext *)context;
+- (void)_diskCache_clearAllImages;
+- (void)_diskCache_ensureCacheDirectoryExists;
+- (void)_diskCache_updateByteCountsAdded:(UInt64)bytesAdded
+                                 removed:(UInt64)bytesRemoved;
+- (BOOL)_diskCache_renameImageEntryWithOldIdentifier:(NSString *)oldIdentifier
+                                       newIdentifier:(NSString *)newIdentifier
+                                               error:(out NSError * __nullable * __nullable)errorOut;
+- (void)_diskCache_populateEntryWithCompleteImage:(TIPImageDiskCacheEntry *)entry
+                                 targetDimensions:(CGSize)targetDimensions
+                                targetContentMode:(UIViewContentMode)targetContentMode
+                                 decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
+- (void)_diskCache_populateEntryWithPartialImage:(TIPImageDiskCacheEntry *)entry
+                                decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
+- (void)_diskCache_populateEntryWithTemporaryFile:(TIPImageDiskCacheEntry *)entry;
+- (void)_diskCache_inspect:(TIPInspectableCacheCallback)callback;
 
 @end
 
@@ -167,15 +158,13 @@ typedef void(^TIPImageDiskCacheManifestPopulateEntriesCompletionBlock)(unsigned 
                                                                        NSArray<TIPImageDiskCacheEntry *> * __nullable entries,
                                                                        NSArray<NSString *> * __nullable falseEntryPaths);
 
+TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImageDiskCache (Manifest)
-static void _manifest_populateManifest(SELF_ARG,
-                                       NSString *cachePath);
-static void _manifest_populateEntries(SELF_ARG,
-                                      NSString *cachePath,
-                                      TIPImageDiskCacheManifestPopulateEntriesCompletionBlock completionBlock);
-static void _manifest_finalizePopulateManifest(SELF_ARG,
-                                               NSArray<TIPImageDiskCacheEntry *> *entries,
-                                               unsigned long long totalSize);
+- (void)_manifest_populateManifestWithCachePath:(NSString *)cachePath;
+- (void)_manifest_populateEntriesWithCachePath:(NSString *)cachePath
+                                    completion:(TIPImageDiskCacheManifestPopulateEntriesCompletionBlock)completionBlock;
+- (void)_manifest_finalizePopulateManifest:(NSArray<TIPImageDiskCacheEntry *> *)entries
+                                 totalSize:(unsigned long long)totalSize;
 @end
 
 @implementation TIPImageDiskCache
@@ -252,7 +241,7 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
 
         cachePath = _cachePath; // reassign local var to immutable ivar for async usage
         tip_dispatch_async_autoreleasing(_manifestQueue, ^{
-            _manifest_populateManifest(self, cachePath);
+            [self _manifest_populateManifestWithCachePath:cachePath];
         });
     }
     return self;
@@ -280,7 +269,9 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
     __block NSError *outerError;
     tip_dispatch_sync_autoreleasing(_globalConfig.queueForDiskCaches, ^{
         NSError *innerError;
-        success = _diskCache_renameImageEntry(self, oldIdentifier, newIdentifier, &innerError);
+        success = [self _diskCache_renameImageEntryWithOldIdentifier:oldIdentifier
+                                                       newIdentifier:newIdentifier
+                                                               error:&innerError];
         outerError = innerError;
     });
     if (error) {
@@ -301,7 +292,8 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
     __block NSString *tempFilePath;
     tip_dispatch_sync_autoreleasing(_globalConfig.queueForDiskCaches, ^{
         NSError *innerError;
-        tempFilePath = _diskCache_copyImageEntryToTemporaryFile(self, identifier, &innerError);
+        tempFilePath = [self _diskCache_copyImageEntryToTemporaryFile:identifier
+                                                                error:&innerError];
         outerError = innerError;
     });
     if (error) {
@@ -313,6 +305,8 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
 
 - (nullable TIPImageDiskCacheEntry *)imageEntryForIdentifier:(NSString *)identifier
                                                      options:(TIPImageDiskCacheFetchOptions)options
+                                            targetDimensions:(CGSize)targetDimensions
+                                           targetContentMode:(UIViewContentMode)targetContentMode
                                             decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
 {
     if (!identifier) {
@@ -321,7 +315,11 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
 
     __block TIPImageDiskCacheEntry *entry;
     tip_dispatch_sync_autoreleasing(_globalConfig.queueForDiskCaches, ^{
-        entry = _diskCache_getImageEntry(self, identifier, options, decoderConfigMap);
+        entry = [self _diskCache_getImageEntry:identifier
+                                       options:options
+                              targetDimensions:targetDimensions
+                             targetContentMode:targetContentMode
+                              decoderConfigMap:decoderConfigMap];
     });
     return entry;
 }
@@ -334,7 +332,9 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
     }
 
     tip_dispatch_async_autoreleasing(_globalConfig.queueForDiskCaches, ^{
-        _diskCache_updateImageEntry(self, entry, force, TIPSafeFromRaw(entry.identifier));
+        [self _diskCache_updateImageEntry:entry
+                  forciblyReplaceExisting:force
+                           safeIdentifier:TIPSafeFromRaw(entry.identifier)];
     });
 }
 
@@ -354,7 +354,7 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
 - (void)clearAllImages:(nullable void (^)(void))completion
 {
     tip_dispatch_async_autoreleasing(_globalConfig.queueForDiskCaches, ^{
-        _diskCache_clearAllImages(self);
+        [self _diskCache_clearAllImages];
         if (completion) {
             completion();
         }
@@ -386,8 +386,10 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
 
     tip_dispatch_async_autoreleasing(_globalConfig.queueForDiskCaches, ^{
         NSString *safeIdentifier = TIPSafeFromRaw(imageIdentifier);
-        if (!_diskCache_touchImage(self, safeIdentifier, NO /*force*/) && entry) {
-            _diskCache_updateImageEntry(self, entry, NO /*forciblyReplaceExisting*/, safeIdentifier);
+        if (![self _diskCache_touchImage:safeIdentifier forced:NO] && entry) {
+            [self _diskCache_updateImageEntry:entry
+                      forciblyReplaceExisting:NO
+                               safeIdentifier:safeIdentifier];
         }
     });
 }
@@ -417,7 +419,8 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
     }
 
     tip_dispatch_async_autoreleasing(_globalConfig.queueForDiskCaches, ^{
-        _diskCache_finalizeTemporaryFile(self, tempFile, context);
+        [self _diskCache_finalizeTemporaryFile:tempFile
+                                       context:context];
     });
 }
 
@@ -449,7 +452,7 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
 {
     const NSUInteger size = entry.completeFileSize + entry.partialFileSize;
     _globalConfig.internalTotalCountForAllDiskCaches -= 1;
-    _diskCache_updateByteCounts(self, 0 /*bytesAdded*/, size /*bytesRemoved*/);
+    [self _diskCache_updateByteCountsAdded:0 removed:size];
 
     NSFileManager *fm = [NSFileManager defaultManager];
     NSString *filePath = [self filePathForSafeIdentifier:entry.safeIdentifier];
@@ -465,7 +468,7 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
 - (void)inspect:(TIPInspectableCacheCallback)callback
 {
     tip_dispatch_async_autoreleasing(_globalConfig.queueForDiskCaches, ^{
-        _diskCache_inspect(self, callback);
+        [self _diskCache_inspect:callback];
     });
 }
 
@@ -473,21 +476,16 @@ static void _manifest_finalizePopulateManifest(SELF_ARG,
 
 @implementation TIPImageDiskCache (Background)
 
-static void _diskCache_updateByteCounts(SELF_ARG,
-                                        UInt64 bytesAdded,
-                                        UInt64 bytesRemoved)
+- (void)_diskCache_updateByteCountsAdded:(UInt64)bytesAdded
+                                 removed:(UInt64)bytesRemoved
 {
-    if (!self) {
-        return;
-    }
-
     // are we decrementing our byte count before the manifest has finished loading?
-    if (bytesRemoved > bytesAdded && self->_diskCache_flags.manifestIsLoading) {
+    if (bytesRemoved > bytesAdded && _diskCache_flags.manifestIsLoading) {
 
         // this would cause the manifest to become negative
         // instead, delay the decrement until later and just deal with the increment
 
-        self->_earlyRemovedBytesSize += bytesRemoved;
+        _earlyRemovedBytesSize += bytesRemoved;
 
         TIPLogWarning(@"Decrementing disk cache size before the Manifest finished loading!  It's OK though, we'll delay the subtracting until later.  Added: %llu, Sub'd: %llu", bytesAdded, bytesRemoved);
 
@@ -495,29 +493,20 @@ static void _diskCache_updateByteCounts(SELF_ARG,
     }
 
     TIP_UPDATE_BYTES(self.atomicTotalSize, bytesAdded, bytesRemoved, @"Disk Cache Size");
-    TIP_UPDATE_BYTES(self->_globalConfig.internalTotalBytesForAllDiskCaches, bytesAdded, bytesRemoved, @"All Disk Caches Size");
+    TIP_UPDATE_BYTES(_globalConfig.internalTotalBytesForAllDiskCaches, bytesAdded, bytesRemoved, @"All Disk Caches Size");
 }
 
-static void _diskCache_ensureCacheDirectoryExists(SELF_ARG)
+- (void)_diskCache_ensureCacheDirectoryExists
 {
-    if (!self) {
-        return;
-    }
-
-    [[NSFileManager defaultManager] createDirectoryAtPath:self->_cachePath
+    [[NSFileManager defaultManager] createDirectoryAtPath:_cachePath
                               withIntermediateDirectories:YES
                                                attributes:nil
                                                     error:NULL];
 }
 
-static NSString * __nullable _diskCache_copyImageEntryToTemporaryFile(SELF_ARG,
-                                                                      NSString *unsafeIdentifier,
-                                                                      NSError * __nullable * __nullable errorOut)
+- (nullable NSString *)_diskCache_copyImageEntryToTemporaryFile:(NSString *)unsafeIdentifier
+                                                          error:(out NSError * __nullable * __nullable)errorOut
 {
-    if (!self) {
-        return nil;
-    }
-
     NSString *temporaryFilePath = nil;
     NSError *fileCopyError = nil;
     NSString *filePath = [self diskCache_imageEntryFilePathForIdentifier:unsafeIdentifier
@@ -548,78 +537,36 @@ static NSString * __nullable _diskCache_copyImageEntryToTemporaryFile(SELF_ARG,
     return temporaryFilePath;
 }
 
-- (nullable NSString *)diskCache_imageEntryFilePathForIdentifier:(NSString *)identifier
-                                        hitShouldMoveEntryToHead:(BOOL)hitToHead
-                                                         context:(out TIPImageCacheEntryContext * __autoreleasing __nullable * __nullable)contextOut
+- (nullable TIPImageDiskCacheEntry *)_diskCache_getImageEntry:(NSString *)unsafeIdentifier
+                                                      options:(TIPImageDiskCacheFetchOptions)options
+                                             targetDimensions:(CGSize)targetDimensions
+                                            targetContentMode:(UIViewContentMode)targetContentMode
+                                             decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
 {
-    TIPCompleteImageEntryContext *context = nil;
-    NSFileManager *fm = [NSFileManager defaultManager];
-    NSString *safeIdentifer = TIPSafeFromRaw(identifier);
-    NSString *filePath = [self filePathForSafeIdentifier:safeIdentifer];
-
-    if (_diskCache_flags.manifestIsLoading) {
-        if ([fm fileExistsAtPath:filePath]) {
-            const NSUInteger size = TIPFileSizeAtPath(filePath, NULL);
-            if (size) {
-                NSDictionary *xattributes = TIPGetXAttributesForFile(filePath, _XAttributesKeysToKindsMapForCompleteEntry());
-                context = (id)_ContextFromXAttributes(xattributes, NO);
-                if (![context isKindOfClass:[TIPCompleteImageEntryContext class]]) {
-                    context = nil;
-                }
-            }
-        }
-    } else {
-        TIPImageCacheEntry *entry = (TIPImageCacheEntry *)[_manifest entryWithIdentifier:safeIdentifer
-                                                                               canMutate:hitToHead];
-        context = [entry.completeImageContext copy];
-    }
-
-    if (!context) {
-        filePath = nil;
-    }
-
-    if (contextOut) {
-        *contextOut = context;
-    }
-    return filePath;
-}
-
-- (nullable TIPImageDiskCacheEntry *)diskCache_imageEntryForIdentifier:(NSString *)identifier
-                                                               options:(TIPImageDiskCacheFetchOptions)options
-                                                      decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
-{
-    return _diskCache_getImageEntry(self, identifier, options, decoderConfigMap);
-}
-
-static TIPImageDiskCacheEntry * __nullable _diskCache_getImageEntry(SELF_ARG,
-                                                                    NSString *unsafeIdentifier,
-                                                                    TIPImageDiskCacheFetchOptions options,
-                                                                    NSDictionary<NSString *, id> * __nullable decoderConfigMap)
-{
-    if (!self) {
-        return nil;
-    }
-
     TIPImageDiskCacheEntry *entry = nil;
-    if (self->_diskCache_flags.manifestIsLoading) {
-        entry = _diskCache_getImageEntryDirectlyFromDisk(self, unsafeIdentifier, options, decoderConfigMap);
+    if (_diskCache_flags.manifestIsLoading) {
+        entry = [self _diskCache_getImageEntryDirectlyFromDisk:unsafeIdentifier
+                                                       options:options
+                                              targetDimensions:targetDimensions
+                                             targetContentMode:targetContentMode
+                                              decoderConfigMap:decoderConfigMap];
     } else {
-        entry = _diskCache_getImageEntryFromManifest(self, unsafeIdentifier, options, decoderConfigMap);
+        entry = [self _diskCache_getImageEntryFromManifest:unsafeIdentifier
+                                                   options:options
+                                          targetDimensions:targetDimensions
+                                         targetContentMode:targetContentMode
+                                          decoderConfigMap:decoderConfigMap];
     }
 
     return entry;
 }
 
-static TIPImageDiskCacheEntry * __nullable
-_diskCache_getImageEntryDirectlyFromDisk(SELF_ARG,
-                                         NSString *unsafeIdentifier,
-                                         TIPImageDiskCacheFetchOptions options,
-                                         NSDictionary<NSString *, id> * __nullable decoderConfigMap)
+- (nullable TIPImageDiskCacheEntry *)_diskCache_getImageEntryDirectlyFromDisk:(NSString *)unsafeIdentifier
+                                                                      options:(TIPImageDiskCacheFetchOptions)options
+                                                             targetDimensions:(CGSize)targetDimensions
+                                                            targetContentMode:(UIViewContentMode)targetContentMode
+                                                             decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
 {
-    if (!self) {
-        return nil;
-    }
-
     TIPImageDiskCacheEntry *entry = nil;
     NSFileManager *fm = [NSFileManager defaultManager];
     NSString *safeIdentifer = TIPSafeFromRaw(unsafeIdentifier);
@@ -635,12 +582,17 @@ _diskCache_getImageEntryDirectlyFromDisk(SELF_ARG,
                 entry.completeImageContext = (id)context;
                 entry.completeFileSize = size;
                 if (TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageDiskCacheFetchOptionCompleteImage)) {
-                    TIPImageContainer *image = [TIPImageContainer imageContainerWithFilePath:filePath
-                                                                            decoderConfigMap:decoderConfigMap
-                                                                              codecCatalogue:nil
-                                                                                   memoryMap:context.isAnimated];
+                    NSData *data = [NSData dataWithContentsOfURL:[NSURL fileURLWithPath:filePath]
+                                                         options:(context.isAnimated) ? NSDataReadingMappedIfSafe : 0
+                                                           error:NULL];
+                    TIPImageContainer *image = [TIPImageContainer imageContainerWithData:data
+                                                                        targetDimensions:targetDimensions
+                                                                       targetContentMode:targetContentMode
+                                                                        decoderConfigMap:decoderConfigMap
+                                                                          codecCatalogue:nil];
                     if (image) {
                         entry.completeImage = image;
+                        entry.completeImageData = data;
                     } else {
                         entry = nil;
                     }
@@ -651,16 +603,12 @@ _diskCache_getImageEntryDirectlyFromDisk(SELF_ARG,
     return entry;
 }
 
-static TIPImageDiskCacheEntry * __nullable
-_diskCache_getImageEntryFromManifest(SELF_ARG,
-                                     NSString *unsafeIdentifier,
-                                     TIPImageDiskCacheFetchOptions options,
-                                     NSDictionary<NSString *, id> * __nullable decoderConfigMap)
+- (nullable TIPImageDiskCacheEntry *)_diskCache_getImageEntryFromManifest:(NSString *)unsafeIdentifier
+                                                                  options:(TIPImageDiskCacheFetchOptions)options
+                                                         targetDimensions:(CGSize)targetDimensions
+                                                        targetContentMode:(UIViewContentMode)targetContentMode
+                                                         decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
 {
-    if (!self) {
-        return nil;
-    }
-
     TIPLRUCache *manifest = [self diskCache_syncAccessManifest];
     NSString *safeIdentifer = TIPSafeFromRaw(unsafeIdentifier);
     TIPImageDiskCacheEntry *entry = (TIPImageDiskCacheEntry *)[manifest entryWithIdentifier:safeIdentifer];
@@ -689,7 +637,7 @@ _diskCache_getImageEntryFromManifest(SELF_ARG,
             [manifest removeEntry:entry];
             entry = nil;
         } else {
-            _diskCache_updateByteCounts(self, newCost /*bytesAdded*/, oldCost /*bytesRemoved*/);
+            [self _diskCache_updateByteCountsAdded:newCost removed:oldCost];
             TIPAssert(newCost <= oldCost); // removing the cache image and/or partial image only ever removes bytes
         }
 
@@ -701,21 +649,25 @@ _diskCache_getImageEntryFromManifest(SELF_ARG,
                 // we can safely update the existing entry's identifier.
                 entry.identifier = unsafeIdentifier;
             }
-            _diskCache_touchImage(self, safeIdentifer, NO /*forced*/);
+            [self _diskCache_touchImage:safeIdentifer forced:NO];
 
             // Mutate and return a copy
             entry = [entry copy];
 
             if (TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageDiskCacheFetchOptionCompleteImage)) {
-                _diskCache_populateEntryWithCompleteImage(self, entry, decoderConfigMap);
+                [self _diskCache_populateEntryWithCompleteImage:entry
+                                               targetDimensions:targetDimensions
+                                              targetContentMode:targetContentMode
+                                               decoderConfigMap:decoderConfigMap];
             }
 
             if (TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageDiskCacheFetchOptionPartialImage) || (TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageDiskCacheFetchOptionPartialImageIfNoCompleteImage) && !entry.completeImageContext)) {
-                _diskCache_populateEntryWithPartialImage(self, entry, decoderConfigMap);
+                [self _diskCache_populateEntryWithPartialImage:entry
+                                              decoderConfigMap:decoderConfigMap];
             }
 
             if (TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageDiskCacheFetchOptionTemporaryFile) || (TIP_BITMASK_HAS_SUBSET_FLAGS(options, TIPImageDiskCacheFetchOptionTemporaryFileIfNoCompleteImage) && !entry.completeImageContext)) {
-                _diskCache_populateEntryWithTemporaryFile(self, entry);
+                [self _diskCache_populateEntryWithTemporaryFile:entry];
             }
         }
     }
@@ -723,35 +675,32 @@ _diskCache_getImageEntryFromManifest(SELF_ARG,
     return entry;
 }
 
-static void _diskCache_populateEntryWithCompleteImage(SELF_ARG,
-                                                      TIPImageDiskCacheEntry *entry,
-                                                      NSDictionary<NSString *, id> * __nullable decoderConfigMap)
+- (void)_diskCache_populateEntryWithCompleteImage:(TIPImageDiskCacheEntry *)entry
+                                 targetDimensions:(CGSize)targetDimensions
+                                targetContentMode:(UIViewContentMode)targetContentMode
+                                 decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
 {
-    if (!self) {
-        return;
-    }
-
     if (entry.completeImageContext) {
         NSString *filePath = [self filePathForSafeIdentifier:entry.safeIdentifier];
         TIPAssertMessage(filePath != nil, @"entry.identifier = %@", entry.identifier);
         if (filePath) {
             const BOOL memoryMap = entry.completeImageContext.isAnimated;
-            entry.completeImage = [TIPImageContainer imageContainerWithFilePath:filePath
-                                                               decoderConfigMap:decoderConfigMap
-                                                                 codecCatalogue:nil
-                                                                      memoryMap:memoryMap];
+            NSData *data = [NSData dataWithContentsOfURL:[NSURL fileURLWithPath:filePath]
+                                                 options:(memoryMap) ? NSDataReadingMappedIfSafe : 0
+                                                   error:NULL];
+            entry.completeImage = [TIPImageContainer imageContainerWithData:data
+                                                           targetDimensions:targetDimensions
+                                                          targetContentMode:targetContentMode
+                                                           decoderConfigMap:decoderConfigMap
+                                                             codecCatalogue:nil];
+            entry.completeImageData = data;
         }
     }
 }
 
-static void _diskCache_populateEntryWithPartialImage(SELF_ARG,
-                                                     TIPImageDiskCacheEntry *entry,
-                                                     NSDictionary<NSString *, id> * __nullable decoderConfigMap)
+- (void)_diskCache_populateEntryWithPartialImage:(TIPImageDiskCacheEntry *)entry
+                                decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
 {
-    if (!self) {
-        return;
-    }
-
     if (entry.partialImageContext) {
         NSString *filePath = [self filePathForSafeIdentifier:entry.safeIdentifier];
         filePath = [filePath stringByAppendingPathExtension:kPartialImageExtension];
@@ -769,13 +718,8 @@ static void _diskCache_populateEntryWithPartialImage(SELF_ARG,
     }
 }
 
-static void _diskCache_populateEntryWithTemporaryFile(SELF_ARG,
-                                                      TIPImageDiskCacheEntry *entry)
+- (void)_diskCache_populateEntryWithTemporaryFile:(TIPImageDiskCacheEntry *)entry
 {
-    if (!self) {
-        return;
-    }
-
     if (entry.partialImageContext) {
         NSString *finalPath = [self filePathForSafeIdentifier:entry.safeIdentifier];
         NSString *partialPath = [finalPath stringByAppendingPathExtension:kPartialImageExtension];
@@ -791,22 +735,10 @@ static void _diskCache_populateEntryWithTemporaryFile(SELF_ARG,
     }
 }
 
-- (void)diskCache_updateImageEntry:(TIPImageCacheEntry *)entry forciblyReplaceExisting:(BOOL)force
+- (void)_diskCache_updateImageEntry:(TIPImageCacheEntry *)entry
+            forciblyReplaceExisting:(BOOL)forciblyReplaceExisting
+                     safeIdentifier:(NSString *)safeIdentifier
 {
-    @autoreleasepool {
-        _diskCache_updateImageEntry(self, entry, force, TIPSafeFromRaw(entry.identifier));
-    }
-}
-
-static void _diskCache_updateImageEntry(SELF_ARG,
-                                        TIPImageCacheEntry *entry,
-                                        BOOL forciblyReplaceExisting,
-                                        NSString *safeIdentifier)
-{
-    if (!self) {
-        return;
-    }
-
     // Validate entry first
     if (!entry.identifier) {
         return;
@@ -818,7 +750,7 @@ static void _diskCache_updateImageEntry(SELF_ARG,
         return;
     }
 
-    _diskCache_ensureCacheDirectoryExists(self);
+    [self _diskCache_ensureCacheDirectoryExists];
 
     // Get the "existing" entry
     TIPLRUCache *manifest = [self diskCache_syncAccessManifest];
@@ -857,12 +789,12 @@ static void _diskCache_updateImageEntry(SELF_ARG,
         if (contextURL) {
             userInfo[TIPProblemInfoKeyImageURL] = contextURL;
         }
-        if (self->_cachePath) {
+        if (_cachePath) {
             // Context is helpful, but needn't expose it with a constant.
-            userInfo[@"cachePath"] = self->_cachePath;
+            userInfo[@"cachePath"] = _cachePath;
         }
-        [self->_globalConfig postProblem:TIPProblemDiskCacheUpdateImageEntryCouldNotGenerateFileName
-                                userInfo:userInfo];
+        [_globalConfig postProblem:TIPProblemDiskCacheUpdateImageEntryCouldNotGenerateFileName
+                          userInfo:userInfo];
     }
 
     const NSUInteger oldCost = existingEntry.partialFileSize + existingEntry.completeFileSize;
@@ -994,7 +926,7 @@ static void _diskCache_updateImageEntry(SELF_ARG,
     }
 
     // Cap our entry size
-    const SInt64 max = [self->_globalConfig internalMaxBytesForCacheEntryOfType:self.cacheType];
+    const SInt64 max = [_globalConfig internalMaxBytesForCacheEntryOfType:self.cacheType];
     if (existingEntry && (SInt64)existingEntry.partialFileSize > max) {
 
         NSDictionary *userInfo = @{
@@ -1005,7 +937,7 @@ static void _diskCache_updateImageEntry(SELF_ARG,
                                    @"expectedSize" : @(existingEntry.partialImageContext.expectedContentLength),
                                    @"partialSize" : @(existingEntry.partialFileSize),
                                    };
-        [self->_globalConfig postProblem:TIPProblemImageTooLargeToStoreInDiskCache userInfo:userInfo];
+        [_globalConfig postProblem:TIPProblemImageTooLargeToStoreInDiskCache userInfo:userInfo];
 
         if (partialFilePath) {
             [fm removeItemAtPath:partialFilePath error:NULL];
@@ -1025,8 +957,7 @@ static void _diskCache_updateImageEntry(SELF_ARG,
                                    TIPProblemInfoKeyImageDimensions : dimensionsValue,
                                    @"size" : @(existingEntry.completeFileSize),
                                    };
-        [self->_globalConfig postProblem:TIPProblemImageTooLargeToStoreInDiskCache
-                                userInfo:userInfo];
+        [_globalConfig postProblem:TIPProblemImageTooLargeToStoreInDiskCache userInfo:userInfo];
 
         [fm removeItemAtPath:filePath error:NULL];
         existingEntry.completeImage = nil;
@@ -1044,17 +975,21 @@ static void _diskCache_updateImageEntry(SELF_ARG,
 
         // Update xattrs and LRU
         const NSUInteger newCost = existingEntry.partialFileSize + existingEntry.completeFileSize;
-        _diskCache_updateByteCounts(self, newCost /*bytesAdded*/, oldCost /*bytesRemoved*/);
+        [self _diskCache_updateByteCountsAdded:newCost removed:oldCost];
         if (!hasPreviousEntry && existingEntry) {
-            self->_globalConfig.internalTotalCountForAllDiskCaches += 1;
+            _globalConfig.internalTotalCountForAllDiskCaches += 1;
         }
 
         [manifest addEntry:existingEntry];
         if (didChangePartial) {
-            _diskCache_touchEntry(self, existingEntry, forciblyReplaceExisting /*forced*/, YES /*partial*/);
+            [self _diskCache_touchEntry:existingEntry
+                                 forced:forciblyReplaceExisting
+                                partial:YES];
         }
         if (didChangeComplete) {
-            _diskCache_touchEntry(self, existingEntry, forciblyReplaceExisting /*forced*/, NO /*partial*/);
+            [self _diskCache_touchEntry:existingEntry
+                                 forced:forciblyReplaceExisting
+                                partial:NO];
         }
 
         if (gTwitterImagePipelineAssertEnabled) {
@@ -1077,35 +1012,29 @@ static void _diskCache_updateImageEntry(SELF_ARG,
         }
     }
 
-    [self->_globalConfig pruneAllCachesOfType:self.cacheType withPriorityCache:self];
+    [_globalConfig pruneAllCachesOfType:self.cacheType withPriorityCache:self];
 }
 
-static BOOL _diskCache_touchImage(SELF_ARG,
-                                  NSString *safeIdentifier,
-                                  BOOL forced)
+- (BOOL)_diskCache_touchImage:(NSString *)safeIdentifier
+                       forced:(BOOL)forced
 {
-    if (!self) {
-        return NO;
-    }
-
     TIPLRUCache *manifest = [self diskCache_syncAccessManifest];
     TIPImageDiskCacheEntry *entry = (TIPImageDiskCacheEntry *)[manifest entryWithIdentifier:safeIdentifier];
     if (entry) {
-        _diskCache_touchEntry(self, entry, forced, YES /*partial*/);
-        _diskCache_touchEntry(self, entry, forced, NO /*partial*/);
+        [self _diskCache_touchEntry:entry
+                             forced:forced
+                            partial:YES];
+        [self _diskCache_touchEntry:entry
+                             forced:forced
+                            partial:NO];
     }
     return entry != nil;
 }
 
-static void _diskCache_touchEntry(SELF_ARG,
-                                  TIPImageDiskCacheEntry * __nullable entry,
-                                  BOOL forced,
-                                  BOOL partial)
+- (void)_diskCache_touchEntry:(nullable TIPImageDiskCacheEntry *)entry
+                       forced:(BOOL)forced
+                      partial:(BOOL)partial
 {
-    if (!self) {
-        return;
-    }
-
     TIPImageCacheEntryContext *context = (partial) ? entry.partialImageContext : entry.completeImageContext;
     if (!context) {
         return;
@@ -1145,30 +1074,21 @@ static void _diskCache_touchEntry(SELF_ARG,
 #endif
 }
 
-static void _diskCache_clearAllImages(SELF_ARG)
+- (void)_diskCache_clearAllImages
 {
-    if (!self) {
-        return;
-    }
-
     TIPStartMethodScopedBackgroundTask(ClearAllImages);
     TIPLRUCache *manifest = [self diskCache_syncAccessManifest];
     const SInt16 totalCount = (SInt16)manifest.numberOfEntries;
     [manifest clearAllEntries];
-    _diskCache_updateByteCounts(self, 0 /*bytesAdded*/, (UInt64)self.atomicTotalSize /*bytesRemoved*/);
-    self->_globalConfig.internalTotalCountForAllDiskCaches -= totalCount;
-    [[NSFileManager defaultManager] removeItemAtPath:self->_cachePath error:NULL];
+    [self _diskCache_updateByteCountsAdded:0 removed:(UInt64)self.atomicTotalSize];
+    _globalConfig.internalTotalCountForAllDiskCaches -= totalCount;
+    [[NSFileManager defaultManager] removeItemAtPath:_cachePath error:NULL];
     TIPLogInformation(@"Cleared all images in %@", self);
 }
 
-static void _diskCache_finalizeTemporaryFile(SELF_ARG,
-                                             TIPImageDiskCacheTemporaryFile * tempFile,
-                                             TIPImageCacheEntryContext *context)
+- (void)_diskCache_finalizeTemporaryFile:(TIPImageDiskCacheTemporaryFile *)tempFile
+                                 context:(TIPImageCacheEntryContext *)context
 {
-    if (!self) {
-        return;
-    }
-
     NSString * const finalPath = tempFile.finalPath;
     if (!finalPath) {
         NSString *message = [NSString stringWithFormat:@"%@ has a nil finalPath.  identifier: %@", NSStringFromClass([tempFile class]), tempFile.imageIdentifier];
@@ -1189,7 +1109,7 @@ static void _diskCache_finalizeTemporaryFile(SELF_ARG,
     NSString * const safeIdentifier = [finalPath lastPathComponent];
     TIPAssert([safeIdentifier isEqualToString:TIPSafeFromRaw(tempFile.imageIdentifier)]);
 
-    _diskCache_ensureCacheDirectoryExists(self);
+    [self _diskCache_ensureCacheDirectoryExists];
 
     BOOL const isPartial = [context isKindOfClass:[TIPPartialImageEntryContext class]];
     if (!isPartial) {
@@ -1229,7 +1149,8 @@ static void _diskCache_finalizeTemporaryFile(SELF_ARG,
             if (oldPartialContext) {
                 if ((oldPartialDimensions.width * oldPartialDimensions.height) <= (newDimensions.width * newDimensions.height)) {
                     // if the old partial image is smaller (or equal), remove it
-                    _diskCache_updateByteCounts(self, 0 /*bytesAdded*/, entry.partialFileSize /*bytesRemoved*/);
+                    [self _diskCache_updateByteCountsAdded:0
+                                                   removed:entry.partialFileSize];
                     entry.partialFileSize = 0;
                     entry.partialImageContext = nil;
                     [fm removeItemAtPath:partialPath error:NULL];
@@ -1240,7 +1161,8 @@ static void _diskCache_finalizeTemporaryFile(SELF_ARG,
                 const BOOL oldSizeTooSmall = (oldCompleteDimensions.width * oldCompleteDimensions.height) < (newDimensions.width * newDimensions.height);
                 if (oldSizeTooSmall || oldCompleteContext.treatAsPlaceholder) {
                     // if the old complete image is smaller, remove it
-                    _diskCache_updateByteCounts(self, 0 /*bytesAdded*/, entry.completeFileSize /*bytesRemoved*/);
+                    [self _diskCache_updateByteCountsAdded:0
+                                                   removed:entry.completeFileSize];
                     entry.completeFileSize = 0;
                     entry.completeImageContext = nil;
                     [fm removeItemAtPath:finalPath error:NULL];
@@ -1256,7 +1178,8 @@ static void _diskCache_finalizeTemporaryFile(SELF_ARG,
             if (oldPartialContext) {
                 if ((oldPartialDimensions.width * oldPartialDimensions.height) <= (newDimensions.width * newDimensions.height)) {
                     // if the old partial image is smaller (or equal), remove it
-                    _diskCache_updateByteCounts(self, 0 /*bytesAdded*/, entry.partialFileSize /*bytesRemoved*/);
+                    [self _diskCache_updateByteCountsAdded:0
+                                                   removed:entry.partialFileSize];
                     entry.partialFileSize = 0;
                     entry.partialImageContext = nil;
                     [fm removeItemAtPath:partialPath error:NULL];
@@ -1293,9 +1216,9 @@ static void _diskCache_finalizeTemporaryFile(SELF_ARG,
             entry.completeImageContext = (id)context;
         }
 
-        _diskCache_updateByteCounts(self, size /*bytesAdded*/, 0 /*bytesRemoved*/);
+        [self _diskCache_updateByteCountsAdded:size removed:0];
         if (newEntry) {
-            self->_globalConfig.internalTotalCountForAllDiskCaches += 1;
+            _globalConfig.internalTotalCountForAllDiskCaches += 1;
         }
 
         if (gTwitterImagePipelineAssertEnabled) {
@@ -1316,20 +1239,17 @@ static void _diskCache_finalizeTemporaryFile(SELF_ARG,
         }
 
         [manifest addEntry:entry];
-        _diskCache_touchEntry(self, entry, YES /*forced*/, isPartial);
-        [self->_globalConfig pruneAllCachesOfType:self.cacheType withPriorityCache:self];
+        [self _diskCache_touchEntry:entry
+                             forced:YES
+                            partial:isPartial];
+        [_globalConfig pruneAllCachesOfType:self.cacheType withPriorityCache:self];
     } else {
         TIPLogWarning(@"%@", error);
     }
 }
 
-static void _diskCache_inspect(SELF_ARG,
-                               TIPInspectableCacheCallback callback)
+- (void)_diskCache_inspect:(TIPInspectableCacheCallback)callback
 {
-    if (!self) {
-        return;
-    }
-
     NSMutableArray *completedEntries = [[NSMutableArray alloc] init];
     NSMutableArray *partialEntries = [[NSMutableArray alloc] init];
 
@@ -1356,15 +1276,10 @@ static void _diskCache_inspect(SELF_ARG,
     callback(completedEntries, partialEntries);
 }
 
-static BOOL _diskCache_renameImageEntry(SELF_ARG,
-                                        NSString *oldIdentifier,
-                                        NSString *newIdentifier,
-                                        NSError * __nullable * __nullable errorOut)
+- (BOOL)_diskCache_renameImageEntryWithOldIdentifier:(NSString *)oldIdentifier
+                                       newIdentifier:(NSString *)newIdentifier
+                                               error:(out NSError * __nullable * __nullable)errorOut
 {
-    if (!self) {
-        return NO;
-    }
-
     NSString *oldSafeID = TIPSafeFromRaw(oldIdentifier);
     TIPLRUCache *manifest = [self diskCache_syncAccessManifest];
     TIPImageDiskCacheEntry *oldEntry = (TIPImageDiskCacheEntry *)[manifest entryWithIdentifier:oldSafeID
@@ -1413,10 +1328,9 @@ static BOOL _diskCache_renameImageEntry(SELF_ARG,
         newEntry.identifier = newIdentifier;
         [manifest removeEntry:oldEntry];
         [manifest addEntry:newEntry];
-        _diskCache_updateByteCounts(self,
-                                    newEntry.completeFileSize + newEntry.partialFileSize /*bytesAdded*/,
-                                    0 /*bytesRemoved*/);
-        self->_globalConfig.internalTotalCountForAllDiskCaches += 1;
+        [self _diskCache_updateByteCountsAdded:newEntry.completeFileSize + newEntry.partialFileSize
+                                       removed:0];
+        _globalConfig.internalTotalCountForAllDiskCaches += 1;
     }
 
     TIPAssert(fail ^ !error);
@@ -1425,6 +1339,10 @@ static BOOL _diskCache_renameImageEntry(SELF_ARG,
     }
     return !fail;
 }
+
+@end
+
+@implementation TIPImageDiskCache (PrivateExposed)
 
 - (TIPLRUCache *)diskCache_syncAccessManifest
 {
@@ -1438,21 +1356,75 @@ static BOOL _diskCache_renameImageEntry(SELF_ARG,
     return [self manifest];
 }
 
+- (void)diskCache_updateImageEntry:(TIPImageCacheEntry *)entry forciblyReplaceExisting:(BOOL)force
+{
+    @autoreleasepool {
+        [self _diskCache_updateImageEntry:entry
+                  forciblyReplaceExisting:force
+                           safeIdentifier:TIPSafeFromRaw(entry.identifier)];
+    }
+}
+
+- (nullable NSString *)diskCache_imageEntryFilePathForIdentifier:(NSString *)identifier
+                                        hitShouldMoveEntryToHead:(BOOL)hitToHead
+                                                         context:(out TIPImageCacheEntryContext * __autoreleasing __nullable * __nullable)contextOut
+{
+    TIPCompleteImageEntryContext *context = nil;
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *safeIdentifer = TIPSafeFromRaw(identifier);
+    NSString *filePath = [self filePathForSafeIdentifier:safeIdentifer];
+
+    if (_diskCache_flags.manifestIsLoading) {
+        if ([fm fileExistsAtPath:filePath]) {
+            const NSUInteger size = TIPFileSizeAtPath(filePath, NULL);
+            if (size) {
+                NSDictionary *xattributes = TIPGetXAttributesForFile(filePath, _XAttributesKeysToKindsMapForCompleteEntry());
+                context = (id)_ContextFromXAttributes(xattributes, NO);
+                if (![context isKindOfClass:[TIPCompleteImageEntryContext class]]) {
+                    context = nil;
+                }
+            }
+        }
+    } else {
+        TIPImageCacheEntry *entry = (TIPImageCacheEntry *)[_manifest entryWithIdentifier:safeIdentifer
+                                                                               canMutate:hitToHead];
+        context = [entry.completeImageContext copy];
+    }
+
+    if (!context) {
+        filePath = nil;
+    }
+
+    if (contextOut) {
+        *contextOut = context;
+    }
+    return filePath;
+}
+
+- (nullable TIPImageDiskCacheEntry *)diskCache_imageEntryForIdentifier:(NSString *)identifier
+                                                               options:(TIPImageDiskCacheFetchOptions)options
+                                                      targetDimensions:(CGSize)targetDimensions
+                                                     targetContentMode:(UIViewContentMode)targetContentMode
+                                                      decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+{
+    return [self _diskCache_getImageEntry:identifier
+                                  options:options
+                         targetDimensions:targetDimensions
+                        targetContentMode:targetContentMode
+                         decoderConfigMap:decoderConfigMap];
+}
+
 @end
 
 @implementation TIPImageDiskCache (Manifest)
 
-static void _manifest_populateManifest(SELF_ARG,
-                                       NSString *cachePath)
+- (void)_manifest_populateManifestWithCachePath:(NSString *)cachePath
 {
-    if (!self) {
-        return;
-    }
-
     const uint64_t machStart = mach_absolute_time();
-    _manifest_populateEntries(self, cachePath, ^(unsigned long long totalSize,
-                                                 NSArray<TIPImageDiskCacheEntry *> *entries,
-                                                 NSArray<NSString *> *falseEntryPaths) {
+    [self _manifest_populateEntriesWithCachePath:cachePath
+                                      completion:^(unsigned long long totalSize,
+                                                   NSArray<TIPImageDiskCacheEntry *> *entries,
+                                                   NSArray<NSString *> *falseEntryPaths) {
 
         // remove files on background queue BEFORE updating the manifest
         // to avoid race condition with earily read path
@@ -1463,28 +1435,24 @@ static void _manifest_populateManifest(SELF_ARG,
             }
         });
 
-        _manifest_finalizePopulateManifest(self, entries, totalSize);
+        [self _manifest_finalizePopulateManifest:entries
+                                       totalSize:totalSize];
 
         const uint64_t machEnd = mach_absolute_time();
         TIPLogInformation(@"%@('%@') took %.3fs to populate its manifest", NSStringFromClass([self class]), self.cachePath.lastPathComponent, TIPComputeDuration(machStart, machEnd));
 
         [self prune]; // goes to the background queue
-    });
+    }];
 }
 
-static void _manifest_populateEntries(SELF_ARG,
-                                      NSString *cachePath,
-                                      TIPImageDiskCacheManifestPopulateEntriesCompletionBlock completionBlock)
+- (void)_manifest_populateEntriesWithCachePath:(NSString *)cachePath
+                                    completion:(TIPImageDiskCacheManifestPopulateEntriesCompletionBlock)completionBlock
 {
-    if (!self) {
-        return;
-    }
-
     tip_dispatch_async_autoreleasing(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 
         NSError *error;
-        NSArray *entryPaths = cachePath ? TIPContentsAtPath(cachePath, &error) : nil;
-        if (!entryPaths) {
+        NSArray<NSURL *> *entryURLs = cachePath ? TIPContentsAtPath(cachePath, &error) : nil;
+        if (!entryURLs) {
             TIPLogError(@"%@ could not load its cache entries from path '%@'. %@", NSStringFromClass([self class]), cachePath, error);
             tip_dispatch_async_autoreleasing(self->_manifestQueue, ^{
                 completionBlock(0, nil, nil);
@@ -1497,7 +1465,7 @@ static void _manifest_populateEntries(SELF_ARG,
 
         NSMutableArray<TIPImageDiskCacheEntry *> *entries = [[NSMutableArray alloc] init];
         NSMutableArray<NSString *> *falseEntryPaths = [[NSMutableArray alloc] init];
-        NSMutableDictionary<NSString *, TIPImageDiskCacheEntry *> *manifest = [[NSMutableDictionary alloc] initWithCapacity:entryPaths.count];
+        NSMutableDictionary<NSString *, TIPImageDiskCacheEntry *> *manifest = [[NSMutableDictionary alloc] initWithCapacity:entryURLs.count];
         NSOperationQueue *manifestCacheQueue = _ImageDiskCacheManifestCacheQueue();
         NSOperationQueue *manifestIOQueue = _ImageDiskCacheManifestIOQueue();
         dispatch_queue_t manifestAccessQueue = self->_manifestQueue;
@@ -1529,7 +1497,7 @@ static void _manifest_populateEntries(SELF_ARG,
         }];
         [finalCacheOperation addDependency:finalIOOperation];
 
-        for (NSString *entryPath in entryPaths) {
+        for (NSURL *entryURL in entryURLs) {
             // putting the construction of the operation to load a manifest entry
             // in a function to avoid risking capturing self which can lead to a
             // retain cycle.
@@ -1537,39 +1505,35 @@ static void _manifest_populateEntries(SELF_ARG,
                                                                      falseEntryPaths,
                                                                      entries,
                                                                      &totalSize,
-                                                                     entryPath,
+                                                                     entryURL,
                                                                      cachePath,
                                                                      now,
                                                                      manifestCacheQueue,
                                                                      finalCacheOperation);
             [finalIOOperation addDependency:ioOp];
-            [manifestIOQueue tip_safeAddOperation:ioOp];
+            [manifestIOQueue addOperation:ioOp];
         }
 
-        [manifestIOQueue tip_safeAddOperation:finalIOOperation];
-        [manifestCacheQueue tip_safeAddOperation:finalCacheOperation];
+        [manifestIOQueue addOperation:finalIOOperation];
+        [manifestCacheQueue addOperation:finalCacheOperation];
     });
 }
 
-static void _manifest_finalizePopulateManifest(SELF_ARG,
-                                               NSArray<TIPImageDiskCacheEntry *> *entries,
-                                               unsigned long long totalSize)
+- (void)_manifest_finalizePopulateManifest:(NSArray<TIPImageDiskCacheEntry *> *)entries
+                                 totalSize:(unsigned long long)totalSize
 {
-    if (!self) {
-        return;
-    }
-
     const BOOL didLoadEntries = entries != nil;
     const SInt16 count = (didLoadEntries) ? (SInt16)entries.count : 0;
-    self->_manifest = (didLoadEntries) ? [[TIPLRUCache alloc] initWithEntries:entries delegate:self] : nil;
-    pthread_mutex_unlock(&self->_manifestMutex);
-    tip_dispatch_async_autoreleasing(self->_globalConfig.queueForDiskCaches, ^{
+    _manifest = (didLoadEntries) ? [[TIPLRUCache alloc] initWithEntries:entries delegate:self] : nil;
+    pthread_mutex_unlock(&_manifestMutex);
+    tip_dispatch_async_autoreleasing(_globalConfig.queueForDiskCaches, ^{
         self->_diskCache_flags.manifestIsLoading = NO;
         if (didLoadEntries) {
             const UInt64 removeSize = self->_earlyRemovedBytesSize;
             self->_earlyRemovedBytesSize = 0;
             self->_globalConfig.internalTotalCountForAllDiskCaches += count;
-            _diskCache_updateByteCounts(self, totalSize /*bytesAdded*/, removeSize /*bytesRemoved*/);
+            [self _diskCache_updateByteCountsAdded:totalSize
+                                           removed:removeSize];
         }
     });
 }
@@ -1677,7 +1641,7 @@ _ImageDiskCacheManifestLoadOperation(NSMutableDictionary<NSString *, TIPImageDis
                                      NSMutableArray<NSString *> *falseEntryPaths,
                                      NSMutableArray<TIPImageDiskCacheEntry *> *entries,
                                      unsigned long long *totalSizeInOut,
-                                     NSString *path,
+                                     NSURL *entryURL,
                                      NSString *cachePath,
                                      NSDate *timestamp,
                                      NSOperationQueue *manifestCacheQueue,
@@ -1685,16 +1649,17 @@ _ImageDiskCacheManifestLoadOperation(NSMutableDictionary<NSString *, TIPImageDis
 {
     __weak typeof(finalCacheOperation) weakFinalCacheOperation = finalCacheOperation;
     return [NSBlockOperation blockOperationWithBlock:^{
+        NSString *path = entryURL.lastPathComponent;
         TIPImageCacheEntryContext *context = nil;
         NSString *rawIdentifier = nil;
         NSError *error = nil;
         const BOOL isTmp = [[path pathExtension] isEqualToString:kPartialImageExtension];
         NSString * const safeIdentifier = isTmp ? [path stringByDeletingPathExtension] : path;
-        NSString *entryPath = [cachePath stringByAppendingPathComponent:path];
+        NSString *entryPath = [entryURL path];
 
-        const NSUInteger size = TIPFileSizeAtPath(entryPath, &error);
+        const NSUInteger size = [[entryURL resourceValuesForKeys:@[NSURLFileSizeKey] error:&error][NSURLFileSizeKey] unsignedIntegerValue];
         if (!size) {
-            TIPLogError(@"Could not get stat() of '%@': %@", entryPath, error);
+            TIPLogError(@"Could not get filesize of '%@': %@", entryURL, error);
         } else {
             rawIdentifier = TIPRawFromSafe(safeIdentifier);
 
@@ -1763,7 +1728,7 @@ _ImageDiskCacheManifestLoadOperation(NSMutableDictionary<NSString *, TIPImageDis
         }];
 
         [weakFinalCacheOperation addDependency:cacheOp];
-        [manifestCacheQueue tip_safeAddOperation:cacheOp];
+        [manifestCacheQueue addOperation:cacheOp];
     }];
 }
 

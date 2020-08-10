@@ -53,7 +53,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TIPImagePipelineObserver,
         tipConfig.add(self)
 
         let catalogue = TIPImageCodecCatalogue.sharedInstance()
-        catalogue.setCodec(TIPXWebPCodec.init(), forImageType: TIPXImageTypeWebP)
+        catalogue.setCodec(TIPXWebPCodec.init(), forImageType: TIPImageTypeWEBP)
 
         self.imagePipeline = TIPImagePipeline(identifier: "Twitter.Example")
         self.imagePipeline?.additionalCaches = [self]

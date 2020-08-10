@@ -159,7 +159,7 @@ static TIPImagePipeline *sPipeline = nil;
     globalConfig.imageFetchDownloadProvider = [[TIPTestsImageFetchDownloadProviderOverrideClass() alloc] init];
     globalConfig.maxConcurrentImagePipelineDownloadCount = 4;
     globalConfig.maxBytesForAllRenderedCaches = 12 * 1024 * 1024;
-    globalConfig.maxBytesForAllMemoryCaches = 36 * 1024 * 1024;
+    globalConfig.maxBytesForAllMemoryCaches = 12 * 1024 * 1024;
     globalConfig.maxBytesForAllDiskCaches = 16 * 1024 * 1024;
     globalConfig.maxRatioSizeOfCacheEntry = 0;
 }
@@ -169,9 +169,8 @@ static TIPImagePipeline *sPipeline = nil;
     TIPGlobalConfiguration *globalConfig = [TIPGlobalConfiguration sharedInstance];
     TIPSetDebugSTOPOnAssertEnabled(YES);
     TIPSetShouldAssertDuringPipelineRegistation(YES);
-    [sPipeline.renderedCache clearAllImages:NULL];
-    [sPipeline.memoryCache clearAllImages:NULL];
-    [sPipeline.diskCache clearAllImages:NULL];
+    [sPipeline clearMemoryCaches];
+    [sPipeline clearDiskCache];
     globalConfig.imageFetchDownloadProvider = nil;
     globalConfig.maxBytesForAllRenderedCaches = -1;
     globalConfig.maxBytesForAllMemoryCaches = -1;
@@ -184,9 +183,8 @@ static TIPImagePipeline *sPipeline = nil;
 
 - (void)tearDown
 {
-    [sPipeline.renderedCache clearAllImages:NULL];
-    [sPipeline.memoryCache clearAllImages:NULL];
-    [sPipeline.diskCache clearAllImages:NULL];
+    [sPipeline clearMemoryCaches];
+    [sPipeline clearDiskCache];
 
     id<TIPImageFetchDownloadProviderWithStubbingSupport> provider = (id<TIPImageFetchDownloadProviderWithStubbingSupport>)[TIPGlobalConfiguration sharedInstance].imageFetchDownloadProvider;
     [provider removeAllDownloadStubs];

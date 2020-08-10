@@ -31,6 +31,11 @@ NS_ASSUME_NONNULL_BEGIN
  See `TIPImageContainer(Animated)` for more.
  */
 @property (nonatomic, readonly, getter=isAnimated) BOOL animated;
+/**
+ An opaque descriptor object encapsulating info about this `TIPImageContainer` w/o the large `UIImage`.
+ Can be used to create a new `TIPImageContainer` along with the matching `UIImage` using `[TIPImageContainer imageContainerWithImage:descriptor:]`.
+ */
+@property (nonatomic, readonly) id descriptor;
 
 #pragma mark Initialization
 
@@ -114,21 +119,41 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Convenience constructor.
+ @param image the `UIImage` to encapsulate
+ @param descriptor the matching descriptor (sourced from a `TIPImageContainer` with the same _image_)
+ @return image container encapsulating the desired image, or `nil` if the _descriptor_ and _image_ are incompatible
+ */
++ (nullable instancetype)imageContainerWithImage:(UIImage *)image descriptor:(id)descriptor;
+
+/**
+ Convenience constructor.
  @param imageSource the `CGImageSourceRef` to read in as a `UIImage` and encapsulate
+ @param targetDimensions the dimension sizing constraints to decode the image into (`CGSizeZero` for full size)
+ @param targetContentMode the content mode sizing constraints to decode the image into (any non-scaling mode for full size)
  @return image container encapsulating the desired image, or `nil` if the image could not be loaded
  @note unlike the other `TIPImageContainer` convenience constructor methods, this method
  does NOT load via a `TIPImageCodecCatalogue`.
  */
++ (nullable instancetype)imageContainerWithImageSource:(CGImageSourceRef)imageSource
+                                      targetDimensions:(CGSize)targetDimensions
+                                     targetContentMode:(UIViewContentMode)targetContentMode;
 + (nullable instancetype)imageContainerWithImageSource:(CGImageSourceRef)imageSource;
 
 /**
  Convenience constructor.
- @param data the `NSData` to load as a `UIImage` and encpasulate
+ @param data the `NSData` to load as a `UIImage` and encapsulate
+ @param targetDimensions the dimension sizing constraints to decode the image into (`CGSizeZero` for full size)
+ @param targetContentMode the content mode sizing constraints to decode the image into (any non-scaling mode for full size)
  @param decoderConfigMap an optional dictionary of opaque config objects for the decoder to use (config will be matched by the decoder's image type string), passing `nil` is always fine
  @param catalogue the catalogue of codecs to load with, pass `nil` to use
  `[TIPImageCodecCatalogue sharedInstance]`
  @return image container encapsulating the desired image, or `nil` if the image could not be loaded
  */
++ (nullable instancetype)imageContainerWithData:(NSData *)data
+                               targetDimensions:(CGSize)targetDimensions
+                              targetContentMode:(UIViewContentMode)targetContentMode
+                               decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                 codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue;
 + (nullable instancetype)imageContainerWithData:(NSData *)data
                                decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
                                  codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue;
@@ -136,6 +161,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Convenience constructor.
  @param filePath the file path to load as a `UIImage` and encpasulate
+ @param targetDimensions the dimension sizing constraints to decode the image into (`CGSizeZero` for full size)
+ @param targetContentMode the content mode sizing constraints to decode the image into (any non-scaling mode for full size)
  @param decoderConfigMap an optional dictionary of opaque config objects for the decoder to use (config will be matched by the decoder's image type string), passing `nil` is always fine
  @param catalogue the catalogue of codecs to load with, pass `nil` to use
  `[TIPImageCodecCatalogue sharedInstance]`
@@ -144,6 +171,12 @@ NS_ASSUME_NONNULL_BEGIN
  @warning Loading with memory mapped file is very fragile. Modification/move/deletion and even high velocity reading of the underlying file (at that path) can yield a crash or corruption. Take care to only provide `YES` for _map_ if you are very confident in the approach.
  */
 + (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath
+                                   targetDimensions:(CGSize)targetDimensions
+                                  targetContentMode:(UIViewContentMode)targetContentMode
+                                   decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                     codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+                                          memoryMap:(BOOL)map;
++ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath
                                    decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
                                      codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
                                           memoryMap:(BOOL)map;
@@ -151,6 +184,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Convenience constructor.
  @param fileURL the file path `NSURL` to load as a `UIImage` and encpasulate
+ @param targetDimensions the dimension sizing constraints to decode the image into (`CGSizeZero` for full size)
+ @param targetContentMode the content mode sizing constraints to decode the image into (any non-scaling mode for full size)
  @param decoderConfigMap an optional dictionary of opaque config objects for the decoder to use (config will be matched by the decoder's image type string), passing `nil` is always fine
  @param catalogue the catalogue of codecs to load with, pass `nil` to use
  `[TIPImageCodecCatalogue sharedInstance]`
@@ -158,6 +193,12 @@ NS_ASSUME_NONNULL_BEGIN
  @return image container encapsulating the desired image, or `nil` if the image could not be loaded
  @warning Loading with memory mapped file is very fragile. Modification/move/deletion and even high velocity reading of the underlying file (at that path) can yield a crash or corruption. Take care to only provide `YES` for _map_ if you are very confident in the approach.
  */
++ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL
+                                  targetDimensions:(CGSize)targetDimensions
+                                 targetContentMode:(UIViewContentMode)targetContentMode
+                                  decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
+                                    codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+                                         memoryMap:(BOOL)map;
 + (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL
                                   decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
                                     codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue

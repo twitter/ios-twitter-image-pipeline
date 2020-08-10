@@ -237,7 +237,7 @@ FOUNDATION_EXTERN NSString *TIPURLEncodeString(NSString *string);
                                 NSDictionary *largeVariant = sizes[@"large"];
                                 NSInteger w = [largeVariant[@"w"] integerValue];
                                 NSInteger h = [largeVariant[@"h"] integerValue];
-                                if (w & h) {
+                                if (0 != w && 0 != h) {
                                     TweetImageInfo *image = [[TweetImageInfo alloc] initWithBaseURLString:baseURLString format:format originalDimensions:CGSizeMake(w, h)];
                                     [images addObject:image];
                                 }

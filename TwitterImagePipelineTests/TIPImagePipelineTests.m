@@ -309,9 +309,8 @@
     TIPImagePipelineTestContext *context1 = nil;
     TIPImagePipelineTestContext *context2 = nil;
 
-    [[TIPImagePipelineBaseTests sharedPipeline].memoryCache clearAllImages:NULL];
-    [[TIPImagePipelineBaseTests sharedPipeline].diskCache clearAllImages:NULL];
-    [[TIPImagePipelineBaseTests sharedPipeline].renderedCache clearAllImages:NULL];
+    [[TIPImagePipelineBaseTests sharedPipeline] clearMemoryCaches];
+    [[TIPImagePipelineBaseTests sharedPipeline] clearDiskCache];
     context1 = [[TIPImagePipelineTestContext alloc] init];
     context2 = [[TIPImagePipelineTestContext alloc] init];
     context1.otherContext = context2;
@@ -343,9 +342,8 @@
 
     // Cancel original
 
-    [[TIPImagePipelineBaseTests sharedPipeline].memoryCache clearAllImages:NULL];
-    [[TIPImagePipelineBaseTests sharedPipeline].diskCache clearAllImages:NULL];
-    [[TIPImagePipelineBaseTests sharedPipeline].renderedCache clearAllImages:NULL];
+    [[TIPImagePipelineBaseTests sharedPipeline] clearMemoryCaches];
+    [[TIPImagePipelineBaseTests sharedPipeline] clearDiskCache];
     context1 = [[TIPImagePipelineTestContext alloc] init];
     context1.shouldCancelOnOtherContextFirstProgress = YES;
     context2 = [[TIPImagePipelineTestContext alloc] init];
@@ -655,9 +653,8 @@
     TIPImageFetchOperation *op = nil;
     TIPImagePipelineTestContext *context = nil;
 
-    [[TIPImagePipelineBaseTests sharedPipeline].memoryCache clearAllImages:NULL];
-    [[TIPImagePipelineBaseTests sharedPipeline].diskCache clearAllImages:NULL];
-    [[TIPImagePipelineBaseTests sharedPipeline].renderedCache clearAllImages:NULL];
+    [[TIPImagePipelineBaseTests sharedPipeline] clearMemoryCaches];
+    [[TIPImagePipelineBaseTests sharedPipeline] clearDiskCache];
     context = [[TIPImagePipelineTestContext alloc] init];
     op = [[TIPImagePipelineBaseTests sharedPipeline] undeprecatedFetchImageWithRequest:request context:context delegate:self];
     [op waitUntilFinishedWithoutBlockingRunLoop];
@@ -699,37 +696,37 @@
 
         TIPGlobalConfiguration *globalConfig = [TIPGlobalConfiguration sharedInstance];
 
-        XCTAssertGreaterThan([TIPImagePipelineBaseTests sharedPipeline].renderedCache.manifest.numberOfEntries, (NSUInteger)0);
+        XCTAssertGreaterThan([[TIPImagePipelineBaseTests sharedPipeline] cacheOfType:TIPImageCacheTypeRendered].manifest.numberOfEntries, (NSUInteger)0);
         dispatch_sync(globalConfig.queueForMemoryCaches, ^{
-            XCTAssertGreaterThan([TIPImagePipelineBaseTests sharedPipeline].memoryCache.manifest.numberOfEntries, (NSUInteger)0);
+            XCTAssertGreaterThan([[TIPImagePipelineBaseTests sharedPipeline] cacheOfType:TIPImageCacheTypeMemory].manifest.numberOfEntries, (NSUInteger)0);
         });
         dispatch_sync(globalConfig.queueForDiskCaches, ^{
-            XCTAssertGreaterThan([TIPImagePipelineBaseTests sharedPipeline].diskCache.manifest.numberOfEntries, (NSUInteger)0);
+            XCTAssertGreaterThan([[TIPImagePipelineBaseTests sharedPipeline] cacheOfType:TIPImageCacheTypeDisk].manifest.numberOfEntries, (NSUInteger)0);
         });
 
         [self runFillingTheCaches:temporaryPipeline bps:1024 * kMegaBits testCacheHits:NO];
-        XCTAssertGreaterThan(temporaryPipeline.renderedCache.manifest.numberOfEntries, (NSUInteger)0);
-        XCTAssertEqual([TIPImagePipelineBaseTests sharedPipeline].renderedCache.manifest.numberOfEntries, (NSUInteger)0);
+        XCTAssertGreaterThan([temporaryPipeline cacheOfType:TIPImageCacheTypeRendered].manifest.numberOfEntries, (NSUInteger)0);
+        XCTAssertEqual([[TIPImagePipelineBaseTests sharedPipeline] cacheOfType:TIPImageCacheTypeRendered].manifest.numberOfEntries, (NSUInteger)0);
         dispatch_sync(globalConfig.queueForMemoryCaches, ^{
-            XCTAssertGreaterThan(temporaryPipeline.memoryCache.manifest.numberOfEntries, (NSUInteger)0);
-            XCTAssertEqual([TIPImagePipelineBaseTests sharedPipeline].memoryCache.manifest.numberOfEntries, (NSUInteger)0);
+            XCTAssertGreaterThan([temporaryPipeline cacheOfType:TIPImageCacheTypeMemory].manifest.numberOfEntries, (NSUInteger)0);
+            XCTAssertEqual([[TIPImagePipelineBaseTests sharedPipeline] cacheOfType:TIPImageCacheTypeMemory].manifest.numberOfEntries, (NSUInteger)0);
         });
         dispatch_sync(globalConfig.queueForMemoryCaches, ^{
-            XCTAssertGreaterThan(temporaryPipeline.diskCache.manifest.numberOfEntries, (NSUInteger)0);
-            XCTAssertEqual([TIPImagePipelineBaseTests sharedPipeline].diskCache.manifest.numberOfEntries, (NSUInteger)0);
+            XCTAssertGreaterThan([temporaryPipeline cacheOfType:TIPImageCacheTypeDisk].manifest.numberOfEntries, (NSUInteger)0);
+            XCTAssertEqual([[TIPImagePipelineBaseTests sharedPipeline] cacheOfType:TIPImageCacheTypeDisk].manifest.numberOfEntries, (NSUInteger)0);
         });
 
         dispatch_sync(globalConfig.queueForDiskCaches, ^{
-            preDeallocDiskSize = config.internalTotalBytesForAllDiskCaches;
+            preDeallocDiskSize = [config internalTotalBytesForAllCachesOfType:TIPImageCacheTypeDisk];
         });
         dispatch_sync(globalConfig.queueForMemoryCaches, ^{
-            preDeallocMemSize = config.internalTotalBytesForAllMemoryCaches;
+            preDeallocMemSize = [config internalTotalBytesForAllCachesOfType:TIPImageCacheTypeMemory];
         });
-        preDeallocRendSize = config.internalTotalBytesForAllRenderedCaches;
+        preDeallocRendSize = [config internalTotalBytesForAllCachesOfType:TIPImageCacheTypeRendered];
 
-        preDeallocPipelineDiskSize = (SInt64)temporaryPipeline.diskCache.totalCost;
-        preDeallocPipelineMemSize = (SInt64)temporaryPipeline.memoryCache.totalCost;
-        preDeallocPipelineRendSize = (SInt64)temporaryPipeline.renderedCache.totalCost;
+        preDeallocPipelineDiskSize = (SInt64)[temporaryPipeline cacheOfType:TIPImageCacheTypeDisk].totalCost;
+        preDeallocPipelineMemSize = (SInt64)[temporaryPipeline cacheOfType:TIPImageCacheTypeMemory].totalCost;
+        preDeallocPipelineRendSize = (SInt64)[temporaryPipeline cacheOfType:TIPImageCacheTypeRendered].totalCost;
 
         temporaryPipeline = nil;
     }
@@ -756,12 +753,12 @@
         [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];
 
         dispatch_sync([TIPGlobalConfiguration sharedInstance].queueForDiskCaches, ^{
-            postDeallocDiskSize = config.internalTotalBytesForAllDiskCaches;
+            postDeallocDiskSize = [config internalTotalBytesForAllCachesOfType:TIPImageCacheTypeDisk];
         });
         dispatch_sync([TIPGlobalConfiguration sharedInstance].queueForMemoryCaches, ^{
-            postDeallocMemSize = config.internalTotalBytesForAllMemoryCaches;
+            postDeallocMemSize = [config internalTotalBytesForAllCachesOfType:TIPImageCacheTypeMemory];
         });
-        postDeallocRendSize = config.internalTotalBytesForAllRenderedCaches;
+        postDeallocRendSize = [config internalTotalBytesForAllCachesOfType:TIPImageCacheTypeRendered];
 
         if (postDeallocDiskSize == 0 && postDeallocMemSize == 0 && postDeallocRendSize == 0) {
             break;

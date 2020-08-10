@@ -19,9 +19,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// Primary class gets the SELF_ARG convenience
-#define SELF_ARG PRIVATE_SELF(TIPImageRenderedCache)
-
 static const NSUInteger kMaxEntriesPerRenderedCollection = 3;
 
 NS_INLINE BOOL _StringsAreEqual(NSString * __nullable string1, NSString * __nullable string2)
@@ -35,6 +32,7 @@ NS_INLINE BOOL _StringsAreEqual(NSString * __nullable string1, NSString * __null
     return [string1 isEqualToString:string2];
 }
 
+TIP_OBJC_FINAL TIP_OBJC_DIRECT_MEMBERS
 @interface TIPRenderedCacheItem : NSObject
 @property (nonatomic, readonly, copy, nullable) NSString *transformerIdentifier;
 @property (nonatomic, readonly) CGSize sourceImageDimensions;
@@ -44,9 +42,14 @@ NS_INLINE BOOL _StringsAreEqual(NSString * __nullable string1, NSString * __null
         transformerIdentifier:(nullable NSString *)transformerIdentifier
         sourceImageDimensions:(CGSize)sourceDims;
 - (void)markDirty;
+
+// Methods for weakify (used when going into background to release images)
+- (void)weakify;
+- (BOOL)strongify;
 @end
 
-@interface TIPImageRenderedEntriesCollection : NSObject <TIPLRUEntry>
+TIP_OBJC_FINAL TIP_OBJC_DIRECT_MEMBERS
+@interface TIPImageRenderedEntriesCollection : NSObject
 
 @property (nonatomic, readonly, copy) NSString *identifier;
 
@@ -56,8 +59,8 @@ NS_INLINE BOOL _StringsAreEqual(NSString * __nullable string1, NSString * __null
 
 - (NSUInteger)collectionCost;
 - (void)addImageEntry:(TIPImageCacheEntry *)entry
-transformerIdentifier:(nullable NSString *)transformerIdentifier
-sourceImageDimensions:(CGSize)sourceDims;
+        transformerIdentifier:(nullable NSString *)transformerIdentifier
+        sourceImageDimensions:(CGSize)sourceDims;
 - (nullable TIPImageCacheEntry *)imageEntryMatchingDimensions:(CGSize)size
                                                   contentMode:(UIViewContentMode)mode
                                         transformerIdentifier:(nullable NSString *)transformerIdentifier
@@ -66,20 +69,34 @@ sourceImageDimensions:(CGSize)sourceDims;
 - (NSArray<TIPImageCacheEntry *> *)allEntries;
 - (void)dirtyAllEntries;
 
-#pragma mark TIPLRUEntry
+// weakify pattern
+- (void)weakifyEntries;
+- (BOOL)strongifyEntries;
 
-@property (nonatomic, nullable) TIPImageRenderedEntriesCollection *nextLRUEntry;
-@property (nonatomic, nullable, weak) TIPImageRenderedEntriesCollection *previousLRUEntry;
+@end
 
+@interface TIPImageRenderedEntriesCollection () <TIPLRUEntry>
 @end
 
 @interface TIPImageRenderedCache () <TIPLRUCacheDelegate>
-@property (atomic) SInt64 atomicTotalCost;
+@property (tip_atomic_direct) SInt64 atomicTotalCost;
 @end
+
+#define STRONGIFY_TEMPORARILY_IF_NEEDED() \
+    const BOOL tip_macro_concat(inWeakMode__, __LINE__) = self->_weakCollections != nil; \
+    if ( tip_macro_concat(inWeakMode__, __LINE__) ) { \
+        [self _strongifyEntries]; \
+    } \
+    tip_defer(^{ \
+        if ( tip_macro_concat(inWeakMode__, __LINE__) ) { \
+            [self weakifyEntries]; \
+        } \
+    });
 
 @implementation TIPImageRenderedCache
 {
     TIPLRUCache *_manifest;
+    NSMutableArray<TIPImageRenderedEntriesCollection *> *_weakCollections;
 }
 
 @synthesize manifest = _manifest;
@@ -129,6 +146,9 @@ sourceImageDimensions:(CGSize)sourceDims;
     // Clear the manifest in the background to avoid main thread stalls
 
     @autoreleasepool {
+
+        STRONGIFY_TEMPORARILY_IF_NEEDED();
+
         TIPLRUCache *oldManifest = _manifest;
         const SInt16 totalCount = (SInt16)oldManifest.numberOfEntries;
         _manifest = [[TIPLRUCache alloc] initWithEntries:nil delegate:self];
@@ -136,12 +156,14 @@ sourceImageDimensions:(CGSize)sourceDims;
             [oldManifest clearAllEntries];
         });
 
-        _updateByteCounts(self, 0 /*bytesAdded*/, (UInt64)self.atomicTotalCost /*bytesRemoved*/);
+        [self _updateByteCountsAdded:0 removed:(UInt64)self.atomicTotalCost];
         [TIPGlobalConfiguration sharedInstance].internalTotalCountForAllRenderedCaches -= totalCount;
         TIPLogInformation(@"Cleared all images in %@", self);
-        if (completion) {
-            completion();
-        }
+
+    }
+
+    if (completion) {
+        completion();
     }
 }
 
@@ -156,6 +178,7 @@ sourceImageDimensions:(CGSize)sourceDims;
     TIPAssert(identifier != nil);
     if (identifier != nil && [NSThread isMainThread]) {
         @autoreleasepool {
+            [self _strongifyEntries];
             TIPImageRenderedEntriesCollection *collection = [_manifest entryWithIdentifier:identifier];
             return [collection imageEntryMatchingDimensions:size
                                                 contentMode:mode
@@ -204,8 +227,12 @@ sourceImageDimensions:(CGSize)sourceDims;
     }
 
     @autoreleasepool {
+
+        STRONGIFY_TEMPORARILY_IF_NEEDED();
+
         TIPGlobalConfiguration *globalConfig = [TIPGlobalConfiguration sharedInstance];
         NSString *identifier = entry.identifier;
+
         TIPImageRenderedEntriesCollection *collection = (TIPImageRenderedEntriesCollection *)[_manifest entryWithIdentifier:identifier];
         const BOOL hasCollection = (collection != nil);
         const NSUInteger oldCost = hasCollection ? collection.collectionCost : 0;
@@ -220,7 +247,8 @@ sourceImageDimensions:(CGSize)sourceDims;
             collection = [[TIPImageRenderedEntriesCollection alloc] initWithIdentifier:identifier];
         }
 
-        [collection addImageEntry:entry transformerIdentifier:transformerIdentifier
+        [collection addImageEntry:entry
+            transformerIdentifier:transformerIdentifier
             sourceImageDimensions:sourceDims];
         const NSUInteger newCost = collection.collectionCost;
 
@@ -235,12 +263,12 @@ sourceImageDimensions:(CGSize)sourceDims;
             }
         }
 
-        _updateByteCounts(self, newCost /*bytesAdded*/, oldCost /*bytesRemoved*/);
+        [self _updateByteCountsAdded:newCost removed:oldCost];
         [globalConfig pruneAllCachesOfType:self.cacheType withPriorityCache:self];
     }
 }
 
-- (void)clearImagesWithIdentifier:(NSString *)identifier
+- (void)clearImageWithIdentifier:(NSString *)identifier
 {
     TIPAssert(identifier != nil);
     if (!identifier) {
@@ -255,12 +283,15 @@ sourceImageDimensions:(CGSize)sourceDims;
     }
 
     @autoreleasepool {
+
+        STRONGIFY_TEMPORARILY_IF_NEEDED();
+
         TIPImageRenderedEntriesCollection *collection = [_manifest entryWithIdentifier:identifier];
         [_manifest removeEntry:collection];
     }
 }
 
-- (void)dirtyImagesWithIdentifier:(NSString *)identifier
+- (void)dirtyImageWithIdentifier:(NSString *)identifier
 {
     TIPAssert(identifier != nil);
     if (!identifier) {
@@ -275,8 +306,31 @@ sourceImageDimensions:(CGSize)sourceDims;
     }
 
     @autoreleasepool {
+
+        STRONGIFY_TEMPORARILY_IF_NEEDED();
+
         TIPImageRenderedEntriesCollection *collection = [_manifest entryWithIdentifier:identifier];
         [collection dirtyAllEntries];
+    }
+}
+
+- (void)weakifyEntries
+{
+    if (![NSThread isMainThread]) {
+        [self performSelectorOnMainThread:_cmd withObject:nil waitUntilDone:NO];
+        return;
+    }
+
+    @autoreleasepool {
+        if (!_weakCollections) {
+            _weakCollections = [[NSMutableArray alloc] initWithCapacity:_manifest.numberOfEntries];
+        }
+        TIPImageRenderedEntriesCollection *collection;
+        while ((collection = _manifest.headEntry) != nil) {
+            [_weakCollections addObject:collection];
+            [_manifest removeEntry:collection]; // remove before weakifying to properly decrement cost
+            [collection weakifyEntries];
+        }
     }
 }
 
@@ -285,7 +339,7 @@ sourceImageDimensions:(CGSize)sourceDims;
 - (void)tip_cache:(TIPLRUCache *)manifest didEvictEntry:(TIPImageRenderedEntriesCollection *)entry
 {
     [TIPGlobalConfiguration sharedInstance].internalTotalCountForAllRenderedCaches -= 1;
-    _updateByteCounts(self, 0 /*bytesAdded*/, entry.collectionCost /*bytesRemoved*/);
+    [self _updateByteCountsAdded:0 removed:entry.collectionCost];
     TIPLogDebug(@"%@ Evicted '%@'", NSStringFromClass([self class]), entry.identifier);
 }
 
@@ -302,6 +356,8 @@ sourceImageDimensions:(CGSize)sourceDims;
 
     @autoreleasepool {
         NSMutableArray *inspectedEntries = [[NSMutableArray alloc] init];
+
+        // WARNING: if in weakify mode, this will yield zero results
 
         for (TIPImageRenderedEntriesCollection *collection in _manifest) {
             NSArray *allEntries = [collection allEntries];
@@ -328,16 +384,29 @@ sourceImageDimensions:(CGSize)sourceDims;
     [self clearAllImages:NULL];
 }
 
-static void _updateByteCounts(SELF_ARG,
-                              UInt64 bytesAdded,
-                              UInt64 bytesRemoved)
+- (void)_updateByteCountsAdded:(UInt64)bytesAdded removed:(UInt64)bytesRemoved
 {
-    if (!self) {
+    TIP_UPDATE_BYTES(self.atomicTotalCost, bytesAdded, bytesRemoved, @"Rendered Cache Size");
+    TIP_UPDATE_BYTES([TIPGlobalConfiguration sharedInstance].internalTotalBytesForAllRenderedCaches, bytesAdded, bytesRemoved, @"All Rendered Caches Size");
+}
+
+- (void)_strongifyEntries
+{
+    if (!_weakCollections) {
         return;
     }
 
-    TIP_UPDATE_BYTES(self.atomicTotalCost, bytesAdded, bytesRemoved, @"Rendered Cache Size");
-    TIP_UPDATE_BYTES([TIPGlobalConfiguration sharedInstance].internalTotalBytesForAllRenderedCaches, bytesAdded, bytesRemoved, @"All Rendered Caches Size");
+    NSArray<TIPImageRenderedEntriesCollection *> *collections = _weakCollections;
+    _weakCollections = nil;
+    TIPGlobalConfiguration *globalConfig = [TIPGlobalConfiguration sharedInstance];
+    for (TIPImageRenderedEntriesCollection *collection in collections) {
+        if ([collection strongifyEntries]) {
+            [_manifest addEntry:collection];
+            globalConfig.internalTotalCountForAllRenderedCaches += 1;
+            [self _updateByteCountsAdded:collection.collectionCost removed:0];
+        }
+    }
+    [globalConfig pruneAllCachesOfType:self.cacheType withPriorityCache:self];
 }
 
 @end
@@ -346,6 +415,9 @@ static void _updateByteCounts(SELF_ARG,
 {
     NSMutableArray<TIPRenderedCacheItem *> *_items;
 }
+
+@synthesize nextLRUEntry = _nextLRUEntry;
+@synthesize previousLRUEntry = _previousLRUEntry;
 
 - (instancetype)initWithIdentifier:(NSString *)identifier
 {
@@ -392,10 +464,9 @@ sourceImageDimensions:(CGSize)sourceDims
         TIPLogError(@"Cached zero cost image to rendered cache %@", info);
     }
 
-    _insertEntry(self,
-                 entry,
-                 transformerIdentifier,
-                 sourceDims);
+    [self _insertEntry:entry
+ transformerIdentifier:transformerIdentifier
+ sourceImageDimensions:sourceDims];
     if (_items.count > kMaxEntriesPerRenderedCollection) {
         [_items removeLastObject];
     }
@@ -487,26 +558,46 @@ sourceImageDimensions:(CGSize)sourceDims
     return YES;
 }
 
+- (void)weakifyEntries
+{
+    for (TIPRenderedCacheItem *item in _items) {
+        [item weakify];
+    }
+}
+
+- (BOOL)strongifyEntries
+{
+    BOOL anyStrongified = NO;
+    NSArray<TIPRenderedCacheItem *> *items = [_items copy];
+    [_items removeAllObjects];
+    for (TIPRenderedCacheItem *item in items) {
+        if ([item strongify]) {
+            anyStrongified = YES;
+            [_items addObject:item];
+        }
+    }
+    return anyStrongified;
+}
+
 #pragma mark Private
 
-static void _insertEntry(PRIVATE_SELF(TIPImageRenderedEntriesCollection),
-                         TIPImageCacheEntry *entry,
-                         NSString * __nullable transformerIdentifier,
-                         CGSize sourceImageDimensions)
+- (void)_insertEntry:(TIPImageCacheEntry *)entry
+        transformerIdentifier:(nullable NSString *)transformerIdentifier
+        sourceImageDimensions:(CGSize)sourceImageDimensions
 {
-    if (!self) {
-        return;
-    }
-
     TIPRenderedCacheItem *item = [[TIPRenderedCacheItem alloc] initWithEntry:entry
                                                        transformerIdentifier:transformerIdentifier
                                                        sourceImageDimensions:sourceImageDimensions];
-    [self->_items insertObject:item atIndex:0];
+    [_items insertObject:item atIndex:0];
 }
 
 @end
 
 @implementation TIPRenderedCacheItem
+{
+    id _weakifyDescriptor;
+    __weak UIImage *_weakifyImage;
+}
 
 - (instancetype)initWithEntry:(TIPImageCacheEntry *)entry
         transformerIdentifier:(nullable NSString *)transformerIdentifier
@@ -523,6 +614,36 @@ static void _insertEntry(PRIVATE_SELF(TIPImageRenderedEntriesCollection),
 - (void)markDirty
 {
     _dirty = YES;
+}
+
+- (void)weakify
+{
+    TIPImageContainer *container = _entry.completeImage;
+    TIPAssert(container != nil);
+    if (container) {
+        _weakifyDescriptor = container.descriptor;
+        _weakifyImage = container.image;
+        _entry.completeImage = nil;
+    }
+}
+
+- (BOOL)strongify
+{
+    UIImage *image = _weakifyImage;
+    id descriptor = _weakifyDescriptor;
+    _weakifyDescriptor = nil;
+    _weakifyImage = nil;
+    if (!image) {
+        return NO;
+    }
+    TIPImageContainer *container = [TIPImageContainer imageContainerWithImage:image
+                                                                   descriptor:descriptor];
+    if (!container) {
+        return NO;
+    }
+
+    _entry.completeImage = container;
+    return YES;
 }
 
 @end

@@ -19,6 +19,7 @@ typedef NS_ENUM(NSInteger, TIPPartialImageState) {
     TIPPartialImageStateComplete,
 };
 
+TIP_OBJC_FINAL
 @interface TIPPartialImage : NSObject
 
 // State
@@ -39,14 +40,17 @@ typedef NS_ENUM(NSInteger, TIPPartialImageState) {
 @property (nonatomic, readonly) NSUInteger byteCount;
 @property (nonatomic, readonly) float progress;
 
+- (void)updateDecoderConfigMap:(nullable NSDictionary<NSString *, id> *)configMap;
+
 - (instancetype)initWithExpectedContentLength:(NSUInteger)contentLength NS_DESIGNATED_INITIALIZER;
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 
-- (void)updateDecoderConfigMap:(nullable NSDictionary<NSString *, id> *)configMap;
 - (TIPImageDecoderAppendResult)appendData:(nullable NSData *)data
                                     final:(BOOL)final;
 - (nullable TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode
+                                   targetDimensions:(CGSize)targetDimensions
+                                  targetContentMode:(UIViewContentMode)targetContentMode
                                             decoded:(BOOL)decode;
 
 @end

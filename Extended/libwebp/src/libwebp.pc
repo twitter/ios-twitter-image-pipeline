@@ -5,7 +5,7 @@ includedir=${prefix}/include
 
 Name: libwebp
 Description: Library for the WebP graphics format
-Version: 1.0.3
+Version: 1.1.0
 Cflags: -I${includedir}
 Libs: -L${libdir} -lwebp
 Libs.private: -lm -D_THREAD_SAFE -pthread 

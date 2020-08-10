@@ -38,10 +38,10 @@
 
 #if !TARGET_OS_TV
 #define PLUG_IN_WEBP() \
-TIPXWebPCodec *webpCodec = [[TIPXWebPCodec alloc] init]; \
-[[TIPImageCodecCatalogue sharedInstance] setCodec:webpCodec forImageType:TIPXImageTypeWebP]; \
+TIPXWebPCodec *webpCodec = [[TIPXWebPCodec alloc] initPreservingDefaultCodecsIfPresent:NO]; \
+[[TIPImageCodecCatalogue sharedInstance] setCodec:webpCodec forImageType:TIPImageTypeWEBP]; \
 tip_defer(^{ \
-    [[TIPImageCodecCatalogue sharedInstance] removeCodecForImageType:TIPXImageTypeWebP]; \
+    [[TIPImageCodecCatalogue sharedInstance] removeCodecForImageType:TIPImageTypeWEBP]; \
 });
 #endif
 
@@ -185,9 +185,13 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     imagePath = [thisBundle pathForResource:@"fireworks" ofType:@"gif"];
     NSUInteger loopCount;
     NSArray<NSNumber *> *durations;
-    image = [UIImage tip_imageWithAnimatedImageFile:imagePath durations:&durations loopCount:&loopCount];
+    image = [UIImage tip_imageWithAnimatedImageFile:imagePath
+                                          durations:&durations
+                                          loopCount:&loopCount];
     [image tip_decode]; // yes, this is a no-op, but we'll leave this here in case we can optimize the decode for animated images later
-    sAnimatedImageContainer = [[TIPImageContainer alloc] initWithAnimatedImage:image loopCount:loopCount frameDurations:durations];
+    sAnimatedImageContainer = [[TIPImageContainer alloc] initWithAnimatedImage:image
+                                                                     loopCount:loopCount
+                                                                frameDurations:durations];
 
     sSavedImages = [NSMutableArray array];
     sPerformanceInfo = [NSMutableDictionary dictionary];
@@ -243,6 +247,11 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)tearDown
 {
+    // reset the codecs
+    NSDictionary<NSString *, id<TIPImageCodec>> *codecs = [TIPImageCodecCatalogue defaultCodecs];
+    [codecs enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull type, id<TIPImageCodec>  _Nonnull codec, BOOL * _Nonnull stop) {
+        [[TIPImageCodecCatalogue sharedInstance] setCodec:codec forImageType:type];
+    }];
     (void)[TIPImageCodecCatalogue sharedInstance].allCodecs; // flush
     [super tearDown];
 }
@@ -285,7 +294,9 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         XCTAssertEqual(!!animated, (detectedAnimatedFrameCount > 1));
     }
 
-    TIPImageContainer *container = [TIPImageContainer imageContainerWithData:data decoderConfigMap:nil codecCatalogue:nil];
+    TIPImageContainer *container = [TIPImageContainer imageContainerWithData:data
+                                                            decoderConfigMap:nil
+                                                              codecCatalogue:nil];
     UIImage *image = container.image;
     XCTAssertNotNil(image, @"extension = '%@'", extension);
     NSTimeInterval decompressTime = [self decompressImage:image];
@@ -324,7 +335,7 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
         @autoreleasepool {
             float quality = 1.0f - ((i % 10) / 10.0f);
 #if !TARGET_OS_TV
-            if (type == TIPXImageTypeWebP && quality > .99f) {
+            if (type == TIPImageTypeWEBP && quality > .99f) {
                 // Lossless WebP is super slow,
                 // drop down to 99% in order to give WebP a fighting chance
                 quality = .99f;
@@ -632,7 +643,9 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     XCTAssertEqualObjects(detectedType, imageType, @"%@", imagePath);
     XCTAssertEqual(0, detectedOptions);
     XCTAssertEqual(NO, (detectedAnimatedFrameCount > 1), @"%@", imagePath);
-    TIPImageContainer *container = [TIPImageContainer imageContainerWithData:data decoderConfigMap:nil codecCatalogue:nil];
+    TIPImageContainer *container = [TIPImageContainer imageContainerWithData:data
+                                                            decoderConfigMap:nil
+                                                              codecCatalogue:nil];
     NSTimeInterval decompressTime = [self decompressImage:container.image];
     XCTAssertNotNil(container, @"%@", imagePath);
     if (detectedAnimatedFrameCount > 1) {
@@ -783,15 +796,29 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 #if !TARGET_OS_TV
 - (void)testSaveWebP
 {
-    XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:TIPXImageTypeWebP]);
+    XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:TIPImageTypeWEBP].tip_encoder);
+    /*
+
+     If Apple adds the WebP encoder
+
+     if ([[TIPImageCodecCatalogue sharedInstance] codecForImageType:TIPImageTypeWEBP].tip_encoder) {
+         [self runSaveTest:TIPImageTypeWEBP options:0 extension:@"apl.webp" quality:WEBP_QUALITY_PERFECT image:sImageContainer];
+         [self runSaveTest:TIPImageTypeWEBP options:0 extension:@"apl.webp" quality:WEBP_QUALITY_GOOD image:sImageContainer];
+
+         [self runMeasurement:@"save" format:@"apl.webp" block:^{
+             [self runSaveTest:TIPImageTypeWEBP options:0 extension:@"apl.webp" quality:WEBP_QUALITY_OK image:sImageContainer];
+         }];
+     }
+
+     */
 
     PLUG_IN_WEBP();
 
-    [self runSaveTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_PERFECT image:sImageContainer];
-    [self runSaveTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_GOOD image:sImageContainer];
+    [self runSaveTest:TIPImageTypeWEBP options:0 extension:@"webp" quality:WEBP_QUALITY_PERFECT image:sImageContainer];
+    [self runSaveTest:TIPImageTypeWEBP options:0 extension:@"webp" quality:WEBP_QUALITY_GOOD image:sImageContainer];
 
     [self runMeasurement:@"save" format:@"webp" block:^{
-        [self runSaveTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_OK image:sImageContainer];
+        [self runSaveTest:TIPImageTypeWEBP options:0 extension:@"webp" quality:WEBP_QUALITY_OK image:sImageContainer];
     }];
 }
 #endif
@@ -799,15 +826,24 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 #if !TARGET_OS_TV
 - (void)testXLoadWebP
 {
-    [self runLoadTestForUnreadableFormat:@"webp"];
+    if ([[TIPImageCodecCatalogue sharedInstance] codecForImageType:TIPImageTypeWEBP].tip_decoder) {
+        [self runLoadTest:TIPImageTypeWEBP options:0 extension:@"webp" quality:WEBP_QUALITY_PERFECT isAnimated:NO];
+        [self runLoadTest:TIPImageTypeWEBP options:0 extension:@"webp" quality:WEBP_QUALITY_GOOD isAnimated:NO];
+
+        [self runMeasurement:@"load" format:@"apl.webp" block:^{
+            [self runLoadTest:TIPImageTypeWEBP options:0 extension:@"webp" quality:WEBP_QUALITY_OK isAnimated:NO];
+        }];
+    } else {
+        [self runLoadTestForUnreadableFormat:@"webp"];
+    }
 
     PLUG_IN_WEBP();
 
-    [self runLoadTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_PERFECT isAnimated:NO];
-    [self runLoadTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_GOOD isAnimated:NO];
+    [self runLoadTest:TIPImageTypeWEBP options:0 extension:@"webp" quality:WEBP_QUALITY_PERFECT isAnimated:NO];
+    [self runLoadTest:TIPImageTypeWEBP options:0 extension:@"webp" quality:WEBP_QUALITY_GOOD isAnimated:NO];
 
     [self runMeasurement:@"load" format:@"webp" block:^{
-        [self runLoadTest:TIPXImageTypeWebP options:0 extension:@"webp" quality:WEBP_QUALITY_OK isAnimated:NO];
+        [self runLoadTest:TIPImageTypeWEBP options:0 extension:@"webp" quality:WEBP_QUALITY_OK isAnimated:NO];
     }];
 }
 #endif
@@ -815,12 +851,23 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 #if !TARGET_OS_TV
 - (void)testSpeedWebP
 {
-    XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:@"webp"]);
+    XCTAssertNil([[TIPImageCodecCatalogue sharedInstance] codecForImageType:@"webp"].tip_encoder);
+    /*
+
+     If Apple adds the WebP encoder
+
+     if ([[TIPImageCodecCatalogue sharedInstance] codecForImageType:TIPImageTypeWEBP].tip_encoder) {
+         [self runMeasurement:@"speed" format:@"apl.webp" block:^{
+             [self runSpeedTest:TIPImageTypeWEBP options:0];
+         }];
+     }
+
+     */
 
     PLUG_IN_WEBP();
 
     [self runMeasurement:@"speed" format:@"webp" block:^{
-        [self runSpeedTest:TIPXImageTypeWebP options:0];
+        [self runSpeedTest:TIPImageTypeWEBP options:0];
     }];
 }
 #endif
@@ -869,6 +916,46 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     }];
 }
 
+- (void)testSaveAnimatedWEBP
+{
+    // noop
+}
+
+- (void)testXLoadAnimatedWEBP
+{
+    PLUG_IN_WEBP();
+
+    // need to "seed" the test file since we don't have the encoder
+
+    NSString *srcFile = [TIPTestsResourceBundle() pathForResource:@"fireworks_original" ofType:@"webp"];
+    NSString *tmpDir = NSTemporaryDirectory();
+    NSString *tmpFile = [tmpDir stringByAppendingPathComponent:@"test.100.awebp"];
+
+    NSFileManager *fm = [NSFileManager defaultManager];
+    [fm createDirectoryAtPath:tmpDir withIntermediateDirectories:YES attributes:nil error:NULL];
+    [fm copyItemAtPath:srcFile toPath:tmpFile error:NULL];
+    tip_defer(^{
+        [fm removeItemAtPath:tmpFile error:NULL];
+    });
+
+    // run the actual test
+
+    TIPImageContainer *container = [TIPImageContainer imageContainerWithFilePath:tmpFile
+                                                                decoderConfigMap:nil
+                                                                  codecCatalogue:nil
+                                                                       memoryMap:YES];
+    if ([TIPXWebPCodec hasAnimationDecoding]) {
+        XCTAssertNotNil(container.image);
+        XCTAssertEqual((NSUInteger)10, container.frameCount);
+    } else {
+        XCTAssertNil(container);
+    }
+}
+
+- (void)testSpeedAnimatedWEBP
+{
+    // noop
+}
 
 - (void)testSaveAnimatedMP4
 {
@@ -894,7 +981,10 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
     // run the actual test
 
-    TIPImageContainer *container = [TIPImageContainer imageContainerWithFilePath:tmpFile decoderConfigMap:nil codecCatalogue:nil memoryMap:YES];
+    TIPImageContainer *container = [TIPImageContainer imageContainerWithFilePath:tmpFile
+                                                                decoderConfigMap:nil
+                                                                  codecCatalogue:nil
+                                                                       memoryMap:YES];
     XCTAssertNotNil(container.image);
     XCTAssertEqual((NSUInteger)35, container.frameCount);
 }
@@ -929,7 +1019,10 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     result = [jpegDecoder tip_finalizeDecoding:decoderContext];
     counts[result]++;
 
-    TIPImageContainer *decodedImage = [jpegDecoder tip_renderImage:decoderContext mode:TIPImageDecoderRenderModeCompleteImage];
+    TIPImageContainer *decodedImage = [jpegDecoder tip_renderImage:decoderContext
+                                                        renderMode:TIPImageDecoderRenderModeCompleteImage
+                                                  targetDimensions:CGSizeZero
+                                                 targetContentMode:UIViewContentModeCenter];
 
     XCTAssertNotNil(decodedImage);
     XCTAssertTrue(CGSizeEqualToSize(decodedImage.dimensions, scaledImage.dimensions));
@@ -974,8 +1067,8 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
 
 - (void)testTypeSupportsProgressiveLoading
 {
-    XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypeJPEG2000], NO); // for now
-    XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypeJPEG], YES); // iOS 8+
+    XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypeJPEG2000], NO);
+    XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypeJPEG], YES);
     XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:TIPImageTypePNG], NO); // for now
     XCTAssertEqual([[TIPImageCodecCatalogue sharedInstance] codecWithImageTypeSupportsProgressiveLoading:nil], NO);
 }

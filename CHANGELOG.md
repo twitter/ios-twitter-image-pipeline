@@ -2,13 +2,101 @@
 
 ## Info
 
-**Document version:** 2.13.5
+**Document version:** 2.24.0
 
-**Last updated:** 04/12/2020
+**Last updated:** 08/06/2020
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.24.0
+
+- Drop iOS 8 and iOS 9 support
+
+### 2.23.5
+
+- Refactor WebP decoder to support animation decoding and improve efficiency
+  - Requires _WebPDemux.framework_ for iOS (the Catalyst lib already has the necessary bits)
+  - The `TIPXWebPCodec` also supports progressive loading (rendering the first frame while more data is loading)
+    - This makes it potentially a better choice as a decoder than the iOS 14+ built in decoder, depending on your use case
+  - Improve decoder to support having static _WebP_ images decode into the provided target sizing for better efficiency
+
+### 2.23.2
+
+- Update to WebP v1.1.0
+  - Also fixes building WebP for Apple Silicon Catalyst builds
+
+### 2.23.1
+
+- Optimize the rendered cache unloading when `clearMemoryCachesOnApplicationBackgroundEnabled` is `YES`
+  - When the app goes into the background, the rendered cache used to clear the oldest rendered images and just keep a max of 50% of the rendered cache capacity for when the app resumes
+    - This was mostly effective for keeping the on screen images in cache avoiding any flashing UI, but had edge cases that could lead flashing or holding onto too much in memory that isn't needed for app resumes
+  - Now, the rendered cache will turn each cache entry as _weak_ and on app resume, these _weak_ entries will be made strong again.
+    - This will have the effect of all rendered cache images with no references being purged, but all those references being retained
+    - Effectively, any UI that is holding the rendered images will keep those around for when the app resumes, making it seemless
+    - For any UI that has unloaded its images when not visible, those images will be purged and will reload when the view becomes visible again
+    - This works especially well with `TIPImageViewFetchHelper` when `disappearanceBehavior` is `TIPImageViewDisappearanceBehaviorUnload` or `TIPImageViewDisappearanceBehaviorReplaceWithPlaceholder`
+
+### 2.23.0
+
+- Replace `TIPImageFetchProgressiveLoadingPolicy` class methods with C functions
+  - Swift does not like having an `@interface` have the same name as an `@protocol`
+  - It can work, but gets very messy
+  - Best to avoid it and replace the convenient class method interfaces in Objective-C with C functions
+  - Though this is a minor version bump, it is API breaking
+    - There isn't a way to deprecated the old APIs and introduce new ones, we just have to remove the old ones to fix usages in Swift
+    - _Apologies for the inconvenience!_
+
+### 2.22.0
+
+- Add `TIPImageFetchSkipStoringToRenderedCache` to `TIPImageFetchOptions`
+  - This permits a fetch to skip storing to the synchronous rendered cache altogether after a fetch
+  - This is useful for UI that displays a large image but is not frequented regularly, such as a full screen image view
+  - By avoiding infrequent images going to rendered cache, the rendered cache can keep more relevent images in cache (or can be configured to be smaller)
+- Add `TIPImageViewDisappearanceBehaviorUnload` to `TIPImageViewDisappearanceBehavior`
+  - This new behavior will set the `fetchView` image to `nil` on disappearance
+  - This new feature can really level up an app at keeping a memory footprint down automatically, no extra work is needed when using `TIPImageViewFetchHelper` for displaying images!
+- Add `TIPImageViewDisappearanceBehaviorReplaceWithPlaceholder` to `TIPImageViewDisappearanceBehavior`
+  - This new behavior will set the `fetchView` image to a placeholder (low resolution) version on disappearance, which will be replace with the full image on visible return
+  - Similar benefits to `TIPImageViewDisappearanceBehaviorUnload` but with the compromise of keeping a little more RAM for a placeholder to avoid UI situations that could yield an empty image view temporarily as the full image is decoded (notably for large images or slow devices)
+- Rename `TIPImageViewFetchHelper` class' `fetchDisappearanceBehavior` to `disappearanceBehavior`
+- Add `shouldTreatApplicationBackgroundAsViewDisappearance` property to `TIPImageViewFetchHelper`
+  - This `BOOL` property will opt the fetch helper into using the disappearance behavior when the app backgrounds
+  - Another big improvement for app memory footprint as the large amount of RAM used for images can be unloaded on app background, reducing the risk of the app being jettisoned!
+  - Impact is really great for large images on screen when backgrounded, be sure to set to `YES` for your large image views!
+
+### 2.21.5
+
+- Adopt `direct` support for Objective-C code and eliminate `PRIVATE_SELF` C function pattern
+  - Preserves Objective-C calling syntax for better code legibility (less C-style calls interleaving ObjC)
+  - Safer than `PRIVATE_SELF` C functions (don't need to check `self != nil`)
+  - Avoids awkward `self->_ivar` access in the direct methods (can stick with just using `_ivar`)
+  - Same low binary overhead as private C functions
+
+### 2.21.0
+
+- Revise `TIPError.h` to be much more Swift compatible
+
+### 2.20.5
+
+- Revise _WebP_ support by adding _iOS 14_ decoder and integrating that with existing `TIPXWebPCodec`
+  - Also means _Animated WebP_ are supported (decode only) on _iOS 14+_ now
+
+### 2.20.0
+
+- Fundamentally apply a rearchitecture to __Twitter Image Pipeline__
+  - First: when loading images from data or files, the target sizing (dimensions & content mode) can now be used by codecs for more efficient decoding
+    - This means that decoding a large image into a view port that is smaller can now decode directly into the appropriate size, reducing RAM and CPU of the decode AND avoiding needing to scale the image down before delivering the image as a result (more CPU savings)
+    - This is implemented with the `ImageIO` based codecs, but not the extended codecs (`WebP` and `MP4`)...yet
+  - Second: there are 3 caches in __TIP__: Rendered image cache, In Memory image cache, and On Disk image data cache.
+    - The In Memory cache has been been restructured to cache the compressed image data instead of the image itself
+    - This means:
+      - Less RAM is needed for this middle cache
+      - Less RAM is used when decoding the image to serve as a response
+      - No more scaling the image from full size to the size to serve as a response (for core image codecs)
+- Given how substantial this change is, we are bumping from version `2.13` to `2.20`
+  - In particular, custom codecs will need to be updated to support the new `targetDimensions` and `targetContentMode` arguments 
 
 ### 2.13.5
 
@@ -27,7 +115,6 @@
   - `-[UIImage tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:]`
 - Fix bug where a GIF load may be incomplete in response but complete in data loaded failing to load in __TIP__
   - Mostly an issue with some CDN vendors terminating the HTTP response incorrectly
-  
 
 ### 2.13.2
 

@@ -19,10 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
  Resolves to being the lesser of `System RAM / 12` or `160 MBs`
  */
 FOUNDATION_EXTERN SInt64 const TIPMaxBytesForAllRenderedCachesDefault;
-/**
- Default max bytes for memory caches.
- Resolves to being the lesser of `System RAM / 12` or `160 MBs`
- */
+//! Default max bytes for memory caches. `48 MBs`
 FOUNDATION_EXTERN SInt64 const TIPMaxBytesForAllMemoryCachesDefault;
 //! Default max bytes for disk caches.  `128 MBs`
 FOUNDATION_EXTERN SInt64 const TIPMaxBytesForAllDiskCachesDefault;
@@ -49,11 +46,11 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
 
  ## Constants
 
-    // Equivalent to one-twelfth of the devices RAM (capped to 64 MB).
+    // Equivalent to one-twelfth of the devices RAM (capped to 160 MB).
     // This is an arbitrary choice a.t.m.
     FOUNDATION_EXTERN NSUInteger const TIPMaxBytesForAllRenderedCachesDefault;
 
-    // Equivalent to one-twelfth of the devices RAM (capped to 64 MB).
+    // Equivalent to 48 MB.
     // This is an arbitrary choice a.t.m.
     FOUNDATION_EXTERN NSUInteger const TIPMaxBytesForAllMemoryCachesDefault;
 
@@ -77,7 +74,7 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
 @property (atomic) SInt64 maxBytesForAllRenderedCaches;
 
 /**
- The maximum number of bytes that all memory image caches can store in memory across all
+ The maximum number of bytes that all in-memory image data caches can store in memory across all
  `TIPImagePipeline` instances.
 
  Negative is Default, 0 is off, positive is the specified number of bytes
@@ -85,7 +82,7 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
 @property (atomic) SInt64 maxBytesForAllMemoryCaches;
 
 /**
- The maximum number of bytes that all disk image caches can store on disk across all
+ The maximum number of bytes that all on-disk image data caches can store on disk across all
  `TIPImagePipeline` instances.
 
  Negative is Default, 0 is off, positive is the specified number of bytes
@@ -103,7 +100,7 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
 @property (atomic) SInt16 maxCountForAllRenderedCaches;
 
 /**
- The maximum number of images that all memory image caches can store in memory across all
+ The maximum number of images that all in-memory image data caches can store in memory across all
  `TIPImagePipeline` instances.
 
  0 is unlimited,
@@ -113,7 +110,7 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
 @property (atomic) SInt16 maxCountForAllMemoryCaches;
 
 /**
- The maximum number of images that all disk image caches can store on disk across all
+ The maximum number of images that all on-disk image data caches can store on disk across all
  `TIPImagePipeline` instances.
 
  0 is unlimited,
@@ -147,8 +144,8 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
 - (void)clearAllDiskCaches;
 
 /**
- Asynchronously clear the memory cache and rendered cache of all registered `TIPImagePipeline`
- instances.
+ Asynchronously clear the in-memory image data cache and rendered cache of all registered
+ `TIPImagePipeline` instances.
  */
 - (void)clearAllMemoryCaches;
 
@@ -235,8 +232,10 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
 
 /**
  Configure whether or not to clear memory caches in *TIP* on app being backgrounded.
- Details: All memory caches are cleared but only half of all rendered caches' images are cleared.
-          This is to avoid flashing images in the UI on app foreground.
+ Details: All memory caches are cleared.
+          Any render cache images that persist (are not deallocated) via separate references
+          (such as a view with a strong reference to it) will be repopulated to the rendered cache
+          on app foreground - this will balance memory purging with keeping the UI correct on app resume.
 
  Default == `NO`
  */
@@ -247,6 +246,22 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
  Default == `CGInterpolationQualityDefault`
  */
 @property (nonatomic, readwrite) CGInterpolationQuality defaultInterpolationQuality;
+
+/**
+ Configure whether the default codecs in TIPImageCodecCatalogue are loaded synchronously by
+ the calling thread (which can incur long pauses as it makes XPC calls) or are loaded asynchronously.
+ */
+@property (nonatomic, readwrite) BOOL loadCodecsAsync;
+
+/**
+ Configure whether TIPImageViewFetchHelper should avoid registering and unregistering for notifications
+ from an image pipeline, instead listening to all notifications and comparing the posting pipeline's
+ identifier property against a saved NSString of the relevant pipeline's identifier.
+
+ This is helpful in reducing total notification registrations. In applications with large numbers
+ of NSNotification observers and posting objects, this may yield performance gains.
+ */
+@property (nonatomic, readwrite) BOOL useInstancelessPipelineObserversInFetchHelpers;
 
 #pragma mark Singleton Accessor
 

@@ -82,7 +82,7 @@ BOOL TIPIsDebuggerAttached()
 
     // We're being debugged if the P_TRACED flag is set.
 
-    return ( (info.kp_proc.p_flag & P_TRACED) != 0 );
+    return TIP_BITMASK_INTERSECTS_FLAGS(info.kp_proc.p_flag, P_TRACED);
 }
 
 void TIPTriggerDebugSTOP()

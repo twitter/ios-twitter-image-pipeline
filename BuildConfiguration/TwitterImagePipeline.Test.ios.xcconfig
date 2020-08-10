@@ -14,9 +14,6 @@
 // Architectures
 SDKROOT = iphoneos
 
-// Deployment
-IPHONEOS_DEPLOYMENT_TARGET = 8.0
-
 // Signing
 
 // This is the result of setting "Sign to run locally" in "Signing & Capabilities" for mac (catalyst)

@@ -150,7 +150,7 @@ static void _PrepareGlobalState(void);
     return _priority;
 }
 
-- (NSURLRequest *)finalURLRequest
+- (nullable NSURLRequest *)finalURLRequest
 {
     return _task.currentRequest;
 }

@@ -28,6 +28,10 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
     TIPImageViewDisappearanceBehaviorCancelImageFetch,
     /** lower priority of fetch on disappear */
     TIPImageViewDisappearanceBehaviorLowerImageFetchPriority,
+    /** unload the image on disappear (and cancel any outstanding fetch) */
+    TIPImageViewDisappearanceBehaviorUnload,
+    /** replace the image on disappear with a placeholder */
+    TIPImageViewDisappearanceBehaviorReplaceWithPlaceholder
 };
 
 /**
@@ -40,8 +44,10 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 
 #pragma mark Properties / State
 
-/** behavior on "disappear", default == `CancelImageFetch` */
-@property (nonatomic) TIPImageViewDisappearanceBehavior fetchDisappearanceBehavior;
+/** behavior on "disappear", default == `TIPImageViewDisappearanceBehaviorUnload` */
+@property (nonatomic) TIPImageViewDisappearanceBehavior disappearanceBehavior;
+/** should treat application backgrounding as the view disappearing?, default == `YES` */
+@property (nonatomic) BOOL shouldTreatApplicationBackgroundAsViewDisappearance;
 /** associated `UIView` that conforms to `TIPImageFetchable` */
 @property (nonatomic, nullable, weak) UIView<TIPImageFetchable> *fetchView;
 /** request to fetch */
@@ -131,6 +137,12 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
 /** call when view did move to window (or `nil`) */
 - (void)triggerViewDidMoveToWindow NS_REQUIRES_SUPER;
 
+/** call when application did enter the background */
+- (void)triggerApplicationDidEnterBackground;
+/** call when application will enter the foreground */
+- (void)triggerApplicationWillEnterForeground;
+
+
 #pragma mark Transition a UIView between fetch helpers
 
 /** call to transition view from one fetch helper to a new fetch helper */
@@ -147,6 +159,11 @@ typedef NS_ENUM(NSInteger, TIPImageViewDisappearanceBehavior)
  could yield a successful load with the network returning.
  */
 + (void)notifyAllFetchHelpersToRetryFailedLoads;
+
+#pragma mark Deprecated
+
+/** Deprecated */
+@property (nonatomic) TIPImageViewDisappearanceBehavior fetchDisappearanceBehavior __attribute__((deprecated("`fetchDisappearanceBehavior` is deprecated.  Use `disappearanceBehavior` isntead.  This API will be removed in the future.")));
 
 @end
 
@@ -306,7 +323,10 @@ FOUNDATION_EXTERN NSString * const TIPImageViewDidUpdateDebugInfoVisibilityNotif
  fetch did update displayed image
  @warning deprecated callback, implement `tip_fetchHelper:didUpdateDisplayedImageContainer:fromSourceDimensions:isFinal:` instead
  */
-- (void)tip_fetchHelper:(TIPImageViewFetchHelper *)helper didUpdateDisplayedImage:(UIImage *)image fromSourceDimensions:(CGSize)size isFinal:(BOOL)isFinal __attribute__((deprecated("implement `tip_fetchHelper:didUpdateDisplayedImageContainer:fromSourceDimensions:isFinal:` instead")));
+- (void)tip_fetchHelper:(TIPImageViewFetchHelper *)helper
+didUpdateDisplayedImage:(UIImage *)image
+   fromSourceDimensions:(CGSize)size
+                isFinal:(BOOL)isFinal __attribute__((deprecated("implement `tip_fetchHelper:didUpdateDisplayedImageContainer:fromSourceDimensions:isFinal:` instead")));
 
 @end
 

@@ -15,26 +15,30 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Error Domains
 
 ///! The error domain for image fetching operations
-FOUNDATION_EXTERN NSString * const TIPImageFetchErrorDomain;
+FOUNDATION_EXTERN NSErrorDomain const TIPImageFetchErrorDomain;
 ///! The error domain for image storing operations
-FOUNDATION_EXTERN NSString * const TIPImageStoreErrorDomain;
+FOUNDATION_EXTERN NSErrorDomain const TIPImageStoreErrorDomain;
 ///! The error domain for generic errors
-FOUNDATION_EXTERN NSString * const TIPErrorDomain;
+FOUNDATION_EXTERN NSErrorDomain const TIPErrorDomain;
 
 #pragma mark Error User Info Keys
+
+typedef NSString * const TIPErrorInfoKey NS_STRING_ENUM;
 
 /**
  The `userInfo` key for the _HTTP Status Code_ when
  `TIPImageFetchErrorCodeHTTPTransactionError` is the error code
  */
-FOUNDATION_EXTERN NSString * const TIPErrorUserInfoHTTPStatusCodeKey;
+FOUNDATION_EXTERN TIPErrorInfoKey TIPErrorInfoHTTPStatusCodeKey;
+
+#define TIPErrorUserInfoHTTPStatusCodeKey TIPErrorInfoHTTPStatusCodeKey
 
 #pragma mark Error Codes
 
 /**
  The error code related to fetching an image.  See also `TIPImageFetchErrorDomain`.
  */
-typedef NS_ENUM(NSInteger, TIPImageFetchErrorCode) {
+typedef NS_ERROR_ENUM(TIPImageFetchErrorDomain, TIPImageFetchErrorCode) {
 
     // Fetch Errors
 
@@ -44,7 +48,7 @@ typedef NS_ENUM(NSInteger, TIPImageFetchErrorCode) {
     TIPImageFetchErrorCodeInvalidRequest,
     /**
      There was an _HTTP_ transaction issue (based on the _HTTP Status Code_).
-     `TIPErrorUserInfoHTTPStatusCodeKey` will be populated with the _HTTP Status Code_ as an
+     `TIPErrorInfoHTTPStatusCodeKey` will be populated with the _HTTP Status Code_ as an
      `NSInteger` (wrapped by an `NSNumber`).
      */
     TIPImageFetchErrorCodeHTTPTransactionError,
@@ -56,12 +60,12 @@ typedef NS_ENUM(NSInteger, TIPImageFetchErrorCode) {
      */
     TIPImageFetchErrorCodeIllegalModificationByHydrationBlock,
     /** The image could not be downloaded */
-    TIPImageFetchErrorCouldNotDownloadImage,
+    TIPImageFetchErrorCodeCouldNotDownloadImage,
     /**
      The image could not be loaded from any of the specified loading sources, see
      `[TIPImageFetchRequest loadingSources]`
      */
-    TIPImageFetchErrorCouldNotLoadImage,
+    TIPImageFetchErrorCodeCouldNotLoadImage,
 
     // TIPImageFetchDownload errors (starting from 1001)
 
@@ -138,7 +142,7 @@ typedef NS_ENUM(NSInteger, TIPImageFetchErrorCode) {
 /**
  The error code related to storing an image.  See also `TIPImageStoreErrorDomain`.
  */
-typedef NS_ENUM(NSInteger, TIPImageStoreErrorCode) {
+typedef NS_ERROR_ENUM(TIPImageStoreErrorDomain, TIPImageStoreErrorCode) {
     /** Unknown */
     TIPImageStoreErrorCodeUnknown = 0,
     /**
@@ -157,11 +161,11 @@ typedef NS_ENUM(NSInteger, TIPImageStoreErrorCode) {
 /**
  TIP error codes that are not related to fetching or storing
  */
-typedef NS_ENUM(NSInteger, TIPErrorCode) {
+typedef NS_ERROR_ENUM(TIPErrorDomain, TIPErrorCode) {
     /** unknown error */
     TIPErrorCodeUnknown = 0,
-    /** attempted to use GPU while app is in background */
-    TIPErrorCodeCannotUseGPUInBackground,
+    /** attempted to use GPU while app is in background (Deprecated) */
+    TIPErrorCodeCannotUseGPUInBackground __attribute__((deprecated("restricting GPU usage in background was lifted with iOS 9.  TIP 2.24+ requires iOS 10+."))),
     /** a `CIImage` was expected, but there was none */
     TIPErrorCodeMissingCIImage,
     /** a `CGImageRef` was expected, but there was none */
@@ -210,44 +214,47 @@ typedef NS_ENUM(NSInteger, TIPErrorCode) {
 
 #pragma mark Problem Names
 
+typedef NSString * const TIPProblem NS_STRING_ENUM;
+typedef NSString * const TIPProblemInfoKey NS_STRING_ENUM NS_SWIFT_NAME(TIPProblem.InfoKey);
+
 //! Problem when disk cache cannot generate a file name for an image entry
-FOUNDATION_EXTERN NSString * const TIPProblemDiskCacheUpdateImageEntryCouldNotGenerateFileName;
+FOUNDATION_EXTERN TIPProblem TIPProblemDiskCacheUpdateImageEntryCouldNotGenerateFileName;
 //! Problem when an image fails to scale
-FOUNDATION_EXTERN NSString * const TIPProblemImageFailedToScale;
+FOUNDATION_EXTERN TIPProblem TIPProblemImageFailedToScale;
 //! Problem when a `TIPImageContainer` has a `nil` _image_
-FOUNDATION_EXTERN NSString * const TIPProblemImageContainerHasNilImage;
+FOUNDATION_EXTERN TIPProblem TIPProblemImageContainerHasNilImage;
 //! Problem when a `TIPImageFetchRequests` provides invalid `targetDimensions`
-FOUNDATION_EXTERN NSString * const TIPProblemImageFetchHasInvalidTargetDimensions;
+FOUNDATION_EXTERN TIPProblem TIPProblemImageFetchHasInvalidTargetDimensions;
 //! Problem that a downloaded image has GPS info
-FOUNDATION_EXTERN NSString * const TIPProblemImageDownloadedHasGPSInfo;
+FOUNDATION_EXTERN TIPProblem TIPProblemImageDownloadedHasGPSInfo;
 //! Problem decoding downloaded image
-FOUNDATION_EXTERN NSString * const TIPProblemImageDownloadedCouldNotBeDecoded;
+FOUNDATION_EXTERN TIPProblem TIPProblemImageDownloadedCouldNotBeDecoded;
 //! Problem when attempting to store an image to disk cache due to size limit
-FOUNDATION_EXTERN NSString * const TIPProblemImageTooLargeToStoreInDiskCache;
+FOUNDATION_EXTERN TIPProblem TIPProblemImageTooLargeToStoreInDiskCache;
 //! Problem downloading an image where the full image was loaded but there was an unnecessary error
-FOUNDATION_EXTERN NSString * const TIPProblemImageDownloadedWithUnnecessaryError;
+FOUNDATION_EXTERN TIPProblem TIPProblemImageDownloadedWithUnnecessaryError;
 
 #pragma mark Problem Info Keys
 
 //! Image identifier, `NSString`
-FOUNDATION_EXTERN NSString * const TIPProblemInfoKeyImageIdentifier;
+FOUNDATION_EXTERN TIPProblemInfoKey TIPProblemInfoKeyImageIdentifier;
 //! Image identifier (coerced to be safe), `NSString`
-FOUNDATION_EXTERN NSString * const TIPProblemInfoKeySafeImageIdentifier;
+FOUNDATION_EXTERN TIPProblemInfoKey TIPProblemInfoKeySafeImageIdentifier;
 //! Image URL, `NSURL`
-FOUNDATION_EXTERN NSString * const TIPProblemInfoKeyImageURL;
+FOUNDATION_EXTERN TIPProblemInfoKey TIPProblemInfoKeyImageURL;
 
 //! Target dimensions, `NSValue` wrapping `CGSize`
-FOUNDATION_EXTERN NSString * const TIPProblemInfoKeyTargetDimensions;
+FOUNDATION_EXTERN TIPProblemInfoKey TIPProblemInfoKeyTargetDimensions;
 //! Target content mode, `NSNumber` wrapping `UIViewContentMode`
-FOUNDATION_EXTERN NSString * const TIPProblemInfoKeyTargetContentMode;
+FOUNDATION_EXTERN TIPProblemInfoKey TIPProblemInfoKeyTargetContentMode;
 //! Computed scaled dimensions, `NSValue` wrapping `CGSize`
-FOUNDATION_EXTERN NSString * const TIPProblemInfoKeyScaledDimensions;
+FOUNDATION_EXTERN TIPProblemInfoKey TIPProblemInfoKeyScaledDimensions;
 //! The dimensions of the image, `NSValue` wrapping `CGSize`
-FOUNDATION_EXTERN NSString * const TIPProblemInfoKeyImageDimensions;
+FOUNDATION_EXTERN TIPProblemInfoKey TIPProblemInfoKeyImageDimensions;
 //! The image is animated, `NSNumber` wrapping `BOOL`
-FOUNDATION_EXTERN NSString * const TIPProblemInfoKeyImageIsAnimated;
+FOUNDATION_EXTERN TIPProblemInfoKey TIPProblemInfoKeyImageIsAnimated;
 
 //! Fetch requeset, `id<TIPImageFetchRequest>`
-FOUNDATION_EXTERN NSString * const TIPProblemInfoKeyFetchRequest;
+FOUNDATION_EXTERN TIPProblemInfoKey TIPProblemInfoKeyFetchRequest;
 
 NS_ASSUME_NONNULL_END

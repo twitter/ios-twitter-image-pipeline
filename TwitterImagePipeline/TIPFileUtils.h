@@ -13,8 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - File Helpers
 
 //! Return the files (and directories) within the directory at the given _path_
-FOUNDATION_EXTERN NSArray<NSString *> * __nullable TIPContentsAtPath(NSString *dirPath,
-                                                                     NSError * __nullable * __nullable outError);
+FOUNDATION_EXTERN NSArray<NSURL *> * __nullable TIPContentsAtPath(NSString *dirPath,
+                                                                  NSError * __nullable * __nullable outError);
 //! Return the size of the file at the given path
 FOUNDATION_EXTERN NSUInteger TIPFileSizeAtPath(NSString *filePath,
                                                NSError * __nullable * __nullable outError);

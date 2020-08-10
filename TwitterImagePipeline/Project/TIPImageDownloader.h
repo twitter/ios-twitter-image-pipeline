@@ -8,6 +8,7 @@
 
 #import <UIKit/UIImage.h>
 
+#import "TIP_Project.h"
 #import "TIPImageCodecs.h"
 #import "TIPImageFetchRequest.h"
 #import "TIPPartialImage.h"
@@ -27,6 +28,7 @@ FOUNDATION_EXTERN NSString * const TIPImageDownloaderCancelSource;
 typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedBytes,
                                                  NSString * __nullable lastModified);
 
+TIP_OBJC_FINAL TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImageDownloader : NSObject
 
 + (instancetype)sharedInstance;
@@ -59,6 +61,8 @@ typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedByt
 - (nullable TIPImageFetchHydrationBlock)imageDownloadHydrationBlock;
 - (nullable TIPImageFetchAuthorizationBlock)imageDownloadAuthorizationBlock;
 - (nullable NSDictionary<NSString *, id> *)decoderConfigMap;
+- (CGSize)targetDimensions;
+- (UIViewContentMode)targetContentMode;
 
 // Loaded image behavior info
 - (NSTimeInterval)imageDownloadTTL;
@@ -98,14 +102,15 @@ typedef void(^TIPImageDownloaderResumeInfoBlock)(NSUInteger alreadyDownloadedByt
                result:(TIPImageDecoderAppendResult)result;
 
 - (void)imageDownload:(id<TIPImageDownloadContext>)op
-didCompleteWithPartialImage:(nullable TIPPartialImage *)partialImage
-         lastModified:(nullable NSString *)lastModified
-             byteSize:(NSUInteger)bytes
-            imageType:(nullable NSString *)imageType
-                image:(nullable TIPImageContainer *)image
-   imageRenderLatency:(NSTimeInterval)latency
-           statusCode:(NSInteger)statusCode
-                error:(nullable NSError *)error;
+        didCompleteWithPartialImage:(nullable TIPPartialImage *)partialImage
+        lastModified:(nullable NSString *)lastModified
+        byteSize:(NSUInteger)bytes
+        imageType:(nullable NSString *)imageType
+        image:(nullable TIPImageContainer *)image
+        imageData:(nullable NSData*)imageData
+        imageRenderLatency:(NSTimeInterval)latency
+        statusCode:(NSInteger)statusCode
+        error:(nullable NSError *)error;
 
 @end
 

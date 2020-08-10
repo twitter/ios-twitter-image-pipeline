@@ -28,9 +28,11 @@ static const ImageTypeStruct sImageTypes[] = {
     { @"public.png",            "PNG",          "twitterfied.png",          NO,     NO  },
     { @"public.tiff",           "TIFF",         "twitterfied.tiff",         NO,     NO  },
     { @"com.compuserve.gif",    "GIF",          "fireworks_original.gif",   NO,     YES },
+    { @"org.webmproject.webp",  "WEBP",         "twitterfied.webp",         NO,     NO  },
+    { @"org.webmproject.webp",  "Ani-WEBP",     "fireworks_original.webp",  NO,     YES },
     // { @"com.compuserve.gif",    "Static GIF",   "https://media3.giphy.com/media/d3F2Dj8zECyDLFpm/v1.Y2lkPWU4MjZjOWZjOGViZWNhZmJmMjk0NDIyZGQzZjM2ZjhkMzhlNGRhZTk5OTYzZjliMQ/200_s.gif",               NO,     NO  },
-    { @"com.google.webp",       "WEBP",         "twitterfied.webp",         NO,     NO  },
     { @"public.heic",           "HEIC",         "twitterfied.heic",         NO,     NO  },
+    // { @"public.heic",           "Ani-HEIC",     "starfield_animation.heic", NO,     YES },
     { @"public.jpeg",           "Small-PJPEG",  "twitterfied.small.pjpg",   YES,    NO  },
 };
 
@@ -336,7 +338,7 @@ static const NSUInteger kDefaultBitrateIndex = 5;
 
 - (CGSize)targetDimensions
 {
-    return _cachedBounds;
+    return TIPDimensionsFromPointSize(_cachedBounds);
 }
 
 - (UIViewContentMode)targetContentMode
@@ -414,6 +416,11 @@ static const NSUInteger kDefaultBitrateIndex = 5;
 //    }
 //    return nil;
 //}
+
+- (NSDictionary *)progressiveLoadingPolicies
+{
+    return @{ TIPImageTypeWEBP : [[TIPFullFrameProgressiveLoadingPolicy alloc] init] };
+}
 
 - (NSURL *)cannedImageFileURL
 {

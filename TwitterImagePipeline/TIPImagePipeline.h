@@ -62,9 +62,11 @@ FOUNDATION_EXTERN NSString * const TIPImagePipelineImageTreatAsPlaceholderNofiti
  order is:
 
     1. Rendered Memory Cache (synchronously accessed)
-    2. Unrendered Memory Cache
-    3. Additional Cache(s)
-    4. Network
+    2. Image Data Memory Cache
+    3. On Disk Cache
+    4. Other pipeline disk caches
+    5. Additional Cache(s)
+    6. Network
 
  ## Construction / Reuse
 
@@ -220,9 +222,11 @@ FOUNDATION_EXTERN NSString * const TIPImagePipelineImageTreatAsPlaceholderNofiti
  1. Synchronously attempt to load the already rendered image from memory (from the main thread)
  2. Asynchronously attempt to load from memory and render
  3. Asynchronously attempt to load from disk and render
- 4. Asynchronously attempt to load from network and render
+ 4. Asynchronously attempt to load from other pipeline disk caches and render
+ 5. Asynchronously attempt to load from the specified "additional caches" and render
+ 6. Asynchronously attempt to load from network and render
 
- _4_ can also do progressive loading, if supported and enabled by the _delegate_ and _request_
+ _6_ can also do progressive loading, if supported and enabled by the _delegate_ and _request_
 
  See `operationWithRequest:context:delegate:` for constructing a `TIPImageFetchOperation`.
 
@@ -289,13 +293,13 @@ FOUNDATION_EXTERN NSString * const TIPImagePipelineImageTreatAsPlaceholderNofiti
  Asynchronously clears the memory caches.
  Memory caching is composed of two separate caches:
  1) for rendered images that can be synchronously accessed if the already sized image is available
- 2) for the largest encountered variant of an image (by identifier) that is asynchronously accessed.
+ 2) for the image data of the largest encountered variant of an image (by identifier) that is asynchronously accessed.
  This method clears both of these caches.
  */
 - (void)clearMemoryCaches;
 
 /**
- Asynchronously clears the disk cache
+ Asynchronously clears the disk cache.
  */
 - (void)clearDiskCache;
 

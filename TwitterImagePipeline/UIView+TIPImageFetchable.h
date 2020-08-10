@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Convenience category for `UIImageView` for adopting `TIPImageFetchable`.
- Just maps `tip_fetchedImage` to `image`, easy.
+ Just maps `tip_fetchedImage` property to `image` property, easy.
  */
 @interface UIImageView (TIPImageFetchable) <TIPImageFetchable>
 @end

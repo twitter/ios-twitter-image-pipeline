@@ -7,5 +7,8 @@
 //
 
 #import <webp/decode.h>
+#import <webp/demux.h>
 #import <webp/encode.h>
+#import <webp/mux.h>
+#import <webp/mux_types.h>
 #import <webp/types.h>

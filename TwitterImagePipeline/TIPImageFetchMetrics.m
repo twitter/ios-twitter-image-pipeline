@@ -13,9 +13,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// Primary class gets the SELF_ARG convenience
-#define SELF_ARG PRIVATE_SELF(TIPImageFetchMetrics)
-
 @interface TIPImageFetchMetricInfo ()
 // Concrete properties for `NetworkSourceInfo` category
 @property (nonatomic, readonly, nullable) id networkMetrics;
@@ -124,7 +121,7 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     if (!_flags.isTrackingCurrentSource) {
-        NSString *reason = [NSString stringWithFormat:@"%@ cannot %@ when %@ has not been called yet!", NSStringFromClass([self class]), NSStringFromSelector(_cmd), NSStringFromSelector(@selector(startWithSource:))];
+        NSString *reason = [NSString stringWithFormat:@"%@ cannot %@ when %@ has not been called yet!", NSStringFromClass([self class]), NSStringFromSelector(_cmd), @"startWithSource:"];
         @throw [NSException exceptionWithName:NSObjectNotAvailableException
                                        reason:reason
                                      userInfo:nil];
@@ -197,44 +194,36 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)previewWasHit:(NSTimeInterval)renderLatency
 {
-    _hit(self,
-         TIPImageFetchLoadResultHitPreview,
-         renderLatency,
-         NO /*synchronously*/);
+    [self _hit:TIPImageFetchLoadResultHitPreview
+ renderLatency:renderLatency
+ synchronously:NO];
 }
 
 - (void)progressiveFrameWasHit:(NSTimeInterval)renderLatency
 {
-    _hit(self,
-         TIPImageFetchLoadResultHitProgressFrame,
-         renderLatency,
-         NO /*synchronously*/);
+    [self _hit:TIPImageFetchLoadResultHitProgressFrame
+ renderLatency:renderLatency
+ synchronously:NO];
 }
 
 - (void)finalWasHit:(NSTimeInterval)renderLatency synchronously:(BOOL)sync
 {
-    _hit(self,
-         TIPImageFetchLoadResultHitFinal,
-         renderLatency,
-         sync);
+    [self _hit:TIPImageFetchLoadResultHitFinal
+ renderLatency:renderLatency
+ synchronously:sync];
 }
 
-static void _hit(SELF_ARG,
-                 TIPImageFetchLoadResult result,
-                 NSTimeInterval latency,
-                 BOOL synchronously)
+- (void)_hit:(TIPImageFetchLoadResult)result
+        renderLatency:(NSTimeInterval)latency
+        synchronously:(BOOL)synchronously TIP_OBJC_DIRECT
 {
-    if (!self) {
-        return;
-    }
-
-    if (self->_flags.isTrackingCurrentSource) {
-        if (!self->_machFirstImageLoadTime) {
-            self->_machFirstImageLoadTime = mach_absolute_time();
+    if (_flags.isTrackingCurrentSource) {
+        if (!_machFirstImageLoadTime) {
+            _machFirstImageLoadTime = mach_absolute_time();
         }
-        [self->_infos[self->_flags.currentSource - 1] hit:result
-                                            renderLatency:latency
-                                            synchronously:synchronously];
+        [_infos[_flags.currentSource - 1] hit:result
+                                renderLatency:latency
+                                synchronously:synchronously];
     }
 }
 

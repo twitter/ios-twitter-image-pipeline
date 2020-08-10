@@ -10,12 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@implementation TIPImageFetchProgressiveLoadingPolicy
-@end
-
-@implementation TIPImageFetchProgressiveLoadingPolicy (ClassMethods)
-
-+ (NSDictionary *)defaultProgressiveLoadingPolicies
+NSDictionary<NSString *, id<TIPImageFetchProgressiveLoadingPolicy>> *TIPImageFetchProgressiveLoadingPolicyDefaultPolicies()
 {
     static NSDictionary *sDefaultPolicies = nil;
     static dispatch_once_t onceToken;
@@ -34,8 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
     });
     return sDefaultPolicies;
 }
-
-@end
 
 @implementation TIPFirstAndLastFrameProgressiveLoadingPolicy
 

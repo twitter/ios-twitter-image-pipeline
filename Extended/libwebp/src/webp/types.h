@@ -7,7 +7,7 @@
 // be found in the AUTHORS file in the root of the source tree.
 // -----------------------------------------------------------------------------
 //
-//  Common types
+//  Common types + memory wrappers
 //
 // Author: Skal (pascal.massimino@gmail.com)
 
@@ -17,11 +17,7 @@
 #include <stddef.h>  // for size_t
 
 #ifndef _MSC_VER
-// TWITTER_WORKAROUND #include <inttypes.h>
-#include <sys/cdefs.h>
-#include <Availability.h>
-#include <_types.h>
-#include <sys/_types/_wchar_t.h>
+// TWITTER: need to use stdint.h instead of inttypes.h to avoid non-module import error on Apple platforms
 #include <stdint.h>
 #if defined(__cplusplus) || !defined(__STRICT_ANSI__) || \
     (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L)
@@ -53,5 +49,21 @@ typedef long long int int64_t;
 
 // Macro to check ABI compatibility (same major revision number)
 #define WEBP_ABI_IS_INCOMPATIBLE(a, b) (((a) >> 8) != ((b) >> 8))
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Allocates 'size' bytes of memory. Returns NULL upon error. Memory
+// must be deallocated by calling WebPFree(). This function is made available
+// by the core 'libwebp' library.
+WEBP_EXTERN void* WebPMalloc(size_t size);
+
+// Releases memory returned by the WebPDecode*() functions (from decode.h).
+WEBP_EXTERN void WebPFree(void* ptr);
+
+#ifdef __cplusplus
+}    // extern "C"
+#endif
 
 #endif  // WEBP_WEBP_TYPES_H_

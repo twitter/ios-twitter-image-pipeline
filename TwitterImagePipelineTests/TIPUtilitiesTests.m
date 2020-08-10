@@ -86,7 +86,10 @@
     // As of yet, it does not repro with unit test :(
 
     NSString *imagePath = [TIPTestsResourceBundle() pathForResource:@"1538x2048" ofType:@"jpg"];
-    TIPImageContainer *originalImage = [TIPImageContainer imageContainerWithFilePath:imagePath decoderConfigMap:nil codecCatalogue:nil memoryMap:NO];
+    TIPImageContainer *originalImage = [TIPImageContainer imageContainerWithFilePath:imagePath
+                                                                    decoderConfigMap:nil
+                                                                      codecCatalogue:nil
+                                                                           memoryMap:NO];
     XCTAssertNotNil(originalImage);
     XCTAssertEqual(originalImage.dimensions.width, (CGFloat)1538.0);
     XCTAssertEqual(originalImage.dimensions.height, (CGFloat)2048.0);
@@ -104,7 +107,10 @@
 - (void)testScalingWithOrientation
 {
     NSString *imagePath = [TIPTestsResourceBundle() pathForResource:@"twitterfied" ofType:@"png"];
-    TIPImageContainer *originalContainer = [TIPImageContainer imageContainerWithFilePath:imagePath decoderConfigMap:nil codecCatalogue:nil memoryMap:NO];
+    TIPImageContainer *originalContainer = [TIPImageContainer imageContainerWithFilePath:imagePath
+                                                                        decoderConfigMap:nil
+                                                                          codecCatalogue:nil
+                                                                               memoryMap:NO];
     XCTAssertEqual(originalContainer.dimensions.width, 1024);
     XCTAssertEqual(originalContainer.dimensions.height, 576);
 
@@ -189,6 +195,92 @@
 
     XCTAssertEqualWithAccuracy(scaledImageFromFullImage.tip_dimensions.width, thumbnailImageFromFile.tip_dimensions.width, 1.5);
     XCTAssertEqualWithAccuracy(scaledImageFromFullImage.tip_dimensions.height, thumbnailImageFromFile.tip_dimensions.height, 1.5);
+}
+
+- (void)testTargetSizingImageWithAskewDPI
+{
+    const CGSize askewImageDimensions = CGSizeMake(680, 356);
+    NSString *askewImagePath = [TIPTestsResourceBundle() pathForResource:@"weird_dpi_image" ofType:@"jpg"];
+    NSData *askewImageData = [NSData dataWithContentsOfFile:askewImagePath];
+    CGImageSourceRef askewImageSource = CGImageSourceCreateWithData((CFDataRef)askewImageData, NULL);
+    TIPDeferRelease(askewImageSource);
+
+    CGSize dimensionsFromUIKit, dimensionsFromUIKitScaled;
+    CGFloat aspectRatioFromUIKit, aspectRatioFromUIKitScaled;
+    @autoreleasepool {
+        UIImage *imageFromUIKit = [UIImage imageWithData:askewImageData];
+        UIImage *imageFromUIKitScaled = [imageFromUIKit tip_scaledImageWithTargetDimensions:CGSizeMake(340, 340)
+                                                                                contentMode:UIViewContentModeScaleAspectFit];
+        dimensionsFromUIKit = imageFromUIKit.tip_dimensions;
+        dimensionsFromUIKitScaled = imageFromUIKitScaled.tip_dimensions;
+        aspectRatioFromUIKit = dimensionsFromUIKit.width / dimensionsFromUIKit.height;
+        aspectRatioFromUIKitScaled = dimensionsFromUIKitScaled.width / dimensionsFromUIKitScaled.height;
+    }
+
+    CGSize dimensionsFromTIP, dimensionsFromTIPScaled;
+    CGFloat aspectRatioFromTIP, aspectRatioFromTIPScaled;
+    @autoreleasepool {
+        UIImage *imageFromTIP = [UIImage tip_imageWithImageSource:askewImageSource atIndex:0];
+        UIImage *imageFromTIPScaled = [UIImage tip_imageWithImageSource:askewImageSource
+                                                          atIndex:0
+                                                 targetDimensions:CGSizeMake(340, 340)
+                                                      targetContentMode:UIViewContentModeScaleAspectFit];
+        dimensionsFromTIP = imageFromTIP.tip_dimensions;
+        dimensionsFromTIPScaled = imageFromTIPScaled.tip_dimensions;
+        aspectRatioFromTIP = dimensionsFromTIP.width / dimensionsFromTIP.height;
+        aspectRatioFromTIPScaled = dimensionsFromTIPScaled.width / dimensionsFromTIPScaled.height;
+    }
+
+    CGSize dimensionsFromThumbnail, dimensionsFromThumbnailScaled;
+    CGFloat aspectRatioFromThumbnail, aspectRatioFromThumbnailScaled;
+    @autoreleasepool {
+        NSMutableDictionary *transformDictionary = [@{
+            (id)kCGImageSourceShouldCache : (id)kCFBooleanFalse,
+            (id)kCGImageSourceThumbnailMaxPixelSize : @(9999),
+            (id)kCGImageSourceCreateThumbnailFromImageAlways : (id)kCFBooleanTrue,
+            (id)kCGImageSourceShouldAllowFloat : (id)kCFBooleanTrue,
+            (id)kCGImageSourceCreateThumbnailWithTransform : (id)kCFBooleanTrue, // <-- will cause things to be askew!
+        } mutableCopy];
+        CGImageRef cgImageFromThumbnail = CGImageSourceCreateThumbnailAtIndex(askewImageSource, 0, (CFDictionaryRef)transformDictionary);
+        TIPDeferRelease(cgImageFromThumbnail);
+        UIImage *imageFromThumbnail = [UIImage imageWithCGImage:cgImageFromThumbnail scale:1 orientation:UIImageOrientationUp];
+
+        transformDictionary[(id)kCGImageSourceThumbnailMaxPixelSize] = @(340);
+        CGImageRef cgImageFromThumbnailScaled = CGImageSourceCreateThumbnailAtIndex(askewImageSource, 0, (CFDictionaryRef)transformDictionary);
+        TIPDeferRelease(cgImageFromThumbnailScaled);
+        UIImage *imageFromThumbnailScaled = [UIImage imageWithCGImage:cgImageFromThumbnailScaled scale:1 orientation:UIImageOrientationUp];
+
+        dimensionsFromThumbnail = imageFromThumbnail.tip_dimensions;
+        dimensionsFromThumbnailScaled = imageFromThumbnailScaled.tip_dimensions;
+        aspectRatioFromThumbnail = dimensionsFromThumbnail.width / dimensionsFromThumbnail.height;
+        aspectRatioFromThumbnailScaled = dimensionsFromThumbnailScaled.width / dimensionsFromThumbnailScaled.height;
+    }
+
+    // Loading from UIKit and TIP both yield the correct sizes
+    XCTAssertEqualWithAccuracy(dimensionsFromUIKit.width, askewImageDimensions.width, 1.0);
+    XCTAssertEqualWithAccuracy(dimensionsFromUIKit.height, askewImageDimensions.height, 1.0);
+    XCTAssertEqualWithAccuracy(dimensionsFromUIKit.width, dimensionsFromTIP.width, 1.0);
+    XCTAssertEqualWithAccuracy(dimensionsFromUIKit.height, dimensionsFromTIP.height, 1.0);
+    XCTAssertEqualWithAccuracy(dimensionsFromUIKitScaled.width, 340, 1.0);
+    XCTAssertEqualWithAccuracy(dimensionsFromUIKitScaled.height, 178, 1.0);
+    XCTAssertEqualWithAccuracy(dimensionsFromUIKitScaled.width, dimensionsFromTIPScaled.width, 1.0);
+    XCTAssertEqualWithAccuracy(dimensionsFromUIKitScaled.height, dimensionsFromTIPScaled.height, 1.0);
+    XCTAssertNotEqualWithAccuracy(dimensionsFromUIKit.width + dimensionsFromUIKit.height, dimensionsFromUIKitScaled.width + dimensionsFromUIKitScaled.height, 1.0);
+    XCTAssertNotEqualWithAccuracy(dimensionsFromTIP.width + dimensionsFromTIP.height, dimensionsFromTIPScaled.width + dimensionsFromTIPScaled.height, 1.0);
+    XCTAssertEqualWithAccuracy(aspectRatioFromUIKit, 1.91, 0.01);
+    XCTAssertEqualWithAccuracy(aspectRatioFromUIKitScaled, aspectRatioFromUIKit, 0.01);
+    XCTAssertEqualWithAccuracy(aspectRatioFromTIP, aspectRatioFromUIKit, 0.01);
+    XCTAssertEqualWithAccuracy(aspectRatioFromTIPScaled, aspectRatioFromTIP, 0.01);
+
+    // Loading from thumbnail (with transform enabled), yields something askew
+    XCTAssertEqualWithAccuracy(dimensionsFromThumbnail.width, askewImageDimensions.width, 1.0);
+    XCTAssertEqualWithAccuracy(dimensionsFromThumbnail.height, 534 /*not 356!*/, 1.0);
+    XCTAssertEqualWithAccuracy(dimensionsFromThumbnailScaled.width, 340, 1.0);
+    XCTAssertEqualWithAccuracy(dimensionsFromThumbnailScaled.height, 267 /*not 178!*/, 2.0);
+    XCTAssertNotEqualWithAccuracy(dimensionsFromTIP.width + dimensionsFromTIP.height, dimensionsFromThumbnail.width + dimensionsFromThumbnail.height, 1.0);
+    XCTAssertNotEqualWithAccuracy(dimensionsFromTIPScaled.width + dimensionsFromTIPScaled.height, dimensionsFromThumbnailScaled.width + dimensionsFromThumbnailScaled.height, 1.0);
+    XCTAssertEqualWithAccuracy(aspectRatioFromThumbnail, 1.27, 0.01);
+    XCTAssertEqualWithAccuracy(aspectRatioFromThumbnailScaled, aspectRatioFromThumbnail, 0.01);
 }
 
 - (void)testPaletteCheck

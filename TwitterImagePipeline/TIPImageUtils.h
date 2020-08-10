@@ -175,6 +175,38 @@ NS_INLINE BOOL TIPContentModeDoesScale(UIViewContentMode contentMode)
     }
 }
 
+//! Is the target sizing scalable?
+NS_INLINE BOOL TIPCanScaleTargetSizing(CGSize targetDimensions, UIViewContentMode targetContentMode)
+{
+    return  targetDimensions.width > 0 &&
+            targetDimensions.height > 0 &&
+            TIPContentModeDoesScale(targetContentMode);
+}
+
+//! Do target sizing arguments match?
+NS_INLINE BOOL TIPDoTargetSizingMatch(CGSize targetDimensions1,
+                                      UIViewContentMode targetContentMode1,
+                                      CGSize targetDimensions2,
+                                      UIViewContentMode targetContentMode2)
+{
+    if (!CGSizeEqualToSize(targetDimensions1, targetDimensions2)) {
+        return NO;
+    }
+    if (targetContentMode1 == targetContentMode2) {
+        return YES;
+    }
+    const BOOL unscaled1 =  targetContentMode1 != UIViewContentModeScaleAspectFit &&
+                            targetContentMode1 != UIViewContentModeScaleAspectFill &&
+                            targetContentMode1 != UIViewContentModeScaleToFill;
+    const BOOL unscaled2 =  targetContentMode2 != UIViewContentModeScaleAspectFit &&
+                            targetContentMode2 != UIViewContentModeScaleAspectFill &&
+                            targetContentMode2 != UIViewContentModeScaleToFill;
+    if (unscaled1 == unscaled2) {
+        return YES;
+    }
+    return NO;
+}
+
 //! Estimate byte size of a decoded `UIImage` with the given settings
 FOUNDATION_EXTERN NSUInteger TIPEstimateMemorySizeOfImageWithSettings(CGSize size,
                                                                       CGFloat scale,

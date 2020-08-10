@@ -29,7 +29,6 @@ ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
 // Deployment
 SKIP_INSTALL = NO
 COPY_PHASE_STRIP = NO
-IPHONEOS_DEPLOYMENT_TARGET = 10.0 // 3 of the 4 sample apps use Foundation or UIKit API introduced in 10.0
 
 // Linking
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/Frameworks

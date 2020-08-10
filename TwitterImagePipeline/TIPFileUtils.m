@@ -18,44 +18,19 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - File Helpers
 
-NSArray<NSString *> * __nullable TIPContentsAtPath(NSString *path,
-                                                   NSError * __nullable * __nullable outError)
+NSArray<NSURL *> * __nullable TIPContentsAtPath(NSString *path,
+                                                NSError * __nullable * __nullable outError)
 {
-    DIR *dir = opendir(path.UTF8String);
-    if (!dir) {
-        if (outError) {
-            *outError = [NSError errorWithDomain:NSPOSIXErrorDomain
-                                            code:errno
-                                        userInfo:nil];
-        }
-        return nil;
+    NSURL *url = [NSURL fileURLWithPath:path isDirectory:YES];
+    NSFileManager *fm = [NSFileManager defaultManager];
+
+    NSError *error = nil;
+    NSArray<NSURL *> *paths = [fm contentsOfDirectoryAtURL:url includingPropertiesForKeys:@[NSURLFileSizeKey, NSURLContentModificationDateKey, NSURLIsDirectoryKey] options:NSDirectoryEnumerationSkipsSubdirectoryDescendants error:&error];
+    if (outError) {
+        *outError = error;
     }
 
-    tip_defer(^{
-        closedir(dir);
-    });
-
-    NSMutableArray *entries = [[NSMutableArray alloc] init];
-    @autoreleasepool {
-        struct dirent *dirEntity = NULL;
-        while ((dirEntity = readdir(dir)) != NULL) {
-            if (dirEntity->d_namlen == 1) {
-                if (0 == strncmp(".", dirEntity->d_name, 1)) {
-                    continue;
-                }
-            } else if (dirEntity->d_namlen == 2) {
-                if (0 == strncmp("..", dirEntity->d_name, 2)) {
-                    continue;
-                }
-            }
-
-            NSString *fileName = [[NSString alloc] initWithUTF8String:dirEntity->d_name];
-            if (fileName) {
-                [entries addObject:fileName];
-            }
-        }
-    } // @autoreleasepool
-    return entries;
+    return paths;
 }
 
 NSUInteger TIPFileSizeAtPath(NSString *path,

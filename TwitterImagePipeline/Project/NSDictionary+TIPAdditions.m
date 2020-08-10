@@ -42,6 +42,22 @@ NS_ASSUME_NONNULL_BEGIN
     return objects;
 }
 
+- (nullable id)tip_objectForCaseInsensitiveKey:(NSString *)key
+{
+    id value = [self objectForKey:key];
+    if (!value) {
+        for (NSString *innerKey in self.allKeys) {
+            if ([innerKey isKindOfClass:[NSString class]]) {
+                if ([innerKey caseInsensitiveCompare:key] == NSOrderedSame) { // TWITTER_STYLE_CASE_INSENSITIVE_COMPARE_NIL_PRECHECKED
+                    value = [self objectForKey:innerKey];
+                    break;
+                }
+            }
+        }
+    }
+    return value;
+}
+
 - (id)tip_copyWithLowercaseKeys
 {
     return [self tip_copyToMutable:NO uppercase:NO];

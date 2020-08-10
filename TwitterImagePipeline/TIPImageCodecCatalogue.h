@@ -117,6 +117,8 @@ typedef NSDictionary<NSString *, id<TIPImageCodec>> * _Nullable (^TIPImageCodecC
 
 /** Convenience method to load an image via catalogue of codecs  */
 - (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data
+                                   targetDimensions:(CGSize)targetDimensions
+                                  targetContentMode:(UIViewContentMode)targetContentMode
                                    decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
                                           imageType:(out NSString * __nullable * __nullable)imageType;
 

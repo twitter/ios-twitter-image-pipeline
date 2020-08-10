@@ -58,13 +58,12 @@ images was the best route and led to *TIP*.
 
 ### Caches
 
-There are 3 separate caches for each _image pipeline_: the rendered
-in-memory cache, the in-memory cache, and the on-disk cache.  Entries in the
-caches are keyed by an _image identifier_ which is provided by the creator of
-the fetch request or automatically generated from the image fetch's URL.
+There are 3 separate caches for each _image pipeline_: the rendered in-memory cache,
+the image data in-memory cache, and the on-disk cache.  Entries in the caches are keyed by an _image identifier_
+which is provided by the creator of the fetch request or automatically generated from the image fetch's URL.
 
 - The _On-Disk Cache_ will maintain both the latest partial image and the largest completed image for an _image identifier_
-- The _In-Memory Cache_ will maintain the largest matching UIImage (based on the image identifier), but has no bias to the image being rendered/decoded or not
+- The _Image Data In-Memory Cache_ will maintain the largest matching image data (based on the image identifier), but is not decoded
 - The _Rendered In-Memory Cache_ will maintain the 3 most recently sized and rendered/decoded UIImages that match (based on the image identifier)
 
 The image will simultaneously be loaded into memory (as raw bytes) and
@@ -91,8 +90,8 @@ streamlined into a pipeline (hence, "_image pipeline_").
 When the request is made, the fetch operation will perform the following:
 
 - Synchronously consult the _Rendered In-Memory Cache_ for an image that will fit the target dimensions and content mode.
-- On miss, asynchronously consult the _In-Memory Cache_ that maintains the UIImage of the largest matching image (based on identifier).
-- On miss, asynchronously consult the _On-Disk Cache_ that maintains the raw bytes of the largest matching image (based on identifier).  As an optimization, *TIP* will take it a step further and also consult all other registered _pipeline disk caches_ - thus saving on the cost of network load by pulling from disk. The cross pipeline retrieved image will be stored to the fetching pipeline's caches to maintain image pipeline siloing.  _Note:_ this cross pipeline access requires the fetching image identifier and image URL to match.
+- On miss, asynchronously consult the _Image Data In-Memory Cache_ that holds the image of the largest matching image (based on identifier).
+- On miss, asynchronously consult the _On-Disk Cache_ that maintains the image data of the largest matching image (based on identifier).  As an optimization, *TIP* will take it a step further and also consult all other registered _pipeline disk caches_ - thus saving on the cost of network load by pulling from disk. The cross pipeline retrieved image will be stored to the fetching pipeline's caches to maintain image pipeline siloing.  _Note:_ this cross pipeline access requires the fetching image identifier and image URL to match.
 - On miss, asynchronously consult any provided _additional caches_ (based on URL).  This is so that legacy caches can be pulled from when transitioning to *TIP* without having to forcibly load all assets again.
 - On miss, asynchronously retrieve the image from the _Network_, resuming any partially loaded data that may exist in the _On-Disk Cache_.
 
@@ -100,7 +99,7 @@ When the request is made, the fetch operation will perform the following:
 
 In addition to this simple progression, the fetch operation will offer the first matching
 (based on image identifier) complete image in the In-Memory Cache or On-Disk Cache
-(rendered and resized to the request's specified target sizing) as a preview image when the URLs
+(rendered and sized to the request's specified target sizing) as a preview image when the URLs
 don't match.  At that point, the fetch delegate can choose to just use the preview image or continue
 with the _Network_ loading the final image.  This is particularly useful when the fetch image URL is
 for a smaller image than the image in cache, no need to hit the network :)
@@ -109,7 +108,7 @@ for a smaller image than the image in cache, no need to hit the network :)
 
 A great value that the _image pipeline_ offers is the ability to stream progressive scans of an
 image, if it is PJPEG, as the image is loaded from the Network.  This progressive rendering is
-natively supported by iOS 8+, the same minimum OS for *TIP*.
+natively supported by iOS 8+, the OS minimum for *TIP* is now iOS 10+.
 Progressive support is opt-in and also configurable in how scans should load.
 
 ### Resuming Image Downloads
@@ -117,6 +116,14 @@ Progressive support is opt-in and also configurable in how scans should load.
 As already mentioned, by persisting the partial load of an image to the _On-Disk Cache_, we are able
 to support resumable downloads.  This requires no interface either, it's just a part of how the
 image pipeline works.
+
+### Rendering to Target Sizing
+
+As of 2.20, the _image pipeline_ will load the image from data to the specified target sizing of the fetch request,
+which avoids the overhead of loading the entire image into a large bitmap just to scale it down to the correct size.
+If the target sizing is larger than the image data, it will load that image bitmap and scale it up to the target sizing
+specified by the fetch request.  If a request does not provide target sizing (or the sizing indicates to not resize),
+it will yield the full size image, as one would expect.
 
 ## Twitter Image Pipeline features
 
@@ -140,8 +147,8 @@ image pipeline works.
     - Dependency chain support (like NSOperation)
 - Caching
     - Synchronous/fast cache for rendered images
-    - Async memory cache for images
-    - Async disk cache for images
+    - Async memory cache for image data
+    - Async disk cache for image data
     - Automatic LRU purging
     - Automatic TTL purging
     - Siloed caches (via multiple `TIPImagePipeline` instances)

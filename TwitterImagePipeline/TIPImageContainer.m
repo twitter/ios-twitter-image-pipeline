@@ -22,14 +22,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation TIPImageContainer
 {
-    NSArray *_frameDurations;
+    NSArray<NSNumber *> *_frameDurations;
     UIImage *_image;
 }
 
 - (instancetype)initWithImage:(UIImage *)image
                      animated:(BOOL)animated
                     loopCount:(NSUInteger)loopCount
-               frameDurations:(nullable NSArray *)durations
+               frameDurations:(nullable NSArray<NSNumber *> *)durations
 {
     if (!image) {
         @throw [NSException exceptionWithName:NSInvalidArgumentException
@@ -61,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithAnimatedImage:(UIImage *)image
                             loopCount:(NSUInteger)loopCount
-                       frameDurations:(nullable NSArray *)durations
+                       frameDurations:(nullable NSArray<NSNumber *> *)durations
 {
     return [self initWithImage:image
                       animated:(image.images.count > 1)
@@ -82,12 +82,12 @@ NS_ASSUME_NONNULL_BEGIN
     return (_animated) ? _image.images.count : 1;
 }
 
-- (nullable NSArray *)frames
+- (nullable NSArray<UIImage *> *)frames
 {
     return _image.images;
 }
 
-- (nullable NSArray *)frameDurations
+- (nullable NSArray<NSNumber *> *)frameDurations
 {
     if (!_frameDurations && _animated) {
         const NSUInteger count = _image.images.count;
@@ -140,9 +140,62 @@ NS_ASSUME_NONNULL_BEGIN
     return description;
 }
 
+- (id)descriptor
+{
+    NSValue *dimensions = [NSValue valueWithCGSize:[self dimensions]];
+    if (self.isAnimated) {
+        return @{
+            @"dimensions" : dimensions,
+            @"frameDurations" : self.frameDurations ?: @[],
+            @"loopCount" : @(self.loopCount)
+        };
+    }
+
+    return @{ @"dimensions" : dimensions };
+}
+
 @end
 
 @implementation TIPImageContainer (Convenience)
+
++ (nullable instancetype)imageContainerWithImage:(UIImage *)image descriptor:(id)descriptor
+{
+    TIPAssert(image != nil);
+    TIPAssert(descriptor != nil);
+    if (!image || !descriptor) {
+        return nil;
+    }
+
+    NSDictionary *d = descriptor;
+    if (![d isKindOfClass:[NSDictionary class]]) {
+        return nil;
+    }
+
+    CGSize dims = [(NSValue*)d[@"dimensions"] CGSizeValue];
+    if (!CGSizeEqualToSize(image.tip_dimensions, dims)) {
+        return nil;
+    }
+
+    NSArray<NSNumber *> *frameDurations = d[@"frameDurations"];
+    if (frameDurations && ![frameDurations isKindOfClass:[NSArray class]]) {
+        return nil;
+    }
+
+    if (frameDurations && image.images.count <= 1) {
+        return nil;
+    }
+
+    if (frameDurations && frameDurations.count != image.images.count) {
+        return nil;
+    }
+
+    const NSUInteger loopCount = (frameDurations != nil) ? [d[@"loopCount"] unsignedIntegerValue] : 0;
+
+    return [[self alloc] initWithImage:image
+                              animated:frameDurations != nil
+                             loopCount:loopCount
+                        frameDurations:frameDurations];
+}
 
 //! returns negative value if all the images are the same size (aka is an animation)
 static CFIndex _DetectLargestNonAnimatedImageIndex(CGImageSourceRef imageSource)
@@ -199,6 +252,15 @@ static CFIndex _DetectLargestNonAnimatedImageIndex(CGImageSourceRef imageSource)
 
 + (nullable instancetype)imageContainerWithImageSource:(CGImageSourceRef)imageSource
 {
+    return [self imageContainerWithImageSource:imageSource
+                              targetDimensions:CGSizeZero
+                             targetContentMode:UIViewContentModeCenter];
+}
+
++ (nullable instancetype)imageContainerWithImageSource:(CGImageSourceRef)imageSource
+                                      targetDimensions:(CGSize)targetDimensions
+                                     targetContentMode:(UIViewContentMode)targetContentMode
+{
     if (!imageSource) {
         return nil;
     }
@@ -211,7 +273,10 @@ static CFIndex _DetectLargestNonAnimatedImageIndex(CGImageSourceRef imageSource)
     const CFIndex index = _DetectLargestNonAnimatedImageIndex(imageSource);
     if (index >= 0) {
         // not animated
-        UIImage *image = [UIImage tip_imageWithImageSource:imageSource atIndex:(NSUInteger)index];
+        UIImage *image = [UIImage tip_imageWithImageSource:imageSource
+                                                   atIndex:(NSUInteger)index
+                                          targetDimensions:targetDimensions
+                                         targetContentMode:targetContentMode];
         return (image) ? [(TIPImageContainer *)[[self class] alloc] initWithImage:image] : nil;
     }
 
@@ -220,6 +285,8 @@ static CFIndex _DetectLargestNonAnimatedImageIndex(CGImageSourceRef imageSource)
     NSArray *durations;
     NSUInteger loopCount;
     UIImage *image = [UIImage tip_imageWithAnimatedImageSource:imageSource
+                                              targetDimensions:targetDimensions
+                                             targetContentMode:targetContentMode
                                                      durations:&durations
                                                      loopCount:&loopCount];
     return [(TIPImageContainer *)[[self class] alloc] initWithAnimatedImage:image
@@ -228,6 +295,19 @@ static CFIndex _DetectLargestNonAnimatedImageIndex(CGImageSourceRef imageSource)
 }
 
 + (nullable instancetype)imageContainerWithData:(NSData *)data
+                               decoderConfigMap:(nullable NSDictionary<NSString *,id> *)decoderConfigMap
+                                 codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+{
+    return [self imageContainerWithData:data
+                       targetDimensions:CGSizeZero
+                      targetContentMode:UIViewContentModeCenter
+                       decoderConfigMap:decoderConfigMap
+                         codecCatalogue:catalogue];
+}
+
++ (nullable instancetype)imageContainerWithData:(NSData *)data
+                               targetDimensions:(CGSize)targetDimensions
+                              targetContentMode:(UIViewContentMode)targetContentMode
                                decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
                                  codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
 {
@@ -236,22 +316,56 @@ static CFIndex _DetectLargestNonAnimatedImageIndex(CGImageSourceRef imageSource)
     }
 
     return [catalogue decodeImageWithData:data
+                         targetDimensions:targetDimensions
+                        targetContentMode:targetContentMode
                          decoderConfigMap:decoderConfigMap
                                 imageType:NULL];
 }
 
 + (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath
+                                   decoderConfigMap:(nullable NSDictionary<NSString *,id> *)decoderConfigMap
+                                     codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+                                          memoryMap:(BOOL)map
+{
+    return [self imageContainerWithFilePath:filePath
+                           targetDimensions:CGSizeZero
+                          targetContentMode:UIViewContentModeCenter
+                           decoderConfigMap:decoderConfigMap
+                             codecCatalogue:catalogue
+                                  memoryMap:map];
+}
+
++ (nullable instancetype)imageContainerWithFilePath:(NSString *)filePath
+                                   targetDimensions:(CGSize)targetDimensions
+                                  targetContentMode:(UIViewContentMode)targetContentMode
                                    decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
                                      codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
                                           memoryMap:(BOOL)map
 {
     return [self imageContainerWithFileURL:[NSURL fileURLWithPath:filePath isDirectory:NO]
+                          targetDimensions:targetDimensions
+                         targetContentMode:targetContentMode
                           decoderConfigMap:decoderConfigMap
                             codecCatalogue:catalogue
                                  memoryMap:map];
 }
 
 + (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL
+                                  decoderConfigMap:(nullable NSDictionary<NSString *,id> *)decoderConfigMap
+                                    codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
+                                         memoryMap:(BOOL)map
+{
+    return [self imageContainerWithFileURL:fileURL
+                          targetDimensions:CGSizeZero
+                         targetContentMode:UIViewContentModeCenter
+                          decoderConfigMap:decoderConfigMap
+                            codecCatalogue:catalogue
+                                 memoryMap:map];
+}
+
++ (nullable instancetype)imageContainerWithFileURL:(NSURL *)fileURL
+                                  targetDimensions:(CGSize)targetDimensions
+                                 targetContentMode:(UIViewContentMode)targetContentMode
                                   decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
                                     codecCatalogue:(nullable TIPImageCodecCatalogue *)catalogue
                                          memoryMap:(BOOL)map
@@ -262,7 +376,9 @@ static CFIndex _DetectLargestNonAnimatedImageIndex(CGImageSourceRef imageSource)
 
     NSData *data = nil;
     if (map) {
-        data = [NSData dataWithContentsOfURL:fileURL options:NSDataReadingMappedIfSafe error:NULL];
+        data = [NSData dataWithContentsOfURL:fileURL
+                                     options:NSDataReadingMappedIfSafe
+                                       error:NULL];
     } else {
         data = [NSData dataWithContentsOfURL:fileURL];
     }
@@ -272,6 +388,8 @@ static CFIndex _DetectLargestNonAnimatedImageIndex(CGImageSourceRef imageSource)
     }
 
     return [self imageContainerWithData:data
+                       targetDimensions:targetDimensions
+                      targetContentMode:targetContentMode
                        decoderConfigMap:decoderConfigMap
                          codecCatalogue:catalogue];
 }

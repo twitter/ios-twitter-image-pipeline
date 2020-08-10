@@ -14,20 +14,37 @@ NS_ASSUME_NONNULL_BEGIN
 
 TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec,
                                                       id __nullable config,
-                                                      NSData *imageData) __attribute__((overloadable))
+                                                      NSData *imageData,
+                                                      CGSize targetDimensions,
+                                                      UIViewContentMode targetContentMode) __attribute__((overloadable))
 {
-    return TIPDecodeImageFromData(codec, config, imageData, nil);
+    return TIPDecodeImageFromData(codec, config, imageData, targetDimensions, targetContentMode, nil);
 }
 
 TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec,
                                                       id __nullable config,
                                                       NSData *imageData,
+                                                      CGSize targetDimensions,
+                                                      UIViewContentMode targetContentMode,
                                                       NSString * __nullable earlyGuessImageType) __attribute__((overloadable))
 {
     TIPImageContainer *container = nil;
     id<TIPImageDecoder> decoder = codec.tip_decoder;
-    if ([decoder respondsToSelector:@selector(tip_decodeImageWithData:config:)]) {
-        container = [decoder tip_decodeImageWithData:imageData config:config];
+    if ([decoder respondsToSelector:@selector(tip_decodeImageWithData:targetDimensions:targetContentMode:config:)]) {
+        container = [decoder tip_decodeImageWithData:imageData
+                                    targetDimensions:targetDimensions
+                                   targetContentMode:targetContentMode
+                                              config:config];
+    } else if ([decoder respondsToSelector:@selector(tip_decodeImageWithData:config:)]) {
+        TIPLogWarning(@"%@ implements legacy %@, needs to be updated to implement modern %@ method",
+                      decoder,
+                      NSStringFromSelector(@selector(tip_decodeImageWithData:config:)),
+                      NSStringFromSelector(@selector(tip_decodeImageWithData:targetDimensions:targetContentMode:config:)));
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        container = [decoder tip_decodeImageWithData:imageData
+                                              config:config];
+#pragma clang diagnostic pop
     } else {
         const TIPImageDecoderDetectionResult result = [decoder tip_detectDecodableData:imageData
                                                                    earlyGuessImageType:earlyGuessImageType];
@@ -38,7 +55,9 @@ TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec,
             [decoder tip_append:context data:imageData];
             if (TIPImageDecoderAppendResultDidCompleteLoading == [decoder tip_finalizeDecoding:context]) {
                 container = [decoder tip_renderImage:context
-                                                mode:TIPImageDecoderRenderModeCompleteImage];
+                                          renderMode:TIPImageDecoderRenderModeCompleteImage
+                                    targetDimensions:targetDimensions
+                                   targetContentMode:targetContentMode];
             }
         }
     }
