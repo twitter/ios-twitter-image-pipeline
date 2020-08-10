@@ -2252,12 +2252,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8B9A36A1233AB3A60050D3B8 /* Build configuration list for PBXNativeTarget "webp" */;
 			buildPhases = (
-				75154179A5C9B92FC8F47302 /* Buildstats Pre-processing */,
 				8B9A3697233AB3A60050D3B8 /* Headers */,
 				8B9A3698233AB3A60050D3B8 /* Sources */,
 				8B9A3699233AB3A60050D3B8 /* Frameworks */,
 				8B9A369A233AB3A60050D3B8 /* Resources */,
-				EA784EF6906EACC610B5F398 /* Buildstats Post-processing */,
 			);
 			buildRules = (
 			);

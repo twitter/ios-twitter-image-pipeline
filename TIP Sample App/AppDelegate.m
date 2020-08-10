@@ -40,7 +40,7 @@
     [TIPGlobalConfiguration sharedInstance].serializeCGContextAccess = YES;
     [TIPGlobalConfiguration sharedInstance].clearMemoryCachesOnApplicationBackgroundEnabled = YES;
     [[TIPGlobalConfiguration sharedInstance] addImagePipelineObserver:self];
-    [[TIPImageCodecCatalogue sharedInstance] setCodec:[[TIPXWebPCodec alloc] init] forImageType:TIPImageTypeWEBP];
+    [[TIPImageCodecCatalogue sharedInstance] setCodec:[[TIPXWebPCodec alloc] initPreservingDefaultCodecsIfPresent:NO] forImageType:TIPImageTypeWEBP];
     _imagePipeline = [[TIPImagePipeline alloc] initWithIdentifier:@"Twitter.Example"];
     _imagePipeline.additionalCaches = @[self];
     [TwitterAPI sharedInstance].delegate = self;
