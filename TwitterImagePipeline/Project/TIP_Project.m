@@ -13,6 +13,7 @@
 
 #import "NSData+TIPAdditions.h"
 #import "TIP_Project.h"
+#import "TIPError.h"
 #import "TIPURLStringCoding.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -21,26 +22,26 @@ const NSTimeInterval TIPTimeToLiveDefault = 30 * 24 * 60 * 60;
 
 #pragma mark Problem Names
 
-NSString * const TIPProblemDiskCacheUpdateImageEntryCouldNotGenerateFileName = @"TIPProblemDiskCacheUpdateImageEntryCouldNotGenerateFileName";
-NSString * const TIPProblemImageFailedToScale = @"TIPProblemImageFailedToScale";
-NSString * const TIPProblemImageContainerHasNilImage = @"TIPProblemImageContainerHasNilImage";
-NSString * const TIPProblemImageFetchHasInvalidTargetDimensions = @"TIPProblemImageFetchHasInvalidTargetDimensions";
-NSString * const TIPProblemImageDownloadedHasGPSInfo = @"TIPProblemImageDownloadedHasGPSInfo";
-NSString * const TIPProblemImageDownloadedCouldNotBeDecoded = @"TIPProblemImageDownloadedCouldNotBeDecoded";
-NSString * const TIPProblemImageTooLargeToStoreInDiskCache = @"TIPProblemImageTooLargeToStoreInDiskCache";
-NSString * const TIPProblemImageDownloadedWithUnnecessaryError = @"TIPProblemImageDownloadedWithUnnecessaryError";
+TIPProblem TIPProblemDiskCacheUpdateImageEntryCouldNotGenerateFileName = @"TIPProblemDiskCacheUpdateImageEntryCouldNotGenerateFileName";
+TIPProblem TIPProblemImageFailedToScale = @"TIPProblemImageFailedToScale";
+TIPProblem TIPProblemImageContainerHasNilImage = @"TIPProblemImageContainerHasNilImage";
+TIPProblem TIPProblemImageFetchHasInvalidTargetDimensions = @"TIPProblemImageFetchHasInvalidTargetDimensions";
+TIPProblem TIPProblemImageDownloadedHasGPSInfo = @"TIPProblemImageDownloadedHasGPSInfo";
+TIPProblem TIPProblemImageDownloadedCouldNotBeDecoded = @"TIPProblemImageDownloadedCouldNotBeDecoded";
+TIPProblem TIPProblemImageTooLargeToStoreInDiskCache = @"TIPProblemImageTooLargeToStoreInDiskCache";
+TIPProblem TIPProblemImageDownloadedWithUnnecessaryError = @"TIPProblemImageDownloadedWithUnnecessaryError";
 
 #pragma mark Problem User Info Keys
 
-NSString * const TIPProblemInfoKeyImageIdentifier = @"imageIdentifier";
-NSString * const TIPProblemInfoKeySafeImageIdentifier = @"safeImageIdentifier";
-NSString * const TIPProblemInfoKeyImageURL = @"imageURL";
-NSString * const TIPProblemInfoKeyTargetDimensions = @"targetDimensions";
-NSString * const TIPProblemInfoKeyTargetContentMode = @"targetContentMode";
-NSString * const TIPProblemInfoKeyScaledDimensions = @"scaledDimensions";
-NSString * const TIPProblemInfoKeyFetchRequest = @"fetchRequest";
-NSString * const TIPProblemInfoKeyImageDimensions = @"dimensions";
-NSString * const TIPProblemInfoKeyImageIsAnimated = @"animated";
+TIPProblemInfoKey TIPProblemInfoKeyImageIdentifier = @"imageIdentifier";
+TIPProblemInfoKey TIPProblemInfoKeySafeImageIdentifier = @"safeImageIdentifier";
+TIPProblemInfoKey TIPProblemInfoKeyImageURL = @"imageURL";
+TIPProblemInfoKey TIPProblemInfoKeyTargetDimensions = @"targetDimensions";
+TIPProblemInfoKey TIPProblemInfoKeyTargetContentMode = @"targetContentMode";
+TIPProblemInfoKey TIPProblemInfoKeyScaledDimensions = @"scaledDimensions";
+TIPProblemInfoKey TIPProblemInfoKeyFetchRequest = @"fetchRequest";
+TIPProblemInfoKey TIPProblemInfoKeyImageDimensions = @"dimensions";
+TIPProblemInfoKey TIPProblemInfoKeyImageIsAnimated = @"animated";
 
 NSString *TIPVersion()
 {

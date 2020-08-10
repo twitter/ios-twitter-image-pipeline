@@ -11,7 +11,6 @@
 
 #import <UIKit/UITraitCollection.h>
 
-#import "NSOperationQueue+TIPSafety.h"
 #import "TIP_Project.h"
 #import "TIPError.h"
 #import "TIPGlobalConfiguration+Project.h"
@@ -36,27 +35,20 @@ NSInteger const TIPMaxConcurrentImagePipelineDownloadCountDefault = 4;
 NSUInteger const TIPMaxRatioSizeOfCacheEntryDefault = 6;
 
 // Cap the default max memory bytes at 160MB (to be split equally betweet Rendered and Memory caches) -- a reasonable limit for devices with lots of RAM since iOS still enforces memory warnings even if the device has much more RAM available
-#define DEFAULT_MAX_MEMORY_BYTES_CAP        (160ull * 1024ull * 1024ull)
+#define DEFAULT_MAX_RENDERED_BYTES_CAP      (160ull * 1024ull * 1024ull)
 // Default the max bytes for in memory caching to 1/12th the devices RAM (to be split equally betweet Rendered and Memory caches)
-#define DEFAULT_MAX_MEMORY_BYTES_DIVISOR    (12ull)
+#define DEFAULT_MAX_RENDERED_BYTES_DIVISOR  (12ull)
 // Arbitrarily default the max bytes for on disk caching to 128MBs (roughly 64 large images or 1,600 small images or 32,000 73x73 avatars)
 #define DEFAULT_MAX_DISK_BYTES              (128ull * 1024ull * 1024ull)
 
-static pthread_mutex_t sUITraitCollectionMutex = PTHREAD_MUTEX_INITIALIZER;
-static BOOL sUITraitCollectionIsSwizzled = NO;
-@interface UITraitCollection (TIPSwizzle)
-+ (void)tip_fixTraitCollectionContructorIfNeeded;
-+ (UITraitCollection *)tip_traitCollectionWithDisplayScale:(CGFloat)scale;
-@end
-
 NS_INLINE SInt64 _MaxBytesForAllRenderedCachesDefaultValue()
 {
-    return (SInt64)MIN([[NSProcessInfo processInfo] physicalMemory] / DEFAULT_MAX_MEMORY_BYTES_DIVISOR, DEFAULT_MAX_MEMORY_BYTES_CAP) / 2;
+    return (SInt64)MIN([[NSProcessInfo processInfo] physicalMemory] / DEFAULT_MAX_RENDERED_BYTES_DIVISOR, DEFAULT_MAX_RENDERED_BYTES_CAP) / 2;
 }
 
 NS_INLINE SInt64 _MaxBytesForAllMemoryCachesDefaultValue()
 {
-    return (SInt64)MIN([[NSProcessInfo processInfo] physicalMemory] / DEFAULT_MAX_MEMORY_BYTES_DIVISOR, DEFAULT_MAX_MEMORY_BYTES_CAP) / 2;
+    return (SInt64)48ull * 1024ull * 1024ull;
 }
 
 NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
@@ -146,16 +138,6 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
         self.imageFetchDownloadProvider = nil;
 
         (void)TIPIsExtension(); // cache if we're an extension
-
-        if ([UITraitCollection class]) {
-            [UITraitCollection tip_fixTraitCollectionContructorIfNeeded];
-        }
-
-        NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-        [nc addObserver:self
-               selector:@selector(_tip_applicationDidEnterBackground)
-                   name:UIApplicationDidEnterBackgroundNotification
-                 object:nil];
     }
     return self;
 }
@@ -489,7 +471,7 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
 
 - (void)enqueueImagePipelineOperation:(NSOperation *)op
 {
-    [_sharedImagePipelineQueue tip_safeAddOperation:op];
+    [_sharedImagePipelineQueue addOperation:op];
 }
 
 - (void)postProblem:(NSString *)problemName userInfo:(NSDictionary<NSString *, id> *)userInfo
@@ -707,22 +689,6 @@ NS_INLINE SInt64 _MaxBytesForAllDiskCachesDefaultValue()
     _imageFetchDownloadProviderSupportsStubbing = supportsStubbing;
 }
 
-#pragma mark Private
-
-- (void)_tip_applicationDidEnterBackground
-{
-    if (self.clearMemoryCachesOnApplicationBackgroundEnabled) {
-
-        TIPStartMethodScopedBackgroundTask(PruneRenderedCachesOnAppBackground);
-
-        [self pruneAllCachesOfType:TIPImageCacheTypeRendered
-                 withPriorityCache:nil
-                  toGlobalMaxBytes:[self internalMaxBytesForAllRenderedCaches] / 2
-                  toGlobalMaxCount:0];
-        // Memory caches are cleared per pipeline
-    }
-}
-
 @end
 
 @implementation TIPGlobalConfiguration (Inspect)
@@ -777,48 +743,6 @@ static void _Inspect(NSMutableDictionary<NSString *, TIPImagePipeline *> *remain
                  gatheredResults,
                  callback);
     }];
-}
-
-@end
-
-@implementation UITraitCollection (TIPSwizzle)
-
-/**
- Creating a `UIImage` yields the construction of a `UITraitCollection`.
- This construction is supposed to be thread safe, however it is not and can
- yield an overreleased reference that will crash later on in a `UIImage` instance's
- lifespan.
-
- It is confirmed that this crash will affect iOS 8 and iOS 9 devices.
- iOS 10 is fixed though.
-
- https://pspdfkit.com/blog/2016/investigating-thread-saftey-of-UIImage/
-
- Apple radars: #27141588 and #26954460
-
- Makes `UITraitCollection` construction thread safe with a method swizzle.
- */
-+ (void)tip_fixTraitCollectionContructorIfNeeded
-{
-    if (tip_available_ios_10) {
-        return;
-    }
-
-    pthread_mutex_lock(&sUITraitCollectionMutex);
-    tip_defer(^{ pthread_mutex_unlock(&sUITraitCollectionMutex); });
-
-    if (!sUITraitCollectionIsSwizzled) {
-        TIPClassSwizzle([UITraitCollection class], @selector(traitCollectionWithDisplayScale:), @selector(tip_traitCollectionWithDisplayScale:));
-        sUITraitCollectionIsSwizzled = YES;
-    }
-}
-
-+ (UITraitCollection *)tip_traitCollectionWithDisplayScale:(CGFloat)scale
-{
-    pthread_mutex_lock(&sUITraitCollectionMutex);
-    tip_defer(^{ pthread_mutex_unlock(&sUITraitCollectionMutex); });
-
-    return [self tip_traitCollectionWithDisplayScale:scale];
 }
 
 @end

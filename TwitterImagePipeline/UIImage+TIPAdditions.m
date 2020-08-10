@@ -100,12 +100,6 @@ TIPStaticAssert(sizeof(struct tip_color_pixel) == kRGBAByteCount, MISSMATCH_PIXE
         return NO;
     }
 
-    if (tip_available_ios_10) {
-        // iOS 10 and above required for using P3 on images
-    } else {
-        return NO;
-    }
-
     if (self.images.count > 0) {
         // animation, just check first image
         UIImage *image = self.images.firstObject;
@@ -359,9 +353,9 @@ TIPStaticAssert(sizeof(struct tip_color_pixel) == kRGBAByteCount, MISSMATCH_PIXE
 
 // below code works but is unused since the UIKit method of scaling is preferred
 #if 0
-static UIImage * __nullable _CoreGraphicsScale(PRIVATE_SELF(UIImage),
-                                               CGSize scaledDimensions,
-                                               CGFloat scale)
+- (nullable UIImage *)_cg_scaleToDimensions:(CGSize)scaledDimensions
+                                      scale:(CGFloat)scale
+                       interpolationQuality:(CGInterpolationQuality)interpolationQuality TIP_OBJC_DIRECT
 {
     CGImageRef cgImage = self.CGImage;
     if (!cgImage) {
@@ -404,7 +398,7 @@ static UIImage * __nullable _CoreGraphicsScale(PRIVATE_SELF(UIImage),
             return;
         }
 
-        CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
+        CGContextSetInterpolationQuality(context, interpolationQuality);
 
         CGRect rect = CGRectZero;
         rect.size = scaledDimensions;
@@ -421,12 +415,10 @@ static UIImage * __nullable _CoreGraphicsScale(PRIVATE_SELF(UIImage),
 }
 #endif
 
-static UIImage *_UIKitScale(PRIVATE_SELF(UIImage),
-                            CGSize scaledDimensions,
-                            CGFloat scale,
-                            CGInterpolationQuality interpolationQuality)
+- (UIImage *)_uikit_scaleToDimensions:(CGSize)scaledDimensions
+                                scale:(CGFloat)scale
+                 interpolationQuality:(CGInterpolationQuality)interpolationQuality TIP_OBJC_DIRECT
 {
-    TIPAssert(self);
     if (0.0 == scale) {
         scale = [UIScreen mainScreen].scale;
     }
@@ -436,7 +428,9 @@ static UIImage *_UIKitScale(PRIVATE_SELF(UIImage),
                                        scaledDimensions.height / scale);
 
     if (self.images.count > 1) {
-        return _UIKitScaleAnimated(self, drawRect, scale, interpolationQuality);
+        return [self _uikit_scaleAnimatedToRect:drawRect
+                                          scale:scale
+                           interpolationQuality:interpolationQuality];
     }
 
     UIImage *image = [self tip_imageWithRenderFormatting:^(id<TIPRenderImageFormat> format) {
@@ -446,13 +440,12 @@ static UIImage *_UIKitScale(PRIVATE_SELF(UIImage),
         CGContextSetInterpolationQuality(ctx, interpolationQuality);
         [self drawInRect:drawRect];
     }];
-    return image ?: (UIImage * _Nonnull)self;
+    return image ?: self;
 }
 
-static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
-                                    CGRect drawRect,
-                                    CGFloat scale,
-                                    CGInterpolationQuality interpolationQuality)
+- (UIImage *)_uikit_scaleAnimatedToRect:(CGRect)drawRect
+                                  scale:(CGFloat)scale
+                   interpolationQuality:(CGInterpolationQuality)interpolationQuality TIP_OBJC_DIRECT
 {
     TIPAssert(self.images.count > 1);
     TIPAssert(scale != 0.);
@@ -541,9 +534,11 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
         const CGInterpolationQuality interpolationQualityValue = (interpolationQuality) ? (CGInterpolationQuality)interpolationQuality.intValue : [TIPGlobalConfiguration sharedInstance].defaultInterpolationQuality;
 
         // scale with UIKit at screen scale
-        image = _UIKitScale(self, scaledTargetDimensions, 0 /*auto scale*/, interpolationQualityValue);
+        image = [self _uikit_scaleToDimensions:scaledTargetDimensions
+                                         scale:0.0 /*auto*/
+                          interpolationQuality:interpolationQualityValue];
 
-        // image = _CoreGraphicsScale(self, scaledTargetDimensions, 0 /*auto scale*/, interpolationQualityValue);
+        // image = [self _cg_scaleToDimensions:scaledTargetDimensions scale:0.0 /*auto*/ interpolationQuality:interpolationQualityValue];
 
     } else {
         image = self;
@@ -731,21 +726,7 @@ static UIImage *_UIKitScaleAnimated(PRIVATE_SELF(UIImage),
         return self;
     }
 
-    if (tip_available_ios_9) {
-        // can do GPU work in the background
-    } else {
-        if (!TIPIsExtension()) {
-            // Cannot do GPU work in the background before iOS 9
-            Class UIApplicationClass = NSClassFromString(@"UIApplication");
-            if ([[UIApplicationClass sharedApplication] applicationState] == UIApplicationStateBackground) {
-                // In background, abort
-                outError = [NSError errorWithDomain:TIPErrorDomain
-                                               code:TIPErrorCodeCannotUseGPUInBackground
-                                           userInfo:nil];
-                return nil;
-            }
-        }
-    }
+    // can do GPU work in the background as of iOS 9!
 
     CIImage *CIImage = self.CIImage;
     if (!CIImage) {
@@ -953,11 +934,11 @@ static NSDictionary * __nonnull _ThumbnailOptions(CGFloat thumbnailMaximumDimens
 static NSDictionary * __nonnull _ThumbnailOptions(CGFloat thumbnailMaximumDimension)
 {
     return @{
-             (id)kCGImageSourceShouldCache : (id)kCFBooleanFalse,
-             (id)kCGImageSourceThumbnailMaxPixelSize : @(thumbnailMaximumDimension),
-             (id)kCGImageSourceCreateThumbnailFromImageAlways : (id)kCFBooleanTrue,
-             (id)kCGImageSourceShouldAllowFloat : (id)kCFBooleanTrue,
-             (id)kCGImageSourceCreateThumbnailWithTransform : (id)kCFBooleanTrue,
+             (id)kCGImageSourceShouldCache : (id)kCFBooleanFalse, // we'll manage the decode ourselves
+             (id)kCGImageSourceThumbnailMaxPixelSize : @(thumbnailMaximumDimension), // scale down to target max dimension if necessary (will not scale up!)
+             (id)kCGImageSourceCreateThumbnailFromImageAlways : (id)kCFBooleanTrue, // the thumbnail could be _anything_, let's just stick with the canonical full size image
+             (id)kCGImageSourceShouldAllowFloat : (id)kCFBooleanTrue, // we do want to support wide gamut if possible
+             (id)kCGImageSourceCreateThumbnailWithTransform : (id)kCFBooleanFalse, // transform can really mess things up when source image has wonky DPI (New York Post often has images that are 2000x1333 DPI for some strange reason) -- we'll handle the orientation separately
              };
 }
 
@@ -968,14 +949,17 @@ static NSDictionary * __nonnull _ThumbnailOptions(CGFloat thumbnailMaximumDimens
         return nil;
     }
 
-    NSDictionary *options = _ThumbnailOptions(thumbnailMaximumDimension);
-    CGImageRef imageRef = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, (CFDictionaryRef)options);
-    if (!imageRef) {
-        return nil;
-    }
-
-    UIImage *image = [UIImage imageWithCGImage:imageRef scale:(CGFloat)1.f orientation:UIImageOrientationUp];
-    CFRelease(imageRef);
+    __block UIImage* image = nil;
+    TIPExecuteCGContextBlock(^{
+        NSDictionary* imageProperties = (NSDictionary *)CFBridgingRelease(CGImageSourceCopyPropertiesAtIndex(imageSource, 0, NULL));
+        UIImageOrientation orientation = TIPUIImageOrientationFromCGImageOrientation([imageProperties[(NSString *)kCGImagePropertyOrientation] unsignedIntValue]); // nil or 0 will correctly yield "Up"
+        NSDictionary *options = _ThumbnailOptions(thumbnailMaximumDimension);
+        CGImageRef imageRef = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, (CFDictionaryRef)options);
+        if (imageRef) {
+            image = [UIImage imageWithCGImage:imageRef scale:(CGFloat)1.f orientation:orientation];
+            CFRelease(imageRef);
+        }
+    });
     return image;
 }
 
@@ -1014,6 +998,19 @@ static NSDictionary * __nonnull _ThumbnailOptions(CGFloat thumbnailMaximumDimens
 }
 
 + (nullable UIImage *)tip_imageWithAnimatedImageFile:(NSString *)filePath
+                                           durations:(out NSArray<NSNumber *> * __nullable * __nullable)durationsOut
+                                           loopCount:(out NSUInteger * __nullable)loopCountOut
+{
+    return [self tip_imageWithAnimatedImageFile:filePath
+                               targetDimensions:CGSizeZero
+                              targetContentMode:UIViewContentModeCenter
+                                      durations:durationsOut
+                                      loopCount:loopCountOut];
+}
+
++ (nullable UIImage *)tip_imageWithAnimatedImageFile:(NSString *)filePath
+                                    targetDimensions:(CGSize)targetDimensions
+                                   targetContentMode:(UIViewContentMode)targetContentMode
                                            durations:(out NSArray<NSNumber *> * __autoreleasing __nullable * __nullable)durationsOut
                                            loopCount:(out NSUInteger * __nullable)loopCountOut
 {
@@ -1022,6 +1019,8 @@ static NSDictionary * __nonnull _ThumbnailOptions(CGFloat thumbnailMaximumDimens
     TIPDeferRelease(imageSource);
     if (imageSource) {
         return [self tip_imageWithAnimatedImageSource:imageSource
+                                     targetDimensions:targetDimensions
+                                    targetContentMode:targetContentMode
                                             durations:durationsOut
                                             loopCount:loopCountOut];
     }
@@ -1029,6 +1028,19 @@ static NSDictionary * __nonnull _ThumbnailOptions(CGFloat thumbnailMaximumDimens
 }
 
 + (nullable UIImage *)tip_imageWithAnimatedImageData:(NSData *)data
+                                           durations:(out NSArray<NSNumber *> * __nullable * __nullable)durationsOut
+                                           loopCount:(out NSUInteger * __nullable)loopCountOut
+{
+    return [self tip_imageWithAnimatedImageData:data
+                               targetDimensions:CGSizeZero
+                              targetContentMode:UIViewContentModeCenter
+                                      durations:durationsOut
+                                      loopCount:loopCountOut];
+}
+
++ (nullable UIImage *)tip_imageWithAnimatedImageData:(NSData *)data
+                                    targetDimensions:(CGSize)targetDimensions
+                                   targetContentMode:(UIViewContentMode)targetContentMode
                                            durations:(out NSArray<NSNumber *> * __autoreleasing __nullable * __nullable)durationsOut
                                            loopCount:(out NSUInteger * __nullable)loopCountOut
 {
@@ -1036,6 +1048,8 @@ static NSDictionary * __nonnull _ThumbnailOptions(CGFloat thumbnailMaximumDimens
     TIPDeferRelease(imageSource);
     if (imageSource) {
         return [self tip_imageWithAnimatedImageSource:imageSource
+                                     targetDimensions:targetDimensions
+                                    targetContentMode:targetContentMode
                                             durations:durationsOut
                                             loopCount:loopCountOut];
     }
@@ -1202,7 +1216,7 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
 {
     // Animated images cannot be "decoded".
     // Decoding an animated image (sourced from a GIF) appears to crash 100% on iOS 10.
-    // Crashes on iOS 8 and 9 too, but very infrequently.
+    // Crashes on iOS 8 and 9 too, but very infrequently (those iOS versions are no longer supported in TIP).
     // We'll avoid it altogether to be safe.
     if (self.images.count <= 0) {
         (void)[self tip_imageWithRenderFormatting:^(id<TIPRenderImageFormat> format) {
@@ -1302,6 +1316,17 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
 + (nullable UIImage *)tip_imageWithImageSource:(CGImageSourceRef)imageSource
                                        atIndex:(NSUInteger)index
 {
+    return [self tip_imageWithImageSource:imageSource
+                                  atIndex:index
+                         targetDimensions:CGSizeZero
+                        targetContentMode:UIViewContentModeCenter];
+}
+
++ (nullable UIImage *)tip_imageWithImageSource:(CGImageSourceRef)imageSource
+                                       atIndex:(NSUInteger)index
+                              targetDimensions:(CGSize)targetDimensions
+                             targetContentMode:(UIViewContentMode)targetContentMode
+{
     if (!imageSource) {
         return nil;
     }
@@ -1311,6 +1336,8 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
         return nil;
     }
 
+    const BOOL canScaleTargetSizing = TIPCanScaleTargetSizing(targetDimensions, targetContentMode);
+    CGSize sourceDimensions = CGSizeZero;
     UIImageOrientation orientation = UIImageOrientationUp;
     CFDictionaryRef imageProperties = CGImageSourceCopyPropertiesAtIndex(imageSource, index, NULL);
     TIPDeferRelease(imageProperties);
@@ -1319,15 +1346,54 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
         // If the orientation property is not set, we get 0 which converts to the default value, UIImageOrientationUp
         const CGImagePropertyOrientation cgOrientation = [[(__bridge NSDictionary *)imageProperties objectForKey:(NSString *)kCGImagePropertyOrientation] unsignedIntValue];
         orientation = TIPUIImageOrientationFromCGImageOrientation(cgOrientation);
+
+        // Need the dimensions if we are checking against given target sizing
+        if (canScaleTargetSizing) {
+            CFNumberRef widthNum  = CFDictionaryGetValue(imageProperties, kCGImagePropertyPixelWidth);
+            CFNumberRef heightNum = CFDictionaryGetValue(imageProperties, kCGImagePropertyPixelHeight);
+            if (widthNum && heightNum) {
+                sourceDimensions = CGSizeMake([(__bridge NSNumber *)widthNum floatValue],
+                                              [(__bridge NSNumber *)heightNum floatValue]);
+            }
+        }
     }
 
-    CGImageRef cgImage = CGImageSourceCreateImageAtIndex(imageSource, index, NULL);
-    TIPDeferRelease(cgImage);
+    __block CGImageRef cgImage = NULL;
+    TIPExecuteCGContextBlock(^{
+        if (canScaleTargetSizing && TIPSizeGreaterThanZero(sourceDimensions)) {
+            const CGSize dimensions = TIPDimensionsScaledToTargetSizing(sourceDimensions,
+                                                                        targetDimensions,
+                                                                        targetContentMode);
+            const CGFloat maxDimension = MAX(dimensions.width, dimensions.height);
+            NSDictionary *options = _ThumbnailOptions(maxDimension);
+            cgImage = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, (CFDictionaryRef)options);
+        }
+        if (!cgImage) {
+            cgImage = CGImageSourceCreateImageAtIndex(imageSource, index, NULL);
+        }
+    });
+    if (!cgImage) {
+        return nil;
+    }
 
-    return (cgImage) ? [UIImage imageWithCGImage:cgImage scale:[UIScreen mainScreen].scale orientation:orientation] : nil;
+    TIPDeferRelease(cgImage);
+    return [UIImage imageWithCGImage:cgImage scale:[UIScreen mainScreen].scale orientation:orientation];
+}
+
++ (nullable UIImage *)tip_imageWithAnimatedImageSource:(CGImageSourceRef)imageSource
+                                             durations:(out NSArray<NSNumber *> * __nullable * __nullable)durationsOut
+                                             loopCount:(out NSUInteger * __nullable)loopCountOut
+{
+    return [self tip_imageWithAnimatedImageSource:imageSource
+                                 targetDimensions:CGSizeZero
+                                targetContentMode:UIViewContentModeCenter
+                                        durations:durationsOut
+                                        loopCount:loopCountOut];
 }
 
 + (nullable UIImage *)tip_imageWithAnimatedImageSource:(CGImageSourceRef)source
+                                      targetDimensions:(CGSize)targetDimensions
+                                     targetContentMode:(UIViewContentMode)targetContentMode
                                              durations:(out NSArray<NSNumber *> * __autoreleasing __nullable * __nullable)durationsOut
                                              loopCount:(out NSUInteger * __nullable)loopCountOut
 {
@@ -1347,6 +1413,15 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
                 CFDictionaryRef topLevelPNGProperties = CFDictionaryGetValue(topLevelProperties, kCGImagePropertyPNGDictionary);
                 if (topLevelPNGProperties) {
                     loopCount = (NSNumber *)CFDictionaryGetValue(topLevelPNGProperties, kCGImagePropertyAPNGLoopCount);
+                } else {
+#if TIP_OS_VERSION_MAX_ALLOWED_IOS_14
+                    if (tip_available_ios_14) {
+                        CFDictionaryRef topLevelWEBPProperties = CFDictionaryGetValue(topLevelProperties, kCGImagePropertyWebPDictionary);
+                        if (topLevelWEBPProperties) {
+                            loopCount = (NSNumber *)CFDictionaryGetValue(topLevelWEBPProperties, kCGImagePropertyWebPLoopCount);
+                        }
+                    }
+#endif // #if TIP_OS_VERSION_MAX_ALLOWED_IOS_14
                 }
             }
             *loopCountOut = (loopCount) ? loopCount.unsignedIntegerValue : 0;
@@ -1355,6 +1430,7 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
         }
     }
 
+    const BOOL canScaleToTargetSizing = TIPCanScaleTargetSizing(targetDimensions, targetContentMode);
     const CGFloat scale = [UIScreen mainScreen].scale;
     NSMutableArray *durations = [NSMutableArray arrayWithCapacity:count];
     NSMutableArray *images = [NSMutableArray arrayWithCapacity:count];
@@ -1364,7 +1440,26 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
         if (properties) {
             const CGImagePropertyOrientation cgOrientation = [[(__bridge NSDictionary *)properties objectForKey:(NSString *)kCGImagePropertyOrientation] unsignedIntValue];
             const UIImageOrientation orientation = TIPUIImageOrientationFromCGImageOrientation(cgOrientation);
-            CGImageRef imageRef = CGImageSourceCreateImageAtIndex(source, i, NULL);
+            CGImageRef imageRef = NULL;
+            if (canScaleToTargetSizing) {
+                CFNumberRef widthNum  = CFDictionaryGetValue(properties, kCGImagePropertyPixelWidth);
+                CFNumberRef heightNum = CFDictionaryGetValue(properties, kCGImagePropertyPixelHeight);
+                if (widthNum && heightNum) {
+                    const CGSize sourceDimensions = CGSizeMake([(__bridge NSNumber *)widthNum floatValue],
+                                                               [(__bridge NSNumber *)heightNum floatValue]);
+                    const CGSize scaledDimensions = TIPDimensionsScaledToTargetSizing(sourceDimensions,
+                                                                                      targetDimensions,
+                                                                                      targetContentMode);
+                    const CGFloat maxDimension = MAX(scaledDimensions.width, scaledDimensions.height);
+                    if (maxDimension > 0.0) {
+                        NSDictionary *thumbOptions = _ThumbnailOptions(maxDimension);
+                        imageRef = CGImageSourceCreateThumbnailAtIndex(source, i, (CFDictionaryRef)thumbOptions);
+                    }
+                }
+            }
+            if (!imageRef) {
+                imageRef = CGImageSourceCreateImageAtIndex(source, i, NULL);
+            }
             TIPDeferRelease(imageRef);
             if (imageRef) {
                 UIImage *frame = [UIImage imageWithCGImage:imageRef scale:scale orientation:orientation];
@@ -1386,6 +1481,17 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
                             // APNG
                             unclampedDelayTimeKey = kCGImagePropertyAPNGUnclampedDelayTime;
                             delayTimeKey = kCGImagePropertyAPNGDelayTime;
+                        } else {
+#if TIP_OS_VERSION_MAX_ALLOWED_IOS_14
+                            if (tip_available_ios_14) {
+                                animatedProperties = CFDictionaryGetValue(properties, kCGImagePropertyWebPDictionary);
+                                if (animatedProperties) {
+                                    // Animated WEBP
+                                    unclampedDelayTimeKey = kCGImagePropertyWebPUnclampedDelayTime;
+                                    delayTimeKey = kCGImagePropertyWebPDelayTime;
+                                }
+                            }
+#endif // #if TIP_OS_VERSION_MAX_ALLOWED_IOS_14
                         }
                     }
 

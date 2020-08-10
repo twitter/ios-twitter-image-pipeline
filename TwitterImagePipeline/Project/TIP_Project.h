@@ -68,8 +68,8 @@ FOUNDATION_EXTERN dispatch_block_t __nullable TIPStartBackgroundTask(NSString * 
 #pragma twitter startignorestylecheck
 
 #define TIPStartMethodScopedBackgroundTask(name) \
-dispatch_block_t clearTaskBlock##__LINE__ = TIPStartBackgroundTask([NSString stringWithFormat:@"[%@ %@]", NSStringFromClass([self class]), @( #name )]); \
-tip_defer(^{ if (clearTaskBlock##__LINE__) { clearTaskBlock##__LINE__(); } });
+dispatch_block_t tip_macro_concat(clearTaskBlock, __LINE__) = TIPStartBackgroundTask([NSString stringWithFormat:@"[%@ %@]", NSStringFromClass([self class]), @( #name )]); \
+tip_defer(^{ if (tip_macro_concat(clearTaskBlock, __LINE__)) { tip_macro_concat(clearTaskBlock, __LINE__)(); } });
 
 #pragma twitter endignorestylecheck
 

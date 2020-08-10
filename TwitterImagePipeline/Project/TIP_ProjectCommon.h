@@ -44,11 +44,25 @@ FOUNDATION_EXTERN BOOL TIPIsExtension(void);
 
 // macros helpers to match against specific iOS versions and their mapped non-iOS platform versions
 
-#define tip_available_ios_9     @available(iOS 9, tvOS 9, macOS 10.11, watchOS 2, *)
-#define tip_available_ios_10    @available(iOS 10, tvOS 10, macOS 10.12, watchOS 3, *)
 #define tip_available_ios_11    @available(iOS 11, tvOS 11, macOS 10.13, watchOS 4, *)
 #define tip_available_ios_12    @available(iOS 12, tvOS 12, macOS 10.14, watchOS 5, *)
 #define tip_available_ios_13    @available(iOS 13, tvOS 13, macOS 10.15, watchOS 6, *)
+#define tip_available_ios_14    @available(iOS 14, tvOS 14, macOS 11.0, watchOS 7, *)
+
+#if TARGET_OS_IOS
+#define TIP_OS_VERSION_MAX_ALLOWED_IOS_14 (__IPHONE_OS_VERSION_MAX_ALLOWED >= 140000)
+#elif TARGET_OS_MACCATALYST
+#define TIP_OS_VERSION_MAX_ALLOWED_IOS_14 (__IPHONE_OS_VERSION_MAX_ALLOWED >= 140000)
+#elif TARGET_OS_TV
+#define TIP_OS_VERSION_MAX_ALLOWED_IOS_14 (__TV_OS_VERSION_MAX_ALLOWED >= 140000)
+#elif TARGET_OS_WATCH
+#define TIP_OS_VERSION_MAX_ALLOWED_IOS_14 (__WATCH_OS_VERSION_MAX_ALLOWED >= 70000)
+#elif TARGET_OS_OSX
+#define TGF_OS_VERSION_MAX_ALLOWED_IOS_14 (__MAC_OS_X_VERSION_MAX_ALLOWED >= 110000)
+#else
+#warning Unexpected Target Platform
+#define TIP_OS_VERSION_MAX_ALLOWED_IOS_14 (0)
+#endif
 
 #pragma mark - Bitmask Helpers
 
@@ -173,6 +187,42 @@ FOUNDATION_EXTERN BOOL TIPAmIBeingUnitTested(void);
 # define TIP_THREAD_SANITIZER_DISABLED
 #endif
 
+#pragma mark - Objective-C attribute support
+
+#if defined(__has_attribute) && (defined(__IPHONE_14_0) || defined(__MAC_10_16) || defined(__MAC_11_0) || defined(__TVOS_14_0) || defined(__WATCHOS_7_0))
+# define TIP_SUPPORTS_OBJC_DIRECT __has_attribute(objc_direct)
+#else
+# define TIP_SUPPORTS_OBJC_DIRECT 0
+#endif
+
+#if defined(__has_attribute)
+# define TIP_SUPPORTS_OBJC_FINAL  __has_attribute(objc_subclassing_restricted)
+#else
+# define TIP_SUPPORTS_OBJC_FINAL  0
+#endif
+
+#pragma mark - Objective-C Direct Support
+
+#if TIP_SUPPORTS_OBJC_DIRECT
+# define tip_nonatomic_direct     nonatomic,direct
+# define tip_atomic_direct        atomic,direct
+# define TIP_OBJC_DIRECT          __attribute__((objc_direct))
+# define TIP_OBJC_DIRECT_MEMBERS  __attribute__((objc_direct_members))
+#else
+# define tip_nonatomic_direct     nonatomic
+# define tip_atomic_direct        atomic
+# define TIP_OBJC_DIRECT
+# define TIP_OBJC_DIRECT_MEMBERS
+#endif // #if TIP_SUPPORTS_OBJC_DIRECT
+
+#pragma mark - Objective-C Final Support
+
+#if TIP_SUPPORTS_OBJC_FINAL
+# define TIP_OBJC_FINAL   __attribute__((objc_subclassing_restricted))
+#else
+# define TIP_OBJC_FINAL
+#endif // #if TIP_SUPPORTS_OBJC_FINAL
+
 #pragma mark - tip_defer support
 
 typedef void(^tip_defer_block_t)(void);
@@ -256,86 +306,6 @@ NS_INLINE void tip_dispatch_sync_autoreleasing(dispatch_queue_t __attribute__((n
         }
     });
 }
-
-#pragma mark - Private Method C Functions Support
-
-/**
- Macro to help with implementing static C-functions instead of private methods
-
-    static NSString *_extendedDescription(PRIVATE_SELF(type))
-    {
-        if (!self) { // ALWAYS perform the `self` nil-check first
-            return nil;
-        }
-        return [[self description] stringByAppendingFormat:@" %@", self->_extendedInfo];
-    }
-
- Can be helpful to define a macro at the top of a .m file for the primary class' `PRIVATE_SELF`.
- Then, that macro can be used in all private function declarations/implementations
- For example:
-
-    // in TIPImagePipeline.m
-    #define SELF_ARG PRIVATE_SELF(TIPImagePipeline)
-
-    static NSString *_extendedDescription(SELF_ARG)
-    {
-        if (!self) { // ALWAYS perform the `self` nil-check first
-            return nil;
-        }
-        return [[self description] stringByAppendingFormat:@" %@", self->_extendedInfo];
-    }
-
- Calling:
-
-    // private method
-    NSString *description = [self _tip_extendedDescription];
-
-    // static function
-    NSString *description = _extendedDescription(self);
-
- Provide context:
-
-    // Don't just pass ambiguous values to arguments, provide context
-
-    UIImage *nilOverlayImage = nil;
-    UIImage *image = _renderImage(self,
-                                  nilOverlayImage,
-                                  self.textOverlayString,
-                                  [UIColor yellow], // tintColor
-                                  UIImageOrientationUp,
-                                  CGSizeZero, // zero size to render without scaling
-                                  0, // options
-                                  NO); // opaque
-
- Note the context is clear for each:
-
-    1. self is self, of course
-    2. nilOverlayImage: we set up a local variable so we can provide context instead of passing `nil` without context
-    3. self.textOverlayString: variable is descriptive of what it is, enough context on its own
-    4. [UIColor yellow]: it's a color, sure, but what for?  Provide a comment that it is for the `tintColor`
-    5. UIImageOrientationUp: clear that this is the orientation to provide to the render function
-    6. CGSizeZero: it's a size, but what does it mean for a special case value of zero and what's the size for?  Extra context with a descriptive comment.
-    7. 0: provides no insight, commenting that it is for `options` is sufficient at specifying that no options were selected.
-    8. NO: provides no insight, commenting that it is for `opaque` indicates the image render will be non-opaque (and probably have an alpha channel).
-
- Why `__nullable` instead of `__nonnull`?
-
- As it stands, we are defining `PRIVATE_SELF` to be `__nullable` and having all implementations encapsulate the `nil` check on `self`.
- Ideally, we would actually want `self` to be `__nonnull` so that the compiler enforces that the caller must pass a non-null argument.
- This would be a safer solution, however, clang (nor the static analyzer) catch the case where a `weak` argument is passed to a `nonnull`
- C function as an argument.  This means having `weakSelf` passed directly to the static C function could end up passing `nil`, and likely
- lead to a crash when the ivar is accessed, such as `self->_ivar`.
-
- A radar has been filed against Apple to remedy this in the compiler, but until then, it is safer to enforce the pattern using `__nullable`
- with a `nil` check.
-
- https://openradar.appspot.com/40129673
-
- */
-
-#ifndef PRIVATE_SELF
-#define PRIVATE_SELF(type) type * __nullable const self
-#endif
 
 NS_ASSUME_NONNULL_END
 

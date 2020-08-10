@@ -80,18 +80,8 @@ typedef NS_ENUM(NSInteger, TIPImageFetchProgressUpdateBehavior)
 
 @end
 
-NS_ASSUME_NONNULL_END
+#pragma mark - Default Policies
 
-#pragma mark - Class Methods
-
-#import <TwitterImagePipeline/TIPImageFetchProgressiveLoadingPolicy+StaticClass.h>
-
-NS_ASSUME_NONNULL_BEGIN
-
-/**
- A category on the `TIPImageFetchProgressiveLoadingPolicy` protocol for class methods.
- */
-@interface TIPImageFetchProgressiveLoadingPolicy (ClassMethods)
 /**
  The default progressive loading policies if progressive loading is supported and enabled.
  The returned `NSDictionary` uses `NSNumber` wrapped `TIPImageType` values as keys.
@@ -102,7 +92,6 @@ NS_ASSUME_NONNULL_BEGIN
  - 64-bit: `TIPFullFrameProgressiveLoadingPolicy` w/ `shouldRenderLowQualityFrame` == `YES`
  - 32-bit: `TIPFirstAndLastFrameProgressiveLoadingPolicy` w/ `shouldRenderLowQualityFrame` == `YES`
  */
-+ (NSDictionary<NSString *, id<TIPImageFetchProgressiveLoadingPolicy>> *)defaultProgressiveLoadingPolicies;
-@end
+FOUNDATION_EXTERN NSDictionary<NSString *, id<TIPImageFetchProgressiveLoadingPolicy>> *TIPImageFetchProgressiveLoadingPolicyDefaultPolicies(void);
 
 NS_ASSUME_NONNULL_END

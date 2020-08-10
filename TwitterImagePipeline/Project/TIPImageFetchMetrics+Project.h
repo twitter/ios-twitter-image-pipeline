@@ -6,12 +6,14 @@
 //  Copyright (c) 2015 Twitter. All rights reserved.
 //
 
+#import "TIP_Project.h"
 #import "TIPImageFetchMetrics.h"
 
 @class TIPPartialImage;
 
 NS_ASSUME_NONNULL_BEGIN
 
+TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImageFetchMetrics ()
 
 - (instancetype)initProject;
@@ -33,6 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImageFetchMetricInfo ()
 
 - (instancetype)initWithSource:(TIPImageLoadSource)source startTime:(uint64_t)startMachTime;

@@ -40,6 +40,38 @@ NS_ASSUME_NONNULL_BEGIN
 @synthesize imageRequestAuthorizationBlock = _imageRequestAuthorizationBlock;
 @synthesize decoderConfigMap = _decoderConfigMap;
 
++ (instancetype)genericImageFetchRequestWithRequest:(id<TIPImageFetchRequest>)request
+{
+    TIPGenericImageFetchRequest *genericRequest = [[[self class] alloc] initWithImageURL:request.imageURL];
+
+#define COPY_PROP(prop) \
+    if ([request respondsToSelector:@selector( prop )]) { \
+        genericRequest->_##prop = [request. prop copy]; \
+    }
+#define GET_PROP(prop) \
+    if ([request respondsToSelector:@selector( prop )]) { \
+        genericRequest->_##prop = request. prop ; \
+    }
+
+    COPY_PROP(imageIdentifier);
+    GET_PROP(targetDimensions);
+    GET_PROP(targetContentMode);
+    GET_PROP(timeToLive);
+    GET_PROP(options);
+    COPY_PROP(progressiveLoadingPolicies);
+    GET_PROP(transformer);
+    GET_PROP(loadingSources);
+    COPY_PROP(imageRequestHydrationBlock);
+    COPY_PROP(imageRequestAuthorizationBlock);
+    COPY_PROP(decoderConfigMap);
+
+#undef COPY_PROP
+#undef GET_PROP
+
+    return genericRequest;
+
+}
+
 - (instancetype)initWithImageURL:(NSURL *)imageURL
 {
     return [self initWithImageURL:imageURL identifier:nil targetDimensions:CGSizeZero targetContentMode:UIViewContentModeCenter];

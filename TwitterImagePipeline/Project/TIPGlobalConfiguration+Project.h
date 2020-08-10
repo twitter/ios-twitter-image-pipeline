@@ -6,6 +6,7 @@
 //  Copyright © 2020 Twitter. All rights reserved.
 //
 
+#import "TIP_Project.h"
 #import "TIPGlobalConfiguration.h"
 #import "TIPImageCache.h"
 
@@ -17,25 +18,25 @@ NS_ASSUME_NONNULL_BEGIN
 @interface TIPGlobalConfiguration ()
 
 // only accessible from queueForDiskCaches
-@property (nonatomic) SInt16 internalMaxCountForAllDiskCaches;
-@property (nonatomic) SInt64 internalMaxBytesForAllDiskCaches;
-@property (nonatomic) SInt64 internalMaxBytesForDiskCacheEntry;
-@property (nonatomic) SInt16 internalTotalCountForAllDiskCaches;
-@property (nonatomic) SInt64 internalTotalBytesForAllDiskCaches;
+@property (tip_nonatomic_direct) SInt16 internalMaxCountForAllDiskCaches;
+@property (tip_nonatomic_direct) SInt64 internalMaxBytesForAllDiskCaches;
+@property (tip_nonatomic_direct) SInt64 internalMaxBytesForDiskCacheEntry;
+@property (tip_nonatomic_direct) SInt16 internalTotalCountForAllDiskCaches;
+@property (tip_nonatomic_direct) SInt64 internalTotalBytesForAllDiskCaches;
 
 // only accessible from queueForMemoryCaches
-@property (nonatomic) SInt16 internalMaxCountForAllMemoryCaches;
-@property (nonatomic) SInt64 internalMaxBytesForAllMemoryCaches;
-@property (nonatomic) SInt64 internalMaxBytesForMemoryCacheEntry;
-@property (nonatomic) SInt16 internalTotalCountForAllMemoryCaches;
-@property (nonatomic) SInt64 internalTotalBytesForAllMemoryCaches;
+@property (tip_nonatomic_direct) SInt16 internalMaxCountForAllMemoryCaches;
+@property (tip_nonatomic_direct) SInt64 internalMaxBytesForAllMemoryCaches;
+@property (tip_nonatomic_direct) SInt64 internalMaxBytesForMemoryCacheEntry;
+@property (tip_nonatomic_direct) SInt16 internalTotalCountForAllMemoryCaches;
+@property (tip_nonatomic_direct) SInt64 internalTotalBytesForAllMemoryCaches;
 
 // only accessible from main thread
-@property (nonatomic) SInt16 internalMaxCountForAllRenderedCaches;
-@property (nonatomic) SInt64 internalMaxBytesForAllRenderedCaches;
-@property (nonatomic) SInt64 internalMaxBytesForRenderedCacheEntry;
-@property (nonatomic) SInt16 internalTotalCountForAllRenderedCaches;
-@property (nonatomic) SInt64 internalTotalBytesForAllRenderedCaches;
+@property (tip_nonatomic_direct) SInt16 internalMaxCountForAllRenderedCaches;
+@property (tip_nonatomic_direct) SInt64 internalMaxBytesForAllRenderedCaches;
+@property (tip_nonatomic_direct) SInt64 internalMaxBytesForRenderedCacheEntry;
+@property (tip_nonatomic_direct) SInt16 internalTotalCountForAllRenderedCaches;
+@property (tip_nonatomic_direct) SInt64 internalTotalBytesForAllRenderedCaches;
 
 // shared queues
 // The TIP caches can execute a LOT of Cocoa code which can pile up with autoreleases.
@@ -49,9 +50,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (dispatch_queue_t)queueForCachesOfType:(TIPImageCacheType)type;
 
 // other properties
-@property (atomic, readonly) NSArray<id<TIPImagePipelineObserver>> *allImagePipelineObservers;
-@property (atomic, nullable, strong) id<TIPLogger> internalLogger;
-@property (nonatomic, readonly) BOOL imageFetchDownloadProviderSupportsStubbing;
+@property (tip_atomic_direct, copy, readonly) NSArray<id<TIPImagePipelineObserver>> *allImagePipelineObservers;
+@property (tip_atomic_direct, nullable, strong) id<TIPLogger> internalLogger;
+@property (tip_nonatomic_direct, readonly) BOOL imageFetchDownloadProviderSupportsStubbing;
 
 // per cache type accessors
 - (SInt16)internalMaxCountForAllCachesOfType:(TIPImageCacheType)type;
@@ -62,23 +63,23 @@ NS_ASSUME_NONNULL_BEGIN
 
 // methods
 
-- (void)enqueueImagePipelineOperation:(NSOperation *)op;
+- (void)enqueueImagePipelineOperation:(NSOperation *)op TIP_OBJC_DIRECT;
 
 - (void)postProblem:(NSString *)problemName
-           userInfo:(NSDictionary<NSString *, id> *)userInfo;
+           userInfo:(NSDictionary<NSString *, id> *)userInfo TIP_OBJC_DIRECT;
 - (void)accessedCGContext:(BOOL)seriallyAccessed
                  duration:(NSTimeInterval)duration
-             isMainThread:(BOOL)mainThread;
+             isMainThread:(BOOL)mainThread TIP_OBJC_DIRECT;
 
  // must call from correct queue (queueForMemoryCaches for memory caches, queueForDiskCaches for disk caches and main queue for rendered caches)
 - (void)pruneAllCachesOfType:(TIPImageCacheType)type
-           withPriorityCache:(nullable id<TIPImageCache>)priorityCache;
+           withPriorityCache:(nullable id<TIPImageCache>)priorityCache TIP_OBJC_DIRECT;
 - (void)pruneAllCachesOfType:(TIPImageCacheType)type
            withPriorityCache:(nullable id<TIPImageCache>)priorityCache
             toGlobalMaxBytes:(SInt64)globalMaxBytes
-            toGlobalMaxCount:(SInt16)globalMaxCount;
+            toGlobalMaxCount:(SInt16)globalMaxCount TIP_OBJC_DIRECT;
 
-- (id<TIPImageFetchDownload>)createImageFetchDownloadWithContext:(id<TIPImageFetchDownloadContext>)context;
+- (id<TIPImageFetchDownload>)createImageFetchDownloadWithContext:(id<TIPImageFetchDownloadContext>)context TIP_OBJC_DIRECT;
 
 @end
 

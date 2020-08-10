@@ -134,6 +134,15 @@ NS_ASSUME_NONNULL_BEGIN
     return self.completeImageContext.updateExpiryOnAccess || self.partialImageContext.updateExpiryOnAccess;
 }
 
+- (NSString *)LRUEntryIdentifier
+{
+    return self.identifier;
+}
+
+@end
+
+@implementation TIPImageCacheEntry (Access)
+
 - (nullable NSDate *)mostRecentAccess
 {
     NSDate *completeDate = _completeImageContext.lastAccess;
@@ -146,11 +155,6 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
     return [completeDate laterDate:partialDate];
-}
-
-- (NSString *)LRUEntryIdentifier
-{
-    return self.identifier;
 }
 
 @end
@@ -166,11 +170,6 @@ NS_ASSUME_NONNULL_BEGIN
 {
     super.completeImage = completeImage;
     _memoryCost = 0;
-}
-
-- (void)setCompleteImageData:(nullable NSData *)completeImageData
-{
-    TIPAssert(NO && "Should not be used!");
 }
 
 - (void)setCompleteImageFilePath:(nullable NSString *)completeImageFilePath
@@ -199,13 +198,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSUInteger)memoryCost
 {
     if (!_memoryCost) {
-        _memoryCost += self.completeImage.sizeInMemory;
-        TIPPartialImage *partialImage = self.partialImage;
-        if (partialImage && partialImage.state > TIPPartialImageStateLoadingHeaders) {
-            _memoryCost += TIPEstimateMemorySizeOfImageWithSettings(partialImage.dimensions, 1.0, 4 /* presume 4 bytes per pixel */, (partialImage.isAnimated) ? partialImage.frameCount : 1);
-        } else {
-            _memoryCost += partialImage.byteCount;
-        }
+        _memoryCost += self.completeImageData.length;
+        _memoryCost += self.partialImage.byteCount;
     }
     return _memoryCost;
 }

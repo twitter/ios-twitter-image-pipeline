@@ -38,7 +38,8 @@ do { \
         Annoying bug in Apple's CoreGraphics will FAIL to load certain image formats (like RAW)    \
         until the identifiers list has been hydrated.                                              \
         Call `TIPReadableImageTypes` to force that hydration.                                      \
-        Doesn't seem to affect iOS 8, but definitely affects iOS 9.                                \
+        Doesn't seem to affect iOS 8, but definitely affects iOS 9+.                               \
+        NOTE: This will trigger XPC on first access via `CGImageSourceCopyTypeIdentifiers(...)`    \
     */ \
     (void)TIPReadableImageTypes(); \
 } while (0)
@@ -59,6 +60,7 @@ NSString * const TIPImageTypeICO        = @"com.microsoft.ico";
 NSString * const TIPImageTypeRAW        = @"public.camera-raw-image";
 NSString * const TIPImageTypeHEIC       = @"public.heic";
 NSString * const TIPImageTypeAVCI       = @"public.avci";
+NSString * const TIPImageTypeWEBP       = @"org.webmproject.webp";
 
 #pragma mark - Static Functions
 
@@ -200,6 +202,8 @@ NSString * __nullable TIPImageTypeFromUTType(NSString * __nullable utType)
         return TIPImageTypeHEIC;
     } else if (UTTypeConformsTo(imageType, CFSTR("public.avci"))) {
         return TIPImageTypeAVCI;
+    } else if (UTTypeConformsTo(imageType, CFSTR("org.webmproject.webp"))) {
+        return TIPImageTypeWEBP;
     }
 
     return nil;

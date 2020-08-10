@@ -14,5 +14,3 @@
 // Architectures
 SDKROOT = iphoneos
 
-// Deployment
-IPHONEOS_DEPLOYMENT_TARGET = 8.0

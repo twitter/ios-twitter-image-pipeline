@@ -86,7 +86,18 @@ NS_ASSUME_NONNULL_BEGIN
     if (count > _delegates.count) {
         id<TIPImageFetchDownload> download = _download;
         [TIPImageDownloadInternalContext executeDelegate:delegate suspendingQueue:NULL block:^(id<TIPImageDownloadDelegate> blockDelegate) {
-            [blockDelegate imageDownload:(id)download didCompleteWithPartialImage:nil lastModified:nil byteSize:0 imageType:nil image:nil imageRenderLatency:0.0 statusCode:0 error:[NSError errorWithDomain:TIPImageFetchErrorDomain code:TIPImageFetchErrorCodeCancelled userInfo:nil]];
+            [blockDelegate imageDownload:(id)download
+             didCompleteWithPartialImage:nil
+                            lastModified:nil
+                                byteSize:0
+                               imageType:nil
+                                   image:nil
+                               imageData:nil
+                      imageRenderLatency:0.0
+                              statusCode:0
+                                   error:[NSError errorWithDomain:TIPImageFetchErrorDomain
+                                                             code:TIPImageFetchErrorCodeCancelled
+                                                         userInfo:nil]];
         }];
     }
 }

@@ -1,17 +1,27 @@
 /* src/webp/config.h.  Generated from config.h.in by configure.  */
 /* src/webp/config.h.in.  Generated from configure.ac by autoheader.  */
 
+#ifndef __has_builtin
+# define __has_builtin(x) 0
+#endif
+
 /* Define if building universal (internal helper macro) */
-/* #undef AC_APPLE_UNIVERSAL_BUILD */
+#define AC_APPLE_UNIVERSAL_BUILD 1
 
 /* Set to 1 if __builtin_bswap16 is available */
+#if __has_builtin(__builtin_bswap16)
 #define HAVE_BUILTIN_BSWAP16 1
+#endif
 
 /* Set to 1 if __builtin_bswap32 is available */
+#if __has_builtin(__builtin_bswap32)
 #define HAVE_BUILTIN_BSWAP32 1
+#endif
 
 /* Set to 1 if __builtin_bswap64 is available */
+#if __has_builtin(__builtin_bswap64)
 #define HAVE_BUILTIN_BSWAP64 1
+#endif
 
 /* Define to 1 if you have the <cpu-features.h> header file. */
 /* #undef HAVE_CPU_FEATURES_H */
@@ -80,7 +90,7 @@
 #define PACKAGE_NAME "libwebp"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "libwebp 1.0.3"
+#define PACKAGE_STRING "libwebp 1.1.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "libwebp"
@@ -89,7 +99,7 @@
 #define PACKAGE_URL "http://developers.google.com/speed/webp"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.0.3"
+#define PACKAGE_VERSION "1.1.0"
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */
@@ -99,7 +109,7 @@
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "1.0.3"
+#define VERSION "1.1.0"
 
 /* Set to 1 if GIF library is installed */
 /* #undef WEBP_HAVE_GIF */
@@ -123,10 +133,14 @@
 /* #undef WEBP_HAVE_SDL */
 
 /* Set to 1 if SSE2 is supported */
+#if __SSE2__
 #define WEBP_HAVE_SSE2 1
+#endif
 
 /* Set to 1 if SSE4.1 is supported */
-/* #undef WEBP_HAVE_SSE41 */
+#if __SSE4_1__
+#define WEBP_HAVE_SSE41 1
+#endif
 
 /* Set to 1 if TIFF library is installed */
 /* #undef WEBP_HAVE_TIFF */

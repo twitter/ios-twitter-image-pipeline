@@ -7,36 +7,13 @@
 //
 
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
+
 #import "TIPXMP4Codec.h"
+#import "TIPXUtils.h"
 
 @import AVFoundation;
 
-#ifndef PRIVATE_SELF
-#define PRIVATE_SELF(type) type * __nullable const self
-#endif
-
 NS_ASSUME_NONNULL_BEGIN
-
-#pragma mark - Defer support
-
-typedef void(^tipx_defer_block_t)(void);
-NS_INLINE void tipx_deferFunc(__strong tipx_defer_block_t __nonnull * __nonnull blockRef)
-{
-    tipx_defer_block_t actualBlock = *blockRef;
-    actualBlock();
-}
-
-#define _tipx_macro_concat(a, b) a##b
-#define tipx_macro_concat(a, b) _tipx_macro_concat(a, b)
-
-#pragma twitter startignorestylecheck
-
-#define tipx_defer(deferBlock) \
-__strong tipx_defer_block_t tipx_macro_concat(tipx_stack_defer_block_, __LINE__) __attribute__((cleanup(tipx_deferFunc), unused)) = deferBlock
-
-#define TIPXDeferRelease(ref) tipx_defer(^{ if (ref) { CFRelease(ref); } })
-
-#pragma twitter endignorestylecheck
 
 #pragma mark - Constants
 
@@ -80,9 +57,11 @@ static UIImage *TIPX_scaledImage(CGImageRef imageRef, CGSize naturalSize, CICont
 
 - (instancetype)initWithBuffer:(nonnull NSMutableData *)buffer config:(nullable id<TIPXMP4DecoderConfig>)config;
 
-- (TIPImageDecoderAppendResult)appendData:(nonnull NSData *)data;
-- (nullable TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode;
-- (TIPImageDecoderAppendResult)finalizeDecoding;
+- (TIPImageDecoderAppendResult)appendData:(nonnull NSData *)data TIPX_OBJC_DIRECT;
+- (nullable TIPImageContainer *)renderImageWithRenderMode:(TIPImageDecoderRenderMode)renderMode
+                                         targetDimensions:(CGSize)targetDimensions
+                                        targetContentMode:(UIViewContentMode)targetContentMode TIPX_OBJC_DIRECT;
+- (TIPImageDecoderAppendResult)finalizeDecoding TIPX_OBJC_DIRECT;
 
 @end
 
@@ -161,38 +140,33 @@ static UIImage *TIPX_scaledImage(CGImageRef imageRef, CGSize naturalSize, CICont
         _maxFrameCount = (config) ? [config maxDecodableFramesCount] : 0;
 
         NSFileManager *fm = [NSFileManager defaultManager];
-        NSString *tmpDir = [fm respondsToSelector:@selector(temporaryDirectory)] ? fm.temporaryDirectory.path : NSTemporaryDirectory();
+        NSString *tmpDir = fm.temporaryDirectory.path;
         [fm createDirectoryAtPath:tmpDir withIntermediateDirectories:YES attributes:nil error:NULL];
 
         _temporaryFilePath = [[tmpDir stringByAppendingPathComponent:[NSUUID UUID].UUIDString] stringByAppendingPathExtension:@"mp4"];
         _temporaryFile = fopen(_temporaryFilePath.UTF8String, "w");
-        _writeDataToTemporaryFile(self, _data);
+        [self _writeDataToTemporaryFile:_data];
     }
     return self;
 }
 
 - (void)dealloc
 {
-    _clear(self);
+    [self _clear];
 }
 
-static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
-                                      NSData *data)
+- (BOOL)_writeDataToTemporaryFile:(NSData *)data TIPX_OBJC_DIRECT
 {
-    if (!self) {
-        return NO;
-    }
-
-    if (self->_temporaryFile) {
+    if (_temporaryFile) {
         const size_t byteCount = data.length;
         if (byteCount) {
-            const size_t byteOut = fwrite(data.bytes, sizeof(char), byteCount, self->_temporaryFile);
+            const size_t byteOut = fwrite(data.bytes, sizeof(char), byteCount, _temporaryFile);
             if (byteCount == byteOut) {
                 return YES;
             } else {
-                fclose(self->_temporaryFile);
-                self->_temporaryFile = NULL;
-                [[NSFileManager defaultManager] removeItemAtPath:self->_temporaryFilePath
+                fclose(_temporaryFile);
+                _temporaryFile = NULL;
+                [[NSFileManager defaultManager] removeItemAtPath:_temporaryFilePath
                                                            error:NULL];
             }
         }
@@ -208,18 +182,18 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
             _frameCount = 1; // seed the frames
         }
         [_data appendData:data];
-        _writeDataToTemporaryFile(self, data);
+        [self _writeDataToTemporaryFile:data];
     }
 
     return TIPImageDecoderAppendResultDidProgress;
 }
 
-- (TIPImageContainer *)_tipx_firstFrameImageContainer
+- (nullable TIPImageContainer *)_firstFrameImageContainer TIPX_OBJC_DIRECT
 {
     if (!_firstFrame) {
         if (_temporaryFile || _finalized) {
             @autoreleasepool {
-                AVAsset *asset = [AVAsset assetWithURL:[NSURL fileURLWithPath:self->_temporaryFilePath]];
+                AVAsset *asset = [AVAsset assetWithURL:[NSURL fileURLWithPath:_temporaryFilePath]];
                 AVAssetImageGenerator *imageGenerator = [AVAssetImageGenerator assetImageGeneratorWithAsset:asset];
                 CGImageRef imageRef = [imageGenerator copyCGImageAtTime:CMTimeMake(0, 1)
                                                              actualTime:nil
@@ -239,7 +213,7 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
                                               orientation:UIImageOrientationUp];
                     }
                     if (image) {
-                        self->_firstFrame = image;
+                        _firstFrame = image;
                     }
                 }
             }
@@ -249,26 +223,28 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
     return _firstFrame ? [[TIPImageContainer alloc] initWithImage:_firstFrame] : nil;
 }
 
-- (nullable TIPImageContainer *)renderImageWithMode:(TIPImageDecoderRenderMode)mode
+- (nullable TIPImageContainer *)renderImageWithRenderMode:(TIPImageDecoderRenderMode)renderMode
+                                         targetDimensions:(CGSize)targetDimensions
+                                        targetContentMode:(UIViewContentMode)targetContentMode
 {
     if (_cachedContainer) {
         return _cachedContainer;
     }
 
-    if (mode != TIPImageDecoderRenderModeCompleteImage && !_finalized) {
-        return [self _tipx_firstFrameImageContainer];
+    if (renderMode != TIPImageDecoderRenderModeCompleteImage && !_finalized) {
+        return [self _firstFrameImageContainer];
     }
 
     if (!_finalized || !_avTrack || !_avAsset) {
         return nil;
     }
 
-    const NSTimeInterval duration = CMTimeGetSeconds(self->_avAsset.duration);
+    const NSTimeInterval duration = CMTimeGetSeconds(_avAsset.duration);
 
     if (duration <= 0.0 || _avTrack.nominalFrameRate <= 0.0f) {
         // defensive programming: state is not viable for decoding, just treat as a 1 frame image
-        self->_cachedContainer = [self _tipx_firstFrameImageContainer];
-        return self->_cachedContainer;
+        _cachedContainer = [self _firstFrameImageContainer];
+        return _cachedContainer;
     }
 
     TIPExecuteCGContextBlock(^{
@@ -289,12 +265,14 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
 
         CGSize naturalSize = self->_avTrack.naturalSize;
 
+        // TODO: handle targetDimensions & targetContentMode!
+
         NSDictionary *outputSettings = @{
                                          (NSString *)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA)
                                          };
         AVAssetReaderTrackOutput *output =
-        [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:self->_avTrack
-                                                   outputSettings:outputSettings];
+            [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:self->_avTrack
+                                                       outputSettings:outputSettings];
         [reader addOutput:output];
         [reader startReading];
 
@@ -309,32 +287,32 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
             mod++;
         }
 
-            CIContext *context;
+        CIContext *context;
 
-            CMSampleBufferRef sample = NULL;
-            do {
-                sample = [output copyNextSampleBuffer];
-                TIPXDeferRelease(sample);
-                if (mod > 1 && ((++count % mod) != 1)) {
-                    continue;
-                }
+        CMSampleBufferRef sample = NULL;
+        do {
+            sample = [output copyNextSampleBuffer];
+            TIPXDeferRelease(sample);
+            if (mod > 1 && ((++count % mod) != 1)) {
+                continue;
+            }
 
-                CGImageRef imageRef = TIPX_CGImageCreateFromCMSampleBuffer(sample);
-                TIPXDeferRelease(imageRef);
-                if (imageRef) {
-                    UIImage *image = nil;
-                    if (TIPX_imageNeedsScaling(imageRef, naturalSize)) {
-                        if (!context) {
-                            context = [[CIContext alloc] init];
-                        }
-                        image = TIPX_scaledImage(imageRef, naturalSize, context);
+            CGImageRef imageRef = TIPX_CGImageCreateFromCMSampleBuffer(sample);
+            TIPXDeferRelease(imageRef);
+            if (imageRef) {
+                UIImage *image = nil;
+                if (TIPX_imageNeedsScaling(imageRef, naturalSize)) {
+                    if (!context) {
+                        context = [[CIContext alloc] init];
                     }
-                    if (!image) {
-                        image = [[UIImage alloc] initWithCGImage:imageRef];
-                    }
-                    [images addObject:image];
+                    image = TIPX_scaledImage(imageRef, naturalSize, context);
                 }
-            } while (sample != NULL);
+                if (!image) {
+                    image = [[UIImage alloc] initWithCGImage:imageRef];
+                }
+                [images addObject:image];
+            }
+        } while (sample != NULL);
 
         self->_frameCount = images.count;
 
@@ -350,7 +328,7 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
         self->_cachedContainer = container;
     });
 
-    _clear(self);
+    [self _clear];
     return _cachedContainer;
 }
 
@@ -389,23 +367,19 @@ static BOOL _writeDataToTemporaryFile(PRIVATE_SELF(TIPXMP4DecoderContext),
     }
 }
 
-static void _clear(PRIVATE_SELF(TIPXMP4DecoderContext))
+- (void)_clear TIPX_OBJC_DIRECT
 {
-    if (!self) {
-        return;
+    _avTrack = nil;
+    _avAsset = nil;
+    if (_temporaryFile) {
+        fflush(_temporaryFile);
+        fclose(_temporaryFile);
+        _temporaryFile = NULL;
     }
-
-    self->_avTrack = nil;
-    self->_avAsset = nil;
-    if (self->_temporaryFile) {
-        fflush(self->_temporaryFile);
-        fclose(self->_temporaryFile);
-        self->_temporaryFile = NULL;
-    }
-    if (self->_temporaryFilePath) {
-        [[NSFileManager defaultManager] removeItemAtPath:self->_temporaryFilePath
+    if (_temporaryFilePath) {
+        [[NSFileManager defaultManager] removeItemAtPath:_temporaryFilePath
                                                    error:NULL];
-        self->_temporaryFilePath = nil;
+        _temporaryFilePath = nil;
     }
 }
 
@@ -462,9 +436,13 @@ static void _clear(PRIVATE_SELF(TIPXMP4DecoderContext))
 }
 
 - (nullable TIPImageContainer *)tip_renderImage:(TIPXMP4DecoderContext *)context
-                                           mode:(TIPImageDecoderRenderMode)mode
+                                     renderMode:(TIPImageDecoderRenderMode)renderMode
+                               targetDimensions:(CGSize)targetDimensions
+                              targetContentMode:(UIViewContentMode)targetContentMode
 {
-    return [context renderImageWithMode:mode];
+    return [context renderImageWithRenderMode:renderMode
+                       targetDimensions:targetDimensions
+                      targetContentMode:targetContentMode];
 }
 
 - (TIPImageDecoderAppendResult)tip_finalizeDecoding:(TIPXMP4DecoderContext *)context

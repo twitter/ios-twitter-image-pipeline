@@ -6,6 +6,7 @@
 //  Copyright © 2020 Twitter. All rights reserved.
 //
 
+#import "TIP_Project.h"
 #import "TIPImageDiskCacheTemporaryFile.h"
 #import "TIPImageDownloader.h"
 #import "TIPImageFetchDownload.h"
@@ -13,6 +14,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+TIP_OBJC_FINAL
 @interface TIPImageDownloadInternalContext : NSObject <TIPImageFetchOperationUnderlyingContext, TIPImageFetchDownloadContext>
 {
 @public
@@ -47,26 +49,30 @@ NS_ASSUME_NONNULL_BEGIN
     NSMutableArray<id<TIPImageDownloadDelegate>> * __nonnull _delegates;
 }
 
+#pragma mark TIPImageFetchDownloadContext
+
 @property (nonatomic, copy, nullable) NSURLRequest *originalRequest;
 @property (nonatomic, copy, nullable) NSURLRequest *hydratedRequest;
 @property (nonatomic, copy, nullable) NSString *authorization;
 @property (nonatomic, nullable) id<TIPImageFetchDownloadClient> client;
 @property (nonatomic, nullable) dispatch_queue_t downloadQueue;
 
-@property (nonatomic, readonly) NSUInteger delegateCount; // computed property
+#pragma mark Methods
 
-- (void)reset; // called when retrying a download and resetting state
+@property (tip_nonatomic_direct, readonly) NSUInteger delegateCount; // computed property
 
-- (NSOperationQueuePriority)downloadPriority;
-- (nullable id<TIPImageDownloadDelegate>)firstDelegate;
-- (BOOL)containsDelegate:(id<TIPImageDownloadDelegate>)delegate;
-- (void)addDelegate:(id<TIPImageDownloadDelegate>)delegate;
-- (void)removeDelegate:(id<TIPImageDownloadDelegate>)delegate;
+- (void)reset TIP_OBJC_DIRECT; // called when retrying a download and resetting state
+
+- (NSOperationQueuePriority)downloadPriority TIP_OBJC_DIRECT;
+- (nullable id<TIPImageDownloadDelegate>)firstDelegate TIP_OBJC_DIRECT;
+- (BOOL)containsDelegate:(id<TIPImageDownloadDelegate>)delegate TIP_OBJC_DIRECT;
+- (void)addDelegate:(id<TIPImageDownloadDelegate>)delegate TIP_OBJC_DIRECT;
+- (void)removeDelegate:(id<TIPImageDownloadDelegate>)delegate TIP_OBJC_DIRECT;
 - (void)executePerDelegateSuspendingQueue:(nullable dispatch_queue_t)queue
-                                    block:(void(^)(id<TIPImageDownloadDelegate>))block;
+                                    block:(void(^)(id<TIPImageDownloadDelegate>))block TIP_OBJC_DIRECT;
 + (void)executeDelegate:(id<TIPImageDownloadDelegate>)delegate
         suspendingQueue:(nullable dispatch_queue_t)queue
-                  block:(void (^)(id<TIPImageDownloadDelegate>))block;
+                  block:(void (^)(id<TIPImageDownloadDelegate>))block TIP_OBJC_DIRECT;
 
 @end
 

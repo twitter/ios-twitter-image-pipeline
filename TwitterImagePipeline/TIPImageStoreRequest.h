@@ -98,7 +98,7 @@ typedef NS_OPTIONS(NSInteger, TIPImageStoreOptions)
  Optionally providing the `imageType` property will specify how to encode the image to disk.
  Takes precedence over `imageData` and `imageFilePath`.
  */
-@property (nullable, nonatomic, readonly) UIImage *image;
+@property (nullable, nonatomic, readonly) UIImage *image; // TODO: refactor to be a `TIPImageContainer` instead of a `UIImage`
 
 /**
  The `NSData` of encoded image bytes for storing.

@@ -16,7 +16,6 @@ SDKROOT = appletvos
 
 // Deployment
 TARGETED_DEVICE_FAMILY = 3
-TVOS_DEPLOYMENT_TARGET = 9.0
 
 // Packaging
 INFOPLIST_FILE = TIPTests/Info.plist

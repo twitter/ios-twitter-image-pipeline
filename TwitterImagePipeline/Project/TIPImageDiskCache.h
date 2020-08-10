@@ -25,37 +25,36 @@ typedef NS_OPTIONS(NSInteger, TIPImageDiskCacheFetchOptions) {
 
 @interface TIPImageDiskCache : NSObject <TIPImageCache, TIPInspectableCache>
 
-@property (nonatomic, readonly, copy) NSString *cachePath;
+@property (tip_nonatomic_direct, readonly, copy) NSString *cachePath;
 
-- (instancetype)initWithPath:(NSString *)cachePath;
+- (instancetype)initWithPath:(NSString *)cachePath TIP_OBJC_DIRECT;
 
 - (nullable TIPImageDiskCacheEntry *)imageEntryForIdentifier:(NSString *)identifier
                                                      options:(TIPImageDiskCacheFetchOptions)options
-                                            decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
+                                            targetDimensions:(CGSize)targetDimensions
+                                           targetContentMode:(UIViewContentMode)targetContentMode
+                                            decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap TIP_OBJC_DIRECT;
 - (void)updateImageEntry:(TIPImageCacheEntry *)entry
- forciblyReplaceExisting:(BOOL)force;
+ forciblyReplaceExisting:(BOOL)force TIP_OBJC_DIRECT;
 - (void)touchImageWithIdentifier:(NSString *)imageIdentifier
-                orSaveImageEntry:(nullable TIPImageDiskCacheEntry *)entry;
-- (void)clearImageWithIdentifier:(NSString *)identifier;
-- (void)clearAllImages:(void (^ __nullable)(void))completion;
-- (void)prune;
-- (TIPImageDiskCacheTemporaryFile *)openTemporaryFileForImageIdentifier:(NSString *)imageIdentifier;
+                orSaveImageEntry:(nullable TIPImageDiskCacheEntry *)entry TIP_OBJC_DIRECT;
+- (void)prune TIP_OBJC_DIRECT;
+- (TIPImageDiskCacheTemporaryFile *)openTemporaryFileForImageIdentifier:(NSString *)imageIdentifier TIP_OBJC_DIRECT;
 - (nullable NSString *)copyImageEntryFileForIdentifier:(NSString *)identifier
-                                                 error:(out NSError * __nullable * __nullable)error;
+                                                 error:(out NSError * __nullable * __nullable)error TIP_OBJC_DIRECT;
 - (BOOL)renameImageEntryWithIdentifier:(NSString *)oldIdentifier
                           toIdentifier:(NSString *)newIdentifier
-                                 error:(NSError * __nullable * __nullable)error;
+                                 error:(NSError * __nullable * __nullable)error TIP_OBJC_DIRECT;
 
-@end
-
-@interface TIPImageDiskCache (TempFile)
+#pragma mark TempFile
 
 - (void)finalizeTemporaryFile:(TIPImageDiskCacheTemporaryFile *)tempFile
-                  withContext:(TIPImageCacheEntryContext *)context;
-- (void)clearTemporaryFilePath:(NSString *)filePath;
+                  withContext:(TIPImageCacheEntryContext *)context TIP_OBJC_DIRECT;
+- (void)clearTemporaryFilePath:(NSString *)filePath TIP_OBJC_DIRECT;
 
 @end
 
+TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImageDiskCache (PrivateExposed)
 - (TIPLRUCache *)diskCache_syncAccessManifest;
 - (nullable NSString *)diskCache_imageEntryFilePathForIdentifier:(NSString *)identifier
@@ -65,6 +64,8 @@ typedef NS_OPTIONS(NSInteger, TIPImageDiskCacheFetchOptions) {
            forciblyReplaceExisting:(BOOL)force;
 - (nullable TIPImageDiskCacheEntry *)diskCache_imageEntryForIdentifier:(NSString *)identifier
                                                                options:(TIPImageDiskCacheFetchOptions)options
+                                                      targetDimensions:(CGSize)targetDimensions
+                                                     targetContentMode:(UIViewContentMode)targetContentMode
                                                       decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap;
 @end
 

@@ -41,6 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
                                                  TIPImageTypeRAW,
                                                  TIPImageTypeHEIC,
                                                  TIPImageTypeAVCI,
+                                                 TIPImageTypeWEBP,
                                                  ];
         for (NSString *imageType in knownImageTypes) {
             id<TIPImageCodec> codec = [TIPBasicCGImageSourceCodec codecWithImageType:imageType];
@@ -59,9 +60,14 @@ NS_ASSUME_NONNULL_BEGIN
     static TIPImageCodecCatalogue *sCatalogue = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        sCatalogue = [[TIPImageCodecCatalogue alloc] initWithCodecsProvider:^NSDictionary<NSString *,id<TIPImageCodec>> * _Nullable{
-            return [self defaultCodecs];
-        }];
+        const BOOL loadAsync = [TIPGlobalConfiguration sharedInstance].loadCodecsAsync;
+        if (loadAsync) {
+            sCatalogue = [[TIPImageCodecCatalogue alloc] initWithCodecsProvider:^NSDictionary<NSString *,id<TIPImageCodec>> * _Nullable{
+                return [self defaultCodecs];
+            }];
+        } else {
+            sCatalogue = [[TIPImageCodecCatalogue alloc] initWithCodecs:[self defaultCodecs]];
+        }
     });
     return sCatalogue;
 }
@@ -207,6 +213,8 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (nullable TIPImageContainer *)decodeImageWithData:(NSData *)data
+                                   targetDimensions:(CGSize)targetDimensions
+                                  targetContentMode:(UIViewContentMode)targetContentMode
                                    decoderConfigMap:(nullable NSDictionary<NSString *, id> *)decoderConfigMap
                                           imageType:(out NSString * __autoreleasing __nullable * __nullable)imageType
 {
@@ -225,7 +233,7 @@ NS_ASSUME_NONNULL_BEGIN
     id<TIPImageCodec> guessedCodec = (guessImageType) ? codecs[guessImageType] : nil;
     if (guessedCodec) {
         id config = decoderConfigMap[guessImageType];
-        container = TIPDecodeImageFromData(guessedCodec, config, data, guessImageType);
+        container = TIPDecodeImageFromData(guessedCodec, config, data, targetDimensions, targetContentMode, guessImageType);
         if (container) {
             localImageType = guessImageType;
             return container;
@@ -235,7 +243,7 @@ NS_ASSUME_NONNULL_BEGIN
     [codecs enumerateKeysAndObjectsUsingBlock:^(NSString *codecImageType, id<TIPImageCodec> codec, BOOL *stop) {
         if (codec != guessedCodec) {
             id config = decoderConfigMap[codecImageType];
-            container = TIPDecodeImageFromData(codec, config, data, guessImageType);
+            container = TIPDecodeImageFromData(codec, config, data, targetDimensions, targetContentMode, guessImageType);
             if (container) {
                 *stop = YES;
                 localImageType = codecImageType;

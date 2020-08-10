@@ -118,13 +118,11 @@ static void TIPFireFetchCompletionBlock(TIPImagePipelineFetchCompletionBlock __n
 {
     tip_dispatch_async_autoreleasing([TIPGlobalConfiguration sharedInstance].queueForDiskCaches, ^{
         NSMutableSet *identifiers = [[NSMutableSet alloc] init];
-        NSFileManager *fm = [NSFileManager defaultManager];
         NSString *pipelineDir = TIPImagePipelinePath();
-        NSArray<NSString *> *files = TIPContentsAtPath(pipelineDir, NULL);
-        BOOL isDir;
-        for (NSString *subdir in files) {
-            if ([fm fileExistsAtPath:[pipelineDir stringByAppendingPathComponent:subdir] isDirectory:&isDir] && isDir) {
-                [identifiers addObject:subdir];
+        NSArray<NSURL *> *files = TIPContentsAtPath(pipelineDir, NULL);
+        for (NSURL *subdir in files) {
+            if ([[subdir resourceValuesForKeys:@[NSURLIsDirectoryKey] error:NULL][NSURLIsDirectoryKey] boolValue]) {
+                [identifiers addObject:[subdir lastPathComponent]];
             }
         }
 
@@ -285,7 +283,7 @@ static void TIPFireFetchCompletionBlock(TIPImagePipelineFetchCompletionBlock __n
 {
     TIPImageStoreOperation *storeOp = [self storeOperationWithRequest:request
                                                            completion:completion];
-    TIPImageStoreHydrationOperation *prepOp = _createHydrationOperation(self, request);
+    TIPImageStoreHydrationOperation *prepOp = [self _createHydrationOperationWithRequest:request];
     if (prepOp) {
         [storeOp setHydrationDependency:prepOp];
         [[TIPGlobalConfiguration sharedInstance] enqueueImagePipelineOperation:prepOp];
@@ -302,13 +300,8 @@ static void TIPFireFetchCompletionBlock(TIPImagePipelineFetchCompletionBlock __n
                                                 completion:completion];
 }
 
-static TIPImageStoreHydrationOperation * __nullable _createHydrationOperation(PRIVATE_SELF(TIPImagePipeline),
-                                                                              id<TIPImageStoreRequest> request)
+- (nullable TIPImageStoreHydrationOperation *)_createHydrationOperationWithRequest:(id<TIPImageStoreRequest>)request TIP_OBJC_DIRECT
 {
-    if (!self) {
-        return nil;
-    }
-
     id<TIPImageStoreRequestHydrater> hydrater = [request respondsToSelector:@selector(hydrater)] ? request.hydrater : nil;
     if (!hydrater) {
         return nil;
@@ -324,7 +317,7 @@ static TIPImageStoreHydrationOperation * __nullable _createHydrationOperation(PR
 - (void)clearImageWithIdentifier:(NSString *)imageIdentifier
 {
     TIPAssert(imageIdentifier != nil);
-    [_renderedCache clearImagesWithIdentifier:imageIdentifier];
+    [_renderedCache clearImageWithIdentifier:imageIdentifier];
     [_memoryCache clearImageWithIdentifier:imageIdentifier];
     [_diskCache clearImageWithIdentifier:imageIdentifier];
 }
@@ -332,13 +325,13 @@ static TIPImageStoreHydrationOperation * __nullable _createHydrationOperation(PR
 - (void)clearRenderedMemoryCacheImageWithIdentifier:(NSString *)imageIdentifier
 {
     TIPAssert(imageIdentifier != nil);
-    [_renderedCache clearImagesWithIdentifier:imageIdentifier];
+    [_renderedCache clearImageWithIdentifier:imageIdentifier];
 }
 
 - (void)dirtyRenderedMemoryCacheImageWithIdentifier:(NSString *)imageIdentifier
 {
     TIPAssert(imageIdentifier != nil);
-    [_renderedCache dirtyImagesWithIdentifier:imageIdentifier];
+    [_renderedCache dirtyImageWithIdentifier:imageIdentifier];
 }
 
 - (void)clearMemoryCaches
@@ -359,14 +352,14 @@ static TIPImageStoreHydrationOperation * __nullable _createHydrationOperation(PR
 {
     TIPAssert(imageIdentifier != nil);
     NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
-        _background_copyDiskCacheFile(self, imageIdentifier, completion);
+        [self _background_copyDiskCacheFileWithIdentifier:imageIdentifier
+                                               completion:completion];
     }];
     [[TIPGlobalConfiguration sharedInstance] enqueueImagePipelineOperation:op];
 }
 
-static void _background_copyDiskCacheFile(PRIVATE_SELF(TIPImagePipeline),
-                                          NSString * imageIdentifier,
-                                          TIPImagePipelineCopyFileCompletionBlock __nullable completion)
+- (void)_background_copyDiskCacheFileWithIdentifier:(NSString *)imageIdentifier
+                                         completion:(nullable TIPImagePipelineCopyFileCompletionBlock)completion TIP_OBJC_DIRECT
 {
     // Copy to temp location
     NSString *temporaryFile = nil;
@@ -433,8 +426,8 @@ static void _background_copyDiskCacheFile(PRIVATE_SELF(TIPImagePipeline),
     if ([TIPGlobalConfiguration sharedInstance].clearMemoryCachesOnApplicationBackgroundEnabled) {
 
         dispatch_block_t endBackgroundTaskBlock = TIPStartBackgroundTask([NSString stringWithFormat:@"[%@ %@]", NSStringFromClass([self class]), NSStringFromSelector(_cmd)]);
+        [_renderedCache weakifyEntries];
         [_memoryCache clearAllImages:endBackgroundTaskBlock];
-        // Rendered caches will be cleared/pruned by TIPGlobalConfiguration
 
     }
 }
@@ -615,6 +608,8 @@ static NSString * __nullable TIPOpenImagePipelineWithIdentifier(NSString *identi
 
 static NSDictionary *TIPCopyAllRegisteredImagePipelines()
 {
+    TIPEnsureStaticImagePipelineVariables();
+
     __block NSDictionary *pipelines;
     tip_dispatch_sync_autoreleasing(sRegistrationQueue, ^{
         pipelines = sStrongIdentifierToWeakImagePipelineMap.dictionaryRepresentation;

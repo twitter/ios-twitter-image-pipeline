@@ -183,21 +183,23 @@ static NSString *sProblematicAvatarPath = nil;
     NSDictionary *options = @{ (NSString *)kCGImageSourceShouldCache : @NO };
     CGImageSourceRef imageSourceRef = CGImageSourceCreateIncremental((__bridge CFDictionaryRef)options);
     CGImageSourceUpdateData(imageSourceRef, (__bridge CFDataRef)imageData, NO);
-    if (tip_available_ios_10) {
-        CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(imageSourceRef, 0, NULL);
-        XCTAssertTrue(properties != NULL);
-        if (properties) {
-            XCTAssertGreaterThan(CFDictionaryGetCount(properties), (CFIndex)0);
-            CFRelease(properties);
-        }
-    } else {
-        XCTAssertThrows(CGImageSourceCopyPropertiesAtIndex(imageSourceRef, 0, NULL));
+    CFDictionaryRef properties = CGImageSourceCopyPropertiesAtIndex(imageSourceRef, 0, NULL);
+    XCTAssertTrue(properties != NULL);
+    if (properties) {
+        XCTAssertGreaterThan(CFDictionaryGetCount(properties), (CFIndex)0);
+        CFRelease(properties);
     }
     CFRelease(imageSourceRef);
 }
 
 - (void)testProblematicAvatarHandledByTIP
 {
+    /**
+     This avatar caused big issues on iOS 9 and below.
+     Now that TIP is iOS 10+, it should no longer be an issue,
+     but we will keep the unit test to ensure we don't regress.
+     */
+
     if (sizeof(NSInteger) == sizeof(int32_t)) {
         // 32-bit devices yield an abort instead of an exception :(
         return;
@@ -208,20 +210,11 @@ static NSString *sProblematicAvatarPath = nil;
 
     TIPPartialImage *partialImage = [[TIPPartialImage alloc] initWithExpectedContentLength:sProblematicAvatarData.length];
     [partialImage appendData:sProblematicAvatarData final:NO];
-    if (tip_available_ios_10) {
-        // no exception will have triggered
-    } else {
-        // exception will have triggered
-    }
-    image2 = [[partialImage renderImageWithMode:TIPImageDecoderRenderModeFullFrameProgress decoded:YES] image];
-    if (tip_available_ios_10) {
-        XCTAssertNotNil(image2); // image can render
-    } else {
-        XCTAssertNil(image2); // image cannot render
-    }
+    image2 = [[partialImage renderImageWithMode:TIPImageDecoderRenderModeFullFrameProgress targetDimensions:CGSizeZero targetContentMode:UIViewContentModeCenter decoded:YES] image];
+    XCTAssertNotNil(image2); // image can render
 
     [partialImage appendData:nil final:YES];
-    image2 = [[partialImage renderImageWithMode:TIPImageDecoderRenderModeFullFrameProgress decoded:YES] image];
+    image2 = [[partialImage renderImageWithMode:TIPImageDecoderRenderModeFullFrameProgress targetDimensions:CGSizeZero targetContentMode:UIViewContentModeCenter decoded:YES] image];
     XCTAssertNotNil(image2);
 
     XCTAssertTrue(CGSizeEqualToSize([image1 tip_dimensions], [image2 tip_dimensions]));
@@ -230,22 +223,20 @@ static NSString *sProblematicAvatarPath = nil;
     NSData *pngData2 = UIImagePNGRepresentationUndeprecated(image2);
 
     // (╯°□°)╯︵ ┻━┻
-    // On iOS 10, these images will serialize to different bytes...
+    // These images will serialize to different bytes (wasn't an issue prior to iOS 10)...
     // ...specifically an image with scale will have DPI info and PixelsPerMeter info.
     // Recreating an imageWithData: image with a scale will get them to be consistent.
-    if (tip_available_ios_10) {
-        if (image1.scale != image2.scale) {
-            UIImage *roundTrip1 = [UIImage imageWithData:pngData1];
-            UIImage *roundTrip2 = [UIImage imageWithData:pngData2];
-            XCTAssertEqual(roundTrip1.scale, roundTrip2.scale);
-            XCTAssertTrue(CGSizeEqualToSize(roundTrip1.size, roundTrip2.size));
+    if (image1.scale != image2.scale) {
+        UIImage *roundTrip1 = [UIImage imageWithData:pngData1];
+        UIImage *roundTrip2 = [UIImage imageWithData:pngData2];
+        XCTAssertEqual(roundTrip1.scale, roundTrip2.scale);
+        XCTAssertTrue(CGSizeEqualToSize(roundTrip1.size, roundTrip2.size));
 
-            image1 = [UIImage imageWithData:sProblematicAvatarData scale:image2.scale];
-            pngData1 = UIImagePNGRepresentationUndeprecated(image1);
+        image1 = [UIImage imageWithData:sProblematicAvatarData scale:image2.scale];
+        pngData1 = UIImagePNGRepresentationUndeprecated(image1);
 
-            UIImage *imageTest = [UIImage imageWithData:pngData1 scale:image2.scale];
-            XCTAssertTrue(CGSizeEqualToSize(imageTest.size, image2.size));
-        }
+        UIImage *imageTest = [UIImage imageWithData:pngData1 scale:image2.scale];
+        XCTAssertTrue(CGSizeEqualToSize(imageTest.size, image2.size));
     }
 
     XCTAssertEqualObjects(pngData1, pngData2);

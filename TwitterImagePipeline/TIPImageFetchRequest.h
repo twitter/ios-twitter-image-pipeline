@@ -48,6 +48,16 @@ typedef NS_OPTIONS(NSInteger, TIPImageFetchOptions)
      non-placeholder fetch/store.
      */
     TIPImageFetchTreatAsPlaceholder = 1 << 1,
+    /**
+     Don't store to rendered cache.
+     Useful for known large views that will not need to be synchronously rendered in the future.
+
+        Example: a full screen view of an image is something that users opt into and not something
+                 passively viewed like in a timeline, those fetches should provide
+                 `.SkipStoringToRenderedCache` to avoid bloating the rendered cache with media that
+                 doesn't require synchronous access.
+     */
+    TIPImageFetchSkipStoringToRenderedCache = 1 << 2,
 };
 
 /**
@@ -113,7 +123,7 @@ typedef NS_OPTIONS(NSInteger, TIPImageFetchOptions)
  The keys should be _TIPImageType_ values (which are `NSString` objects).
  Any unspecified _TIPImageType_ values will use the fallback policy for that type.
  Default == `nil`.
- Fallback is `[TIPImageFetchProgressiveLoadingPolicy defaultProgressiveLoadingPolicies]`
+ Fallback is `TIPImageFetchProgressiveLoadingPolicyDefaultPolicies()`
  See `TIPImageFetchDelegate` and `TIPImageTypes.h`
  */
 @property (nonatomic, readonly, copy, nullable) NSDictionary<NSString *, id<TIPImageFetchProgressiveLoadingPolicy>> *progressiveLoadingPolicies;
@@ -222,6 +232,8 @@ NS_INLINE NSString *TIPImageFetchRequestGetImageIdentifier(id<TIPImageFetchReque
 - (instancetype)initWithImageURL:(NSURL *)imageURL;
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
+
++ (instancetype)genericImageFetchRequestWithRequest:(id<TIPImageFetchRequest>)request;
 
 - (TIPGenericImageFetchRequest *)copy;
 - (TIPGenericImageFetchRequest *)copyWithZone:(nullable NSZone *)zone;

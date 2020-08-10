@@ -6,12 +6,14 @@
 //  Copyright (c) 2015 Twitter. All rights reserved.
 //
 
+#import "TIP_Project.h"
 #import "TIPImagePipelineInspectionResult.h"
 
 @class TIPImageCacheEntry;
 
 NS_ASSUME_NONNULL_BEGIN
 
+TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImagePipelineInspectionResult (Project)
 
 - (nullable instancetype)initWithImagePipeline:(TIPImagePipeline *)imagePipeline;
@@ -32,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable) UIImage *image;
 
 + (nullable instancetype)entryWithCacheEntry:(TIPImageCacheEntry *)cacheEntry
-                                       class:(Class)class;
+                                       class:(Class)class TIP_OBJC_DIRECT;
 
 @end
 

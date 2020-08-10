@@ -87,7 +87,7 @@ FOUNDATION_EXTERN NSString * const TIPImageFetchDownloadConstructorExceptionName
 /**
  Required readonly property to return the final "known" `NSURLRequest` of the download.
  */
-@property (nonatomic, readonly) NSURLRequest *finalURLRequest;
+@property (nonatomic, readonly, nullable) NSURLRequest *finalURLRequest;
 
 @optional
 
@@ -95,7 +95,7 @@ FOUNDATION_EXTERN NSString * const TIPImageFetchDownloadConstructorExceptionName
  Optional readonly property of download metrics.
  This property is left as an opaque `id` for the implementers convenience.
  */
-@property (nonatomic, readonly) id downloadMetrics;
+@property (nonatomic, readonly, nullable) id downloadMetrics;
 
 /** Optional readwrite property to support dynamic priority */
 @property (nonatomic) NSOperationQueuePriority priority;

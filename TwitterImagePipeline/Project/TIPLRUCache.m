@@ -59,6 +59,11 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
     return self;
 }
 
+- (void)dealloc
+{
+    [self nullifyEntryLinks];
+}
+
 - (void)internalSetDelegate:(nullable id<TIPLRUCacheDelegate>)delegate
 {
     _flags.delegateSupportsDidEvictSelector = (NO != [delegate respondsToSelector:@selector(tip_cache:didEvictEntry:)]);
@@ -212,18 +217,7 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
 
 - (void)clearAllEntries
 {
-    // removing all entries via weak dealloc chaining
-    // can yield a stack overflow!
-    // use iterative removal instead
-
-    id<TIPLRUEntry> entryToRemove = _headEntry;
-    while (entryToRemove) {
-        id<TIPLRUEntry> nextEntry = entryToRemove.nextLRUEntry;
-        entryToRemove.nextLRUEntry = nil;
-        entryToRemove.previousLRUEntry = nil;
-        entryToRemove = nextEntry;
-    }
-
+    [self nullifyEntryLinks];
     _tailEntry = nil;
     _headEntry = nil;
     [_cache removeAllObjects];
@@ -323,6 +317,20 @@ NS_INLINE void TIPLRUCacheAssertHeadAndTail(TIPLRUCache *cache)
 
     _mutationCheckInteger++;
     TIPAssert(!_headEntry == !_tailEntry);
+}
+
+- (void)nullifyEntryLinks
+{
+    // removing all entries via weak dealloc chaining
+    // can yield a stack overflow!
+    // use iterative removal instead
+    id<TIPLRUEntry> entryToRemove = _headEntry;
+    while (entryToRemove) {
+        id<TIPLRUEntry> nextEntry = entryToRemove.nextLRUEntry;
+        entryToRemove.nextLRUEntry = nil;
+        entryToRemove.previousLRUEntry = nil;
+        entryToRemove = nextEntry;
+    }
 }
 
 @end

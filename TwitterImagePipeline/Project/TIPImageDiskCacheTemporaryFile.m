@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
                          finalPath:(NSString *)finalPath
                          diskCache:(nullable TIPImageDiskCache *)diskCache;
 
-- (void)cleanupOpenFile;
+- (void)cleanupOpenFile TIP_OBJC_DIRECT;
 
 @end
 

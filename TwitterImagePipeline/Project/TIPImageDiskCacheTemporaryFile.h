@@ -14,6 +14,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImageDiskCacheTemporaryFile : NSObject
 
 @property (nonatomic, readonly, copy) NSString *imageIdentifier;

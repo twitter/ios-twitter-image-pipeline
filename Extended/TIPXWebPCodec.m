@@ -11,57 +11,38 @@
 #import <Accelerate/Accelerate.h>
 #import <TwitterImagePipeline/TwitterImagePipeline.h>
 
+#import "TIPXUtils.h"
 #import "TIPXWebPCodec.h"
 
 #pragma mark WebP includes
 
 #if TARGET_OS_MACCATALYST
 #import <webp/webp.h>
+#if TIPX_WEBP_ANIMATION_DECODING_ENABLED
+#define WEBP_HAS_DEMUX 1
+#endif
 #else
 #import <WebP/decode.h>
 #import <WebP/encode.h>
+#if TIPX_WEBP_ANIMATION_DECODING_ENABLED
+#import <WebPDemux/demux.h>
+#define WEBP_HAS_DEMUX 1
 #endif
-
-#pragma mark -
-
-#ifndef PRIVATE_SELF
-#define PRIVATE_SELF(type) type * __nullable const self
 #endif
 
 NS_ASSUME_NONNULL_BEGIN
 
-#pragma mark - Constants
-
-NSString * const TIPXImageTypeWebP = @"public.webp";
-
-#pragma mark - Defer support
-
-typedef void(^tipx_defer_block_t)(void);
-NS_INLINE void tipx_deferFunc(__strong tipx_defer_block_t __nonnull * __nonnull blockRef)
-{
-    tipx_defer_block_t actualBlock = *blockRef;
-    actualBlock();
-}
-
-#define _tipx_macro_concat(a, b) a##b
-#define tipx_macro_concat(a, b) _tipx_macro_concat(a, b)
-
-#pragma twitter startignorestylecheck
-
-#define tipx_defer(deferBlock) \
-__strong tipx_defer_block_t tipx_macro_concat(tipx_stack_defer_block_, __LINE__) __attribute__((cleanup(tipx_deferFunc), unused)) = deferBlock
-
-#define TIPXDeferRelease(ref) tipx_defer(^{ if (ref) { CFRelease(ref); } })
-
-#pragma twitter endignorestylecheck
-
 #pragma mark - Declarations
 
-static TIPImageContainer * __nullable TIPXWebPConstructImageContainer(CGDataProviderRef dataProvider,
-                                                                      const size_t width,
-                                                                      const size_t height,
-                                                                      const size_t bytesPerPixel,
-                                                                      const size_t componentsPerPixel);
+static UIImage * __nullable TIPXWebPRenderImage(NSData *dataBuffer,
+                                                CGSize sourceDimensions,
+                                                CGSize targetDimensions,
+                                                UIViewContentMode targetContentMode);
+static UIImage * __nullable TIPXWebPConstructImage(CGDataProviderRef dataProvider,
+                                                   const size_t width,
+                                                   const size_t height,
+                                                   const size_t bytesPerPixel,
+                                                   const size_t componentsPerPixel);
 static BOOL TIPXWebPPictureImport(WebPPicture *picture,
                                   CGImageRef imageRef);
 static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
@@ -73,17 +54,20 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 @property (nonatomic, readonly) CGSize tip_dimensions;
 @property (nonatomic, readonly) BOOL tip_hasAlpha;
 @property (nonatomic, readonly) NSUInteger tip_frameCount;
+@property (nonatomic, readonly) BOOL tip_isAnimated;
 
 - (instancetype)initWithExpectedContentLength:(NSUInteger)length
                                        buffer:(NSMutableData *)buffer;
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
 
-@property (nonatomic, readonly) NSUInteger expectedContentLength;
+@property (tipx_nonatomic_direct, readonly) NSUInteger expectedContentLength;
 
-- (TIPImageDecoderAppendResult)append:(NSData *)data;
-- (nullable TIPImageContainer *)renderImage:(TIPImageDecoderRenderMode)mode;
-- (TIPImageDecoderAppendResult)finalizeDecoding;
+- (TIPImageDecoderAppendResult)append:(NSData *)data TIPX_OBJC_DIRECT;
+- (nullable TIPImageContainer *)renderImage:(TIPImageDecoderRenderMode)renderMode
+                           targetDimensions:(CGSize)targetDimensions
+                          targetContentMode:(UIViewContentMode)targetContentMode TIPX_OBJC_DIRECT;
+- (TIPImageDecoderAppendResult)finalizeDecoding TIPX_OBJC_DIRECT;
 
 @end
 
@@ -99,11 +83,32 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 
 - (instancetype)init
 {
+    // Shouldn't be called, but will permit in case of type erasure
+    return [self initPreservingDefaultCodecsIfPresent:NO];
+}
+
+- (instancetype)initPreservingDefaultCodecsIfPresent:(BOOL)preserve
+{
     if (self = [super init]) {
-        _tip_decoder = [[TIPXWebPDecoder alloc] init];
-        _tip_encoder = [[TIPXWebPEncoder alloc] init];
+        if (preserve) {
+            id<TIPImageCodec> webpCodec = [TIPImageCodecCatalogue defaultCodecs][TIPImageTypeWEBP];
+            _tip_decoder = webpCodec.tip_decoder ?: [[TIPXWebPDecoder alloc] init];
+            _tip_encoder = webpCodec.tip_encoder ?: [[TIPXWebPEncoder alloc] init];
+        } else {
+            _tip_decoder = [[TIPXWebPDecoder alloc] init];
+            _tip_encoder = [[TIPXWebPEncoder alloc] init];
+        }
     }
     return self;
+}
+
++ (BOOL)hasAnimationDecoding
+{
+#if WEBP_HAS_DEMUX
+    return YES;
+#else
+    return NO;
+#endif
 }
 
 @end
@@ -139,52 +144,23 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
                                                                   buffer:buffer];
 }
 
-- (TIPImageDecoderAppendResult)tip_append:(id<TIPImageDecoderContext>)context
+- (TIPImageDecoderAppendResult)tip_append:(TIPXWebPDecoderContext *)context
                                      data:(NSData *)data
 {
-    return [(TIPXWebPDecoderContext *)context append:data];
+    return [context append:data];
 }
 
-- (nullable TIPImageContainer *)tip_renderImage:(id<TIPImageDecoderContext>)context
-                                           mode:(TIPImageDecoderRenderMode)mode
+- (nullable TIPImageContainer *)tip_renderImage:(TIPXWebPDecoderContext *)context
+                                     renderMode:(TIPImageDecoderRenderMode)renderMode
+                               targetDimensions:(CGSize)targetDimensions
+                              targetContentMode:(UIViewContentMode)targetContentMode
 {
-    return [(TIPXWebPDecoderContext *)context renderImage:mode];
+    return [context renderImage:renderMode targetDimensions:targetDimensions targetContentMode:targetContentMode];
 }
 
-- (TIPImageDecoderAppendResult)tip_finalizeDecoding:(id<TIPImageDecoderContext>)context
+- (TIPImageDecoderAppendResult)tip_finalizeDecoding:(TIPXWebPDecoderContext *)context
 {
-    return [(TIPXWebPDecoderContext *)context finalizeDecoding];
-}
-
-- (nullable TIPImageContainer *)tip_decodeImageWithData:(NSData *)imageData
-                                                 config:(nullable id)config
-{
-    int width, height;
-    Byte *rgbaBytes = WebPDecodeRGBA(imageData.bytes,
-                                     imageData.length,
-                                     &width,
-                                     &height);
-    if (!rgbaBytes) {
-        return nil;
-    }
-
-    const size_t totalBytes = (size_t)width * (size_t)height * 4 /* RGBA */;
-    NSData *rgbaData = [[NSData alloc] initWithBytesNoCopy:rgbaBytes
-                                                    length:totalBytes
-                                               deallocator:^(void *bytes, NSUInteger length) {
-        WebPFree(rgbaBytes);
-    }];
-    CGDataProviderRef provider = CGDataProviderCreateWithCFData((CFDataRef)rgbaData);
-    TIPXDeferRelease(provider);
-    if (!provider) {
-        return nil;
-    }
-
-    return TIPXWebPConstructImageContainer(provider,
-                                           (size_t)width,
-                                           (size_t)height,
-                                           4 /* bytes per pixel */,
-                                           4 /* components per pixel */);
+    return [context finalizeDecoding];
 }
 
 @end
@@ -248,12 +224,12 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
         return nil;
     }
 
-    WebPMemoryWriter *writerRef = (WebPMemoryWriter *)malloc(sizeof(WebPMemoryWriter));
+    WebPMemoryWriter *writerRef = (WebPMemoryWriter *)WebPMalloc(sizeof(WebPMemoryWriter));
     WebPMemoryWriterInit(writerRef);
 
     dispatch_block_t writerDeallocBlock = ^{
         WebPMemoryWriterClear(writerRef);
-        free(writerRef);
+        WebPFree(writerRef);
     };
 
     pictureRef->writer = WebPMemoryWrite;
@@ -278,19 +254,23 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 {
     struct {
         BOOL didEncounterFailure:1;
-        BOOL didFreeDecoderBuffer:1;
         BOOL didLoadHeaders:1;
+        BOOL didLoadFrame:1;
         BOOL didComplete:1;
+        BOOL isAnimated:1;
+        BOOL isCachedImageFirstFrame:1;
     } _flags;
 
-    WebPDecBuffer _decoderBuffer;
-    WebPIDecoder *_decoder;
     NSMutableData *_dataBuffer;
-
     TIPImageContainer *_cachedImageContainer;
 }
 
 @synthesize tip_data = _dataBuffer;
+
+- (BOOL)tip_isAnimated
+{
+    return _flags.isAnimated;
+}
 
 - (nullable id)tip_config
 {
@@ -302,15 +282,6 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 {
     if (self = [super init]) {
         _expectedContentLength = length;
-        if (WebPInitDecBuffer(&_decoderBuffer)) {
-            _decoderBuffer.colorspace = MODE_RGBA;
-            _decoder = WebPINewDecoder(&_decoderBuffer);
-        } else {
-            _flags.didFreeDecoderBuffer = 1;
-        }
-        if (!_decoder) {
-            _flags.didEncounterFailure = 1;
-        }
 
         if (buffer) {
             _dataBuffer = buffer;
@@ -325,7 +296,7 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 
 - (void)dealloc
 {
-    _cleanup(self);
+    [self _cleanup];
 }
 
 - (TIPImageDecoderAppendResult)append:(NSData *)data
@@ -350,122 +321,292 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
             if (VP8_STATUS_OK == WebPGetFeatures(_dataBuffer.bytes, _dataBuffer.length, &features)) {
                 _tip_dimensions = CGSizeMake(features.width, features.height);
                 _tip_hasAlpha = !!features.has_alpha;
-
-                if (features.has_animation) {
-                    // TODO: support animated WebP
+                if (!features.has_animation) {
+                    _tip_frameCount = 1;
+                } else {
+#if WEBP_HAS_DEMUX
+                    _flags.isAnimated = 1;
+                    // WebP animations do not have a header indicating the number of frames,
+                    // will have to decode entire file to get number of frames.
+                    // Set number of frames to 2 for now and update along the way.
+                    _tip_frameCount = 2;
+#else
                     _flags.didEncounterFailure = 1;
                     return result;
+#endif
                 }
-
                 result = TIPImageDecoderAppendResultDidLoadHeaders;
                 _flags.didLoadHeaders = 1;
             }
         }
+    }
 
-        if (_flags.didLoadHeaders) {
-            VP8StatusCode code = WebPIUpdate(_decoder, _dataBuffer.bytes, _dataBuffer.length);
-            if (VP8_STATUS_OK == code) {
-                _tip_frameCount = 1;
-                _flags.didComplete = 1;
-                result = TIPImageDecoderAppendResultDidCompleteLoading;
-            } else if (VP8_STATUS_SUSPENDED == code) {
-                // more progress to be made
-
-                // TODO: add support for progressive loading once WebP adds support.
-                //       planned but NYI by Google as of Nov 11, 2016.
-            } else {
-                _flags.didEncounterFailure = 1;
+#if WEBP_HAS_DEMUX
+    if (_flags.didLoadHeaders && !_flags.didLoadFrame && _flags.isAnimated) {
+        WebPData webpData = (WebPData){ .bytes = _dataBuffer.bytes, .size = _dataBuffer.length };
+        WebPDemuxState state = WEBP_DEMUX_PARSING_HEADER;
+        WebPDemuxer* demuxer = WebPDemuxPartial(&webpData, &state);
+        tipx_defer(^{
+            WebPDemuxDelete(demuxer);
+        });
+        if (demuxer && state >= WEBP_DEMUX_PARSED_HEADER) {
+            if (WebPDemuxGetI(demuxer, WEBP_FF_FRAME_COUNT) > 1) {
+                _flags.didLoadFrame = 1;
+                result = TIPImageDecoderAppendResultDidLoadFrame;
             }
         }
     }
+#endif
 
     return result;
 }
 
-- (nullable TIPImageContainer *)renderImage:(TIPImageDecoderRenderMode)mode
+- (nullable TIPImageContainer *)renderImage:(TIPImageDecoderRenderMode)renderMode
+                           targetDimensions:(CGSize)targetDimensions
+                          targetContentMode:(UIViewContentMode)targetContentMode
+{
+    @autoreleasepool {
+#if WEBP_HAS_DEMUX
+        if (_flags.isAnimated) {
+            return [self _renderAnimatedImage:renderMode
+                             targetDimensions:targetDimensions
+                            targetContentMode:targetContentMode];
+        }
+#endif
+
+        return [self _renderStaticImage:renderMode
+                       targetDimensions:targetDimensions
+                      targetContentMode:targetContentMode];
+    }
+}
+
+- (nullable TIPImageContainer *)_renderStaticImage:(TIPImageDecoderRenderMode)renderMode
+                                  targetDimensions:(CGSize)targetDimensions
+                                 targetContentMode:(UIViewContentMode)targetContentMode TIPX_OBJC_DIRECT
 {
     if (!_flags.didComplete) {
         return nil;
     }
 
-    if (!_cachedImageContainer) {
-        _cachedImageContainer = _renderImage(self);
-        if (_cachedImageContainer) {
-            _cleanup(self);
+    if (!_cachedImageContainer && !_flags.didEncounterFailure) {
+        UIImage *image = TIPXWebPRenderImage(_dataBuffer,
+                                             _tip_dimensions,
+                                             targetDimensions,
+                                             targetContentMode);
+        if (image) {
+            _cachedImageContainer = [[TIPImageContainer alloc] initWithImage:image];
+            [self _cleanup];
+        } else {
+            _flags.didEncounterFailure = 1;
         }
     }
 
     return _cachedImageContainer;
 }
 
+#if WEBP_HAS_DEMUX
+- (nullable TIPImageContainer *)_renderAnimatedImage:(TIPImageDecoderRenderMode)renderMode
+                                    targetDimensions:(CGSize)targetDimensions
+                                   targetContentMode:(UIViewContentMode)targetContentMode TIPX_OBJC_DIRECT
+{
+    BOOL justFirstFrame = NO;
+    if (!_flags.didComplete) {
+        if (TIPImageDecoderRenderModeCompleteImage == renderMode) {
+            return nil;
+        }
+
+        if (!_flags.didLoadFrame) {
+            return nil;
+        }
+
+        if (_flags.isCachedImageFirstFrame && _cachedImageContainer) {
+            return _cachedImageContainer;
+        }
+
+        justFirstFrame = YES; // <-- we only need the first frame as a preview
+    }
+
+    if (!justFirstFrame) {
+        if (_cachedImageContainer && !_flags.isCachedImageFirstFrame) {
+            return _cachedImageContainer;
+        }
+    }
+
+    // Create our demuxer (defer delete it)
+    WebPData data = (WebPData){ .bytes = _dataBuffer.bytes, .size = _dataBuffer.length };
+    WebPDemuxState state = WEBP_DEMUX_PARSING_HEADER;
+    WebPDemuxer* demuxer = WebPDemuxPartial(&data, &state);
+    tipx_defer(^{
+        WebPDemuxDelete(demuxer);
+    });
+    if (state < WEBP_DEMUX_PARSED_HEADER) {
+        return nil;
+    }
+
+    // Allocate the WebPIterator (and defer free it)
+    WebPIterator* iter = (WebPIterator*)WebPMalloc(sizeof(WebPIterator));
+    memset(iter, 0, sizeof(WebPIterator));
+    tipx_defer(^{
+        WebPFree(iter);
+    });
+
+    // Populate the WebPIterator with the first frame (1 based index, 0 index is the last frame)
+    if (!WebPDemuxGetFrame(demuxer, 1, iter)) {
+        // Failed to get the frame, nothing populated on the iterator
+        return nil;
+    }
+    // Iterator was populated with bookkeeping/allocations for the first frame, defer releasing those references
+    tipx_defer(^{
+        WebPDemuxReleaseIterator(iter);
+    });
+
+    // Go through the animation and pull out the frames (stopping after the first frame if `justFirstFrame` is `YES`)
+    NSTimeInterval totalDuration = 0;
+    const NSUInteger loopCount = (NSUInteger)WebPDemuxGetI(demuxer, WEBP_FF_LOOP_COUNT);
+    NSMutableArray<UIImage *> *frames = [[NSMutableArray alloc] initWithCapacity:(NSUInteger)iter->num_frames];
+    NSMutableArray<NSNumber *> *frameDurations = [[NSMutableArray alloc] initWithCapacity:(NSUInteger)iter->num_frames];
+    do {
+
+        NSData *fragment = [[NSData alloc] initWithBytesNoCopy:(void*)iter->fragment.bytes
+                                                        length:iter->fragment.size
+                                                  freeWhenDone:NO];
+        UIImage *frame = TIPXWebPRenderImage(fragment,
+                                             _tip_dimensions,
+                                             justFirstFrame ? targetDimensions : CGSizeZero,
+                                             targetContentMode);
+        if (!frame) {
+            return nil;
+        }
+
+        const NSTimeInterval duration = (NSTimeInterval)iter->duration / 1000.;
+        [frames addObject:frame];
+        [frameDurations addObject:@(duration)];
+        totalDuration += duration;
+
+    } while (!justFirstFrame && WebPDemuxNextFrame(iter));
+
+    if (justFirstFrame) {
+        // Static image (a preview of the full animation)
+        _cachedImageContainer = [[TIPImageContainer alloc] initWithImage:frames.firstObject];
+    } else {
+        // Full animation
+        UIImage *image = [UIImage animatedImageWithImages:frames
+                                                 duration:totalDuration];
+        _cachedImageContainer = [[TIPImageContainer alloc] initWithAnimatedImage:image
+                                                                       loopCount:loopCount
+                                                                  frameDurations:frameDurations];
+    }
+
+    if (_cachedImageContainer) {
+        _flags.isCachedImageFirstFrame = !!justFirstFrame;
+    }
+    return _cachedImageContainer;
+}
+#endif
+
 - (TIPImageDecoderAppendResult)finalizeDecoding
 {
-    TIPImageDecoderAppendResult result = [self append:[NSData data]];
-    (void)[self renderImage:TIPImageDecoderRenderModeCompleteImage]; // cache
-    return result;
+    if (_flags.didEncounterFailure) {
+        return TIPImageDecoderAppendResultDidCompleteLoading;
+    }
+
+    if (!_flags.didLoadHeaders) {
+        return TIPImageDecoderAppendResultDidProgress;
+    }
+
+#if WEBP_HAS_DEMUX
+    if (_flags.isAnimated) {
+        WebPData data = (WebPData){ .bytes = _dataBuffer.bytes, .size = _dataBuffer.length };
+        WebPDemuxState state = WEBP_DEMUX_PARSING_HEADER;
+        WebPDemuxer* demuxer = WebPDemuxPartial(&data, &state);
+        tipx_defer(^{
+            WebPDemuxDelete(demuxer);
+        });
+        if (!demuxer || WEBP_DEMUX_DONE != state) {
+            _flags.didEncounterFailure = 1;
+            return TIPImageDecoderAppendResultDidCompleteLoading;
+        }
+
+        // Update the frame count to the full count (was set to "2" as a placeholder)
+        _tip_frameCount = WebPDemuxGetI(demuxer, WEBP_FF_FRAME_COUNT);
+    }
+#endif
+
+    _flags.didComplete = 1;
+    return TIPImageDecoderAppendResultDidCompleteLoading;
 }
 
 #pragma mark Private
 
-static void _cleanup(PRIVATE_SELF(TIPXWebPDecoderContext))
+- (void)_cleanup TIPX_OBJC_DIRECT
 {
-    if (!self) {
-        return;
-    }
-
-    if (self->_decoder) {
-        WebPIDelete(self->_decoder);
-        self->_decoder = NULL;
-    }
-    if (!self->_flags.didFreeDecoderBuffer) {
-        WebPFreeDecBuffer(&self->_decoderBuffer);
-        self->_flags.didFreeDecoderBuffer = 1;
-    }
+    // clean up any temporary state before decoding to a TIPImageContainer
 }
 
-static TIPImageContainer * __nullable _renderImage(PRIVATE_SELF(TIPXWebPDecoderContext))
+static UIImage *TIPXWebPRenderImage(NSData *dataBuffer,
+                                    CGSize sourceDimensions,
+                                    CGSize targetDimensions,
+                                    UIViewContentMode targetContentMode)
 {
-    if (!self) {
+    __block WebPDecoderConfig* config = (WebPDecoderConfig*)WebPMalloc(sizeof(WebPDecoderConfig));
+    tipx_defer(^{
+        if (config) {
+            WebPFree(config);
+        }
+    });
+    if (!WebPInitDecoderConfig(config)) {
         return nil;
     }
 
-    int w, h;
-    Byte *rgbaBytes = WebPIDecGetRGB(self->_decoder, /*last_y*/NULL, &w, &h, /*stride*/NULL);
+    const CGSize scaledDimensions = TIPDimensionsScaledToTargetSizing(sourceDimensions,
+                                                                      targetDimensions,
+                                                                      targetContentMode);
+    if (!CGSizeEqualToSize(scaledDimensions, sourceDimensions)) {
+        config->options.scaled_width = (int)scaledDimensions.width;
+        config->options.scaled_height = (int)scaledDimensions.height;
+        config->options.use_scaling = 1;
+        // should we stop fancy upscaling? config.options.no_fancy_upsampling = 1;
+    }
+    config->output.colorspace = MODE_RGBA;
+
+    if (VP8_STATUS_OK != WebPDecode(dataBuffer.bytes, dataBuffer.length, config)) {
+        return nil;
+    }
 
     static const size_t bitsPerComponent = 8;
     static const size_t bitsPerPixel = 32;
     static const size_t bytesPerPixel = bitsPerPixel / 8;
     static const size_t componentsPerPixel = bitsPerPixel / bitsPerComponent;
-    const size_t totalBytes = (size_t)(w * h) * bytesPerPixel;
 
-    // TODO: instead of copying the bytes over (doubling the memory required)
-    // we should have a single buffer shared between the output data provider
-    // and the WebP decoder.
-    // There is a way to create a data provider with raw bytes that has a release
-    // callback where the contextual owner of those bytes could be "freed".
-
-    CFDataRef data = CFDataCreate(NULL, rgbaBytes, (CFIndex)totalBytes);
-    TIPXDeferRelease(data);
-    CGDataProviderRef provider = CGDataProviderCreateWithCFData(data);
+    WebPDecoderConfig* configLongLived = config;
+    os_compiler_barrier();
+    config = nil; // clear the ref to avoid being free on scope exit
+    NSData *data = [[NSData alloc] initWithBytesNoCopy:configLongLived->output.u.RGBA.rgba
+                                                length:configLongLived->output.u.RGBA.size
+                                           deallocator:^(void * _Nonnull bytes, NSUInteger length) {
+        WebPFreeDecBuffer(&configLongLived->output);
+        WebPFree(configLongLived);
+    }];
+    CGDataProviderRef provider = CGDataProviderCreateWithCFData((CFDataRef)data);
     TIPXDeferRelease(provider);
     if (!provider) {
         return nil;
     }
 
-    return TIPXWebPConstructImageContainer(provider,
-                                           (size_t)w,
-                                           (size_t)h,
-                                           componentsPerPixel,
-                                           bytesPerPixel);
+    return TIPXWebPConstructImage(provider,
+                                  (size_t)configLongLived->output.width,
+                                  (size_t)configLongLived->output.height,
+                                  componentsPerPixel,
+                                  bytesPerPixel);
 }
 
 @end
 
-static TIPImageContainer *TIPXWebPConstructImageContainer(CGDataProviderRef dataProvider,
-                                                          const size_t width,
-                                                          const size_t height,
-                                                          const size_t bytesPerPixel,
-                                                          const size_t componentsPerPixel)
+static UIImage *TIPXWebPConstructImage(CGDataProviderRef dataProvider,
+                                       const size_t width,
+                                       const size_t height,
+                                       const size_t bytesPerPixel,
+                                       const size_t componentsPerPixel)
 {
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
     TIPXDeferRelease(colorSpace);
@@ -492,11 +633,7 @@ static TIPImageContainer *TIPXWebPConstructImageContainer(CGDataProviderRef data
                                         renderingIntent);
     TIPXDeferRelease(imageRef);
 
-    UIImage *image = [UIImage imageWithCGImage:imageRef];
-    if (!image) {
-        return nil;
-    }
-    return [[TIPImageContainer alloc] initWithImage:image];
+    return [UIImage imageWithCGImage:imageRef];
 }
 
 static BOOL TIPXWebPPictureImport(WebPPicture *picture,

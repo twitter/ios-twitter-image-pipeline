@@ -178,21 +178,35 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Construct an animated image from encoded _data_
  @param data    the encoded image data
+ @param targetDimensions the dimension sizing constraints to decode the image into (`CGSizeZero` for full size)
+ @param targetContentMode the content mode sizing constraints to decode the image into (any non-scaling mode for full size)
  @param durationsOut    populated with the animation durations on success
  @param loopCountOut    populated with the number of loops on success
  @return a `UIImage` on success, `nil` on failure.  Ought to be an animated image, but depends on
  the data passed in.
  */
 + (nullable UIImage *)tip_imageWithAnimatedImageData:(NSData *)data
+                                    targetDimensions:(CGSize)targetDimensions
+                                   targetContentMode:(UIViewContentMode)targetContentMode
+                                           durations:(out NSArray<NSNumber *> * __nullable * __nullable)durationsOut
+                                           loopCount:(out NSUInteger * __nullable)loopCountOut;
++ (nullable UIImage *)tip_imageWithAnimatedImageData:(NSData *)data
                                            durations:(out NSArray<NSNumber *> * __nullable * __nullable)durationsOut
                                            loopCount:(out NSUInteger * __nullable)loopCountOut;
 /**
  Construct an animated image with a file path
  @param filePath the path to an animated image file
+ @param targetDimensions the dimension sizing constraints to decode the image into (`CGSizeZero` for full size)
+ @param targetContentMode the content mode sizing constraints to decode the image into (any non-scaling mode for full size)
  @param durationsOut the durations of the animated image that was loaded (`NULL` to ignore)
  @param loopCountOut the number of loops of the animated image that was loaded (`NULL` to ignore)
  @return an animated image or `nil` if there was an error
  */
++ (nullable UIImage *)tip_imageWithAnimatedImageFile:(NSString *)filePath
+                                    targetDimensions:(CGSize)targetDimensions
+                                   targetContentMode:(UIViewContentMode)targetContentMode
+                                           durations:(out NSArray<NSNumber *> * __nullable * __nullable)durationsOut
+                                           loopCount:(out NSUInteger * __nullable)loopCountOut;
 + (nullable UIImage *)tip_imageWithAnimatedImageFile:(NSString *)filePath
                                            durations:(out NSArray<NSNumber *> * __nullable * __nullable)durationsOut
                                            loopCount:(out NSUInteger * __nullable)loopCountOut;
@@ -287,18 +301,31 @@ animationFrameDurations:(nullable NSArray<NSNumber *> *)animationFrameDurations
  Create a new UIImage from the image at the specified index in the `CGImageSourceRef`
  @param imageSource the `CGImageSourceRef` to load from
  @param index index of the image in the image source
+ @param targetDimensions the dimension sizing constraints to decode the image into (`CGSizeZero` for full size)
+ @param targetContentMode the content mode sizing constraints to decode the image into (any non-scaling mode for full size)
  @return new UIImage or `nil` if there was an error or no image at the specified index
  */
++ (nullable UIImage *)tip_imageWithImageSource:(CGImageSourceRef)imageSource
+                                       atIndex:(NSUInteger)index
+                              targetDimensions:(CGSize)targetDimensions
+                             targetContentMode:(UIViewContentMode)targetContentMode;
 + (nullable UIImage *)tip_imageWithImageSource:(CGImageSourceRef)imageSource
                                        atIndex:(NSUInteger)index;
 
 /**
  Construct an animated image with a `CGImageSourceRef`
  @param imageSource the `CGImageSourceRef` to load from
+ @param targetDimensions the dimension sizing constraints to decode the image into (`CGSizeZero` for full size)
+ @param targetContentMode the content mode sizing constraints to decode the image into (any non-scaling mode for full size)
  @param durationsOut the durations of the animated image that was loaded (`NULL` to ignore)
  @param loopCountOut the number of loops of the animated image that was loaded (`NULL` to ignore)
  @return an animated image or `nil` if there was an error
  */
++ (nullable UIImage *)tip_imageWithAnimatedImageSource:(CGImageSourceRef)imageSource
+                                      targetDimensions:(CGSize)targetDimensions
+                                     targetContentMode:(UIViewContentMode)targetContentMode
+                                             durations:(out NSArray<NSNumber *> * __nullable * __nullable)durationsOut
+                                             loopCount:(out NSUInteger * __nullable)loopCountOut;
 + (nullable UIImage *)tip_imageWithAnimatedImageSource:(CGImageSourceRef)imageSource
                                              durations:(out NSArray<NSNumber *> * __nullable * __nullable)durationsOut
                                              loopCount:(out NSUInteger * __nullable)loopCountOut;

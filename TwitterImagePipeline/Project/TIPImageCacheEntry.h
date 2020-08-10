@@ -35,14 +35,14 @@ NS_ASSUME_NONNULL_BEGIN
 // Abstract base class
 @interface TIPImageCacheEntryContext : NSObject <NSCopying>
 
-@property (nonatomic) BOOL updateExpiryOnAccess;
-@property (nonatomic) BOOL treatAsPlaceholder;
-@property (nonatomic) NSTimeInterval TTL;
-@property (nonatomic, nullable) NSURL *URL;
-@property (nonatomic, nullable) NSDate *lastAccess;
-@property (nonatomic, getter=isAnimated) BOOL animated;
+@property (tip_nonatomic_direct) BOOL updateExpiryOnAccess;
+@property (tip_nonatomic_direct) BOOL treatAsPlaceholder;
+@property (tip_nonatomic_direct) NSTimeInterval TTL;
+@property (tip_nonatomic_direct, nullable) NSURL *URL;
+@property (tip_nonatomic_direct, nullable) NSDate *lastAccess;
+@property (tip_nonatomic_direct, getter=isAnimated) BOOL animated;
 
-@property (nonatomic) CGSize dimensions; // pixel size, not point size
+@property (tip_nonatomic_direct) CGSize dimensions; // pixel size, not point size
 
 @end
 
@@ -72,7 +72,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable) TIPPartialImage *partialImage;
 @property (nonatomic, nullable) TIPPartialImageEntryContext *partialImageContext;
 
-- (BOOL)isValid:(BOOL)mustHaveSomeImage;
+- (BOOL)isValid:(BOOL)mustHaveSomeImage TIP_OBJC_DIRECT;
 
 #pragma mark TIPLRUEntry
 
@@ -85,17 +85,13 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 @interface TIPImageDiskCacheEntry : TIPImageCacheEntry
-
-@property (nonatomic, nullable) TIPImageDiskCacheTemporaryFile *tempFile;
-
+@property (tip_nonatomic_direct, nullable) TIPImageDiskCacheTemporaryFile *tempFile;
 @end
 
 #pragma mark - Private
 
 @interface TIPImageCacheEntry (Access)
-
-- (nullable NSDate *)mostRecentAccess;
-
+- (nullable NSDate *)mostRecentAccess TIP_OBJC_DIRECT;
 @end
 
 @interface TIPImageCacheEntry (Store)

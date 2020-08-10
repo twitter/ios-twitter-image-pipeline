@@ -76,7 +76,7 @@ FOUNDATION_EXTERN NSString * const TIPImageTypeICO;
 /**
  RAW (Raw image data)
  Only decoding is supported by __TIP__ by default.
- @note requires iOS 8+ (tvOS support not enabled for now)
+ @note tvOS support not enabled for now
  */
 FOUNDATION_EXTERN NSString * const TIPImageTypeRAW;
 /**
@@ -93,6 +93,12 @@ FOUNDATION_EXTERN NSString * const TIPImageTypeICNS;
  @warning this is untested currently due to difficulty in creating .avci files to test
  */
 FOUNDATION_EXTERN NSString * const TIPImageTypeAVCI;
+/**
+ WEBP (Google's WebM project image format, WebP)
+ @note requires iOS 14+
+ @note the `TIPXWebPCodec` encoder and decoder can be installed for backwards compatibility
+ */
+FOUNDATION_EXTERN NSString * const TIPImageTypeWEBP;
 
 #pragma mark Unsupported image types (cannot read nor write)
 

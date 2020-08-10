@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface TIPDisabledExternalMutabilityOperation : TIPSafeOperation <TIPDependencyOperation>
 @end
 
+TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImageStoreOperation : TIPDisabledExternalMutabilityOperation
 
 - (instancetype)initWithRequest:(id<TIPImageStoreRequest>)request
@@ -32,6 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImageStoreHydrationOperation : TIPDisabledExternalMutabilityOperation
 
 @property (nonatomic, readonly, nullable) NSError *error;
@@ -46,6 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+TIP_OBJC_DIRECT_MEMBERS
 @interface TIPImageMoveOperation : TIPDisabledExternalMutabilityOperation
 
 @property (nonatomic, readonly, copy) NSString *originalIdentifier;

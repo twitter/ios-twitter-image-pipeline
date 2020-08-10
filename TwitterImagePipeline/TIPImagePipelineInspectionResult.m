@@ -104,7 +104,10 @@ NS_ASSUME_NONNULL_BEGIN
         entry.URL = cacheEntry.partialImageContext.URL;
 
         if (cacheEntry.partialImage) {
-            entry.image = [cacheEntry.partialImage renderImageWithMode:TIPImageDecoderRenderModeAnyProgress decoded:NO].image;
+            entry.image = [cacheEntry.partialImage renderImageWithMode:TIPImageDecoderRenderModeAnyProgress
+                                                      targetDimensions:CGSizeZero
+                                                     targetContentMode:UIViewContentModeCenter
+                                                               decoded:NO].image;
             if (cacheEntry.partialImage.state > TIPPartialImageStateLoadingHeaders) {
                 entry.bytesUsed = TIPEstimateMemorySizeOfImageWithSettings(cacheEntry.partialImage.dimensions, 1.0, 4 /* presume 4 bytes per pixel */, (cacheEntry.partialImage.isAnimated) ? cacheEntry.partialImage.frameCount : 1);
             } else {
@@ -123,6 +126,11 @@ NS_ASSUME_NONNULL_BEGIN
         } else if ([cacheEntry isKindOfClass:[TIPImageDiskCacheEntry class]]) {
             TIPImageDiskCacheEntry *diskEntry = (id)cacheEntry;
             entry.bytesUsed = diskEntry.completeFileSize;
+        } else if ([cacheEntry isKindOfClass:[TIPImageMemoryCacheEntry class]]) {
+            entry.image = [TIPImageContainer imageContainerWithData:cacheEntry.completeImageData
+                                                   decoderConfigMap:nil
+                                                     codecCatalogue:nil].image;
+            entry.bytesUsed = [(TIPImageMemoryCacheEntry*)cacheEntry memoryCost];
         }
 
         entry.dimensions = cacheEntry.completeImageContext.dimensions;
