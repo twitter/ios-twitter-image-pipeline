@@ -24,11 +24,21 @@ Pod::Spec.new do |s|
     sp.vendored_frameworks = 'Extended/WebPDemux.framework'
   end
 
-  s.subspec 'WebPCodec' do |sp|
+  s.subspec 'WebPCodec_Default' do |sp|
     sp.source_files = 'Extended/TIPXWebPCodec.{h,m}', 'Extended/TIPXUtils.{h,m}'
     sp.public_header_files = 'Extended/TIPXWebPCodec.h'
     sp.dependency 'TwitterImagePipeline/Default'
     sp.dependency 'TwitterImagePipeline/WebPFramework'
+  end
+
+  s.subspec 'WebPCodec' do |sp|
+    sp.dependency 'TwitterImagePipeline/WebPCodec_Default'
+
+    sp.subspec 'Animated' do |ssp|
+      ssp.xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => 'TIPX_WEBP_ANIMATION_DECODING_ENABLED=1' }
+      ssp.dependency 'TwitterImagePipeline/WebPDemuxFramework'
+      ssp.dependency 'TwitterImagePipeline/WebPCodec_Default'
+    end
   end
 
   s.subspec 'MP4Codec' do |sp|
