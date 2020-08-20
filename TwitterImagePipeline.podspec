@@ -16,20 +16,18 @@ Pod::Spec.new do |s|
     sp.public_header_files = 'TwitterImagePipeline/*.h'
   end
 
-  s.subspec 'WebPCodec_Default' do |sp|
-    sp.source_files = 'Extended/TIPXWebPCodec.{h,m}', 'Extended/TIPXUtils.{h,m}'
-    sp.public_header_files = 'Extended/TIPXWebPCodec.h'
-    sp.vendored_frameworks = 'Extended/WebP.framework'
-    sp.dependency 'TwitterImagePipeline/Default'
-  end
-
   s.subspec 'WebPCodec' do |sp|
-    sp.dependency 'TwitterImagePipeline/WebPCodec_Default'
+    sp.subspec 'Default' do |ssp|
+      ssp.source_files = 'Extended/TIPXWebPCodec.{h,m}', 'Extended/TIPXUtils.{h,m}'
+      ssp.public_header_files = 'Extended/TIPXWebPCodec.h'
+      ssp.vendored_frameworks = 'Extended/WebP.framework'
+      ssp.dependency 'TwitterImagePipeline/Default'
+    end
 
     sp.subspec 'Animated' do |ssp|
       ssp.xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => 'TIPX_WEBP_ANIMATION_DECODING_ENABLED=1' }
       ssp.vendored_frameworks = 'Extended/WebPDemux.framework'
-      ssp.dependency 'TwitterImagePipeline/WebPCodec_Default'
+      ssp.dependency 'TwitterImagePipeline/WebPCodec/Default'
     end
   end
 
