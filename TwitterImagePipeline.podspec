@@ -16,5 +16,26 @@ Pod::Spec.new do |s|
     sp.public_header_files = 'TwitterImagePipeline/*.h'
   end
 
+  s.subspec 'WebPFramework' do |sp|
+    sp.vendored_frameworks = 'Extended/WebP.framework'
+  end
+
+  s.subspec 'WebPDemuxFramework' do |sp|
+    sp.vendored_frameworks = 'Extended/WebPDemux.framework'
+  end
+
+  s.subspec 'WebPCodec' do |sp|
+    sp.source_files = 'Extended/TIPXWebPCodec.{h,m}', 'Extended/TIPXUtils.{h,m}'
+    sp.public_header_files = 'Extended/TIPXWebPCodec.h'
+    sp.dependency 'TwitterImagePipeline/Default'
+    sp.dependency 'TwitterImagePipeline/WebPFramework'
+  end
+
+  s.subspec 'MP4Codec' do |sp|
+    sp.source_files = 'Extended/TIPXMP4Codec.{h,m}', 'Extended/TIPXUtils.{h,m}'
+    sp.public_header_files = 'Extended/TIPXMP4Codec.h'
+    sp.dependency 'TwitterImagePipeline/Default'
+  end
+
   s.default_subspec = 'Default'
 end
