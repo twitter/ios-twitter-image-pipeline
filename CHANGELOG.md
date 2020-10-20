@@ -2,13 +2,17 @@
 
 ## Info
 
-**Document version:** 2.24.0
+**Document version:** 2.24.1
 
-**Last updated:** 08/06/2020
+**Last updated:** 10/20/2020
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.24.1 - Liam Nichols
+
+- Add MP4 and WebP subspecs for CocoaPods
 
 ### 2.24.0
 
