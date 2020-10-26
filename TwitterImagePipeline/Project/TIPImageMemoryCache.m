@@ -1,5 +1,5 @@
 //
-//  TIPMemoryCache.m
+//  TIPImageMemoryCache.m
 //  TwitterImagePipeline
 //
 //  Created on 3/3/15.

@@ -2,13 +2,18 @@
 
 ## Info
 
-**Document version:** 2.24.1
+**Document version:** 2.24.2
 
-**Last updated:** 10/20/2020
+**Last updated:** 10/22/2020
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.24.2
+
+- Fix WebP decoder for animations
+  - Complex animations were not properly being decoded
 
 ### 2.24.1 - Liam Nichols
 

@@ -28,10 +28,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Initializer
- @param preserve Pass `YES` to preserve the default system encoder and/or decoder if possible.  Pass `NO` to use the `TIPXWebPCodec` implementations for both encoder and decoder.
+ @param preferredCodec Pass the default system encoder and/or decoder if possible. If they are not provided (including if a nil `tip_decoder` or `tip_encoder` are found), use the `TIPXWebPCodec` implementations.
  @return a new `TIPXWebPCodec` instance
  */
-- (instancetype)initPreservingDefaultCodecsIfPresent:(BOOL)preserve NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithPreferredCodec:(nullable id<TIPImageCodec>)preferredCodec NS_DESIGNATED_INITIALIZER;
 - (instancetype)init NS_UNAVAILABLE;
 
 /** Convenience check to see if animation decoding was compiled */

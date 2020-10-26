@@ -596,7 +596,7 @@ TIP_OBJC_DIRECT_MEMBERS
 - (BOOL)_shouldLoadProgressivelyWithIdentifier:(NSString *)identifier
                                       imageURL:(NSURL *)URL
                                      imageType:(NSString *)imageType
-                            originalDimensions:(CGSize)originalDimensions;
+                            originalDimensions:(CGSize)originalDimensions
 {
     id<TIPImageViewFetchHelperDelegate> delegate = self.atomicDelegate;
     if ([delegate respondsToSelector:@selector(tip_fetchHelper:shouldLoadProgressivelyWithIdentifier:URL:imageType:originalDimensions:)]) {
@@ -929,14 +929,8 @@ TIP_OBJC_DIRECT_MEMBERS
                   name:kRetryFailedLoadsNotification
                 object:nil];
 
-    if (_observedPipelineIdentifier != nil) {
-        if (_opaqueNotificationObserver) {
-            [nc removeObserver:_opaqueNotificationObserver];
-        } else {
-            [nc removeObserver:self
-                          name:TIPImagePipelineDidStoreCachedImageNotification
-                        object:nil];
-        }
+    if (_opaqueNotificationObserver) {
+        [nc removeObserver:_opaqueNotificationObserver];
     }
 
     [_debugInfoView removeFromSuperview];
@@ -1187,40 +1181,11 @@ TIP_OBJC_DIRECT_MEMBERS
 - (void)_startObservingImagePipeline:(nullable TIPImagePipeline *)pipeline
 {
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-
-    if ([TIPGlobalConfiguration sharedInstance].useInstancelessPipelineObserversInFetchHelpers) {
-
-        // if this is nil, we're transitioning *into* the instanceless path.
-        if (!_opaqueNotificationObserver) {
-
-            // only necessary if we were observing something
-            if (_observedPipelineIdentifier) {
-                [nc removeObserver:self name:TIPImagePipelineDidStoreCachedImageNotification object:nil];
-            }
-
-            __weak typeof(self) weakSelf = self;
-            _opaqueNotificationObserver = [nc addObserverForName:TIPImagePipelineDidStoreCachedImageNotification object:nil queue:nil usingBlock:^(NSNotification * _Nonnull note) {
-                [weakSelf _tip_imageDidUpdate:note];
-            }];
-        }
-    } else {
-
-        //if this is not nil, we're transitioning *out of* the instanceless path.
-        if (_opaqueNotificationObserver) {
-            [nc removeObserver:_opaqueNotificationObserver];
-            _opaqueNotificationObserver = nil;
-        }
-
-        // Clear related observing
-        [nc removeObserver:self name:TIPImagePipelineDidStoreCachedImageNotification object:nil];
-
-        // Start observing
-        if (pipeline) {
-            [nc addObserver:self
-                   selector:@selector(_tip_imageDidUpdate:)
-                       name:TIPImagePipelineDidStoreCachedImageNotification
-                     object:pipeline];
-        }
+    if (!_opaqueNotificationObserver) {
+        __weak typeof(self) weakSelf = self;
+        _opaqueNotificationObserver = [nc addObserverForName:TIPImagePipelineDidStoreCachedImageNotification object:nil queue:nil usingBlock:^(NSNotification * _Nonnull note) {
+            [weakSelf _tip_imageDidUpdate:note];
+        }];
     }
 
     // save the pipeline identifier for use in `_tip_imageDidUpdate:`

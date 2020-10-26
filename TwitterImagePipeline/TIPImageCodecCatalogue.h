@@ -20,6 +20,8 @@ typedef NSDictionary<NSString *, id<TIPImageCodec>> * _Nullable (^TIPImageCodecC
 
 /**
  All the default codecs that come with __Twitter Image Pipeline__
+
+ Warning: this method can block for a very long time. It is highly recommended you not use it from the main thread.
  */
 + (NSDictionary<NSString *, id<TIPImageCodec>> *)defaultCodecs;
 
@@ -61,6 +63,17 @@ typedef NSDictionary<NSString *, id<TIPImageCodec>> * _Nullable (^TIPImageCodecC
  @param imageType the type of image
  */
 - (void)setCodec:(id<TIPImageCodec>)codec forImageType:(NSString *)imageType;
+
+/**
+ Search the catalogue for a codec for the image type, and then invoke a block that may map it into a new one.
+
+ It is very important that `replacementBlock` not call out to other `TIPImageCodecCatalogue` instance methods. Doing so
+ will very likely cause a deadlock.
+
+ @param imageType the type of image
+ @param replacementBlock a block to map an existing codec (or `nil` if one was not found) into a replacement
+ */
+- (void)replaceCodecForImageType:(NSString *)imageType usingBlock:(id<TIPImageCodec> (^)(id<TIPImageCodec> _Nullable existingCodec))replacementBlock;
 
 /**
  remove the codec for the given _imageType_

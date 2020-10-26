@@ -133,6 +133,16 @@ NS_ASSUME_NONNULL_BEGIN
     });
 }
 
+- (void)replaceCodecForImageType:(NSString *)imageType usingBlock:(id<TIPImageCodec> (^)(id<TIPImageCodec> _Nullable existingCodec))replacementBlock
+{
+    tip_dispatch_barrier_async_autoreleasing(_codecQueue, ^{
+        id<TIPImageCodec> replacementCodec = replacementBlock(self->_codecs[imageType]);
+        if (replacementCodec != nil) {
+            self->_codecs[imageType] = replacementCodec;
+        }
+    });
+}
+
 - (nullable id<TIPImageCodec>)codecForImageType:(NSString *)imageType
 {
     __block id<TIPImageCodec> codec;

@@ -1114,7 +1114,7 @@ TIPStaticAssert(sizeof(TIPImageFetchOperationState_Unaligned_AtomicT) == sizeof(
     _progressiveRenderCount = 0;
 }
 
-- (void)_background_setFinalStateAfterFlushingDelegate:(TIPImageFetchOperationState)state;
+- (void)_background_setFinalStateAfterFlushingDelegate:(TIPImageFetchOperationState)state
 {
     TIPAssert(TIPImageFetchOperationStateIsFinished(state));
     _flags.transitioningToFinishedState = 1;

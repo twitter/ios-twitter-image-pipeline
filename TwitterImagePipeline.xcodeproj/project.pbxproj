@@ -72,10 +72,6 @@
 		3D31382E229A79590016F387 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D31382C229A794C0016F387 /* AVFoundation.framework */; };
 		3D31382F229A79710016F387 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DEC0ABC229A75350053C279 /* ImageIO.framework */; };
 		3D313830229A79710016F387 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DEC0ABC229A75350053C279 /* ImageIO.framework */; };
-		3D313832229A7C720016F387 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D313831229A7C720016F387 /* MobileCoreServices.framework */; };
-		3D313833229A7C830016F387 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D313831229A7C720016F387 /* MobileCoreServices.framework */; };
-		3D313834229A7C930016F387 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D313831229A7C720016F387 /* MobileCoreServices.framework */; };
-		3D313835229A7C940016F387 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D313831229A7C720016F387 /* MobileCoreServices.framework */; };
 		3D3139DE229B1EEA0016F387 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DEC0ABA229A75050053C279 /* CoreGraphics.framework */; };
 		3D3139DF229B1F0B0016F387 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D31382C229A794C0016F387 /* AVFoundation.framework */; };
 		3D3139E0229B1F440016F387 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DEC0ABE229A75590053C279 /* CoreImage.framework */; };
@@ -99,6 +95,8 @@
 		8B0243781E5CC42A0058D10A /* PipelineCacheInspectionResultsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0243771E5CC42A0058D10A /* PipelineCacheInspectionResultsViewController.m */; };
 		8B02CB1F1C51409900443AD3 /* TIPImageFetchRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B02CB1D1C51409900443AD3 /* TIPImageFetchRequest.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B02CB271C5142CB00443AD3 /* TIPImageStoreRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B02CB251C5142CB00443AD3 /* TIPImageStoreRequest.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		8B1288C62542117800A57375 /* tenor_test.webp in Resources */ = {isa = PBXBuildFile; fileRef = 8B1288C52542117800A57375 /* tenor_test.webp */; };
+		8B1289282543352F00A57375 /* NSData+TIPAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BC217511DDF69DB0017B0DA /* NSData+TIPAdditions.h */; };
 		8B129A171E519DC4009796AD /* placeholder.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8B129A161E519DC4009796AD /* placeholder.jpg */; };
 		8B198F2D1D7FD34C00122D83 /* UIImage+TIPAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B198F2B1D7FD34C00122D83 /* UIImage+TIPAdditions.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B198F2E1D7FD34C00122D83 /* UIImage+TIPAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B198F2C1D7FD34C00122D83 /* UIImage+TIPAdditions.m */; };
@@ -259,9 +257,7 @@
 		8B80DC50233AF34B00BAE571 /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B80DC4D233AF33D00BAE571 /* WebP.framework */; platformFilter = ios; };
 		8B80DC52233AF34E00BAE571 /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B80DC4D233AF33D00BAE571 /* WebP.framework */; platformFilter = ios; };
 		8B834B0624DC9B1E007AE6EB /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B80DC4D233AF33D00BAE571 /* WebP.framework */; platformFilter = ios; };
-		8B834B0724DC9B1E007AE6EB /* WebP.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8B80DC4D233AF33D00BAE571 /* WebP.framework */; platformFilter = ios; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8B834B0824DC9B20007AE6EB /* WebPDemux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B234F3F24D4C02E00F257AC /* WebPDemux.framework */; platformFilter = ios; };
-		8B834B0924DC9B20007AE6EB /* WebPDemux.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8B234F3F24D4C02E00F257AC /* WebPDemux.framework */; platformFilter = ios; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8B894DD51D4FBA3D00FFB5F8 /* TIPImageTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B894DD31D4FBA3D00FFB5F8 /* TIPImageTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B894DD81D4FBD7900FFB5F8 /* TIPImageTypes.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B894DD71D4FBD7900FFB5F8 /* TIPImageTypes.m */; };
 		8B8B72891EBC2B3A004E10BA /* TIPImageFetchTransformer.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B8B72881EBC2B3A004E10BA /* TIPImageFetchTransformer.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -459,7 +455,6 @@
 		8B9A3740233AB46D0050D3B8 /* webp_dec.c in Sources */ = {isa = PBXBuildFile; fileRef = 8B9A3639233AB2040050D3B8 /* webp_dec.c */; platformFilter = maccatalyst; settings = {COMPILER_FLAGS = "-w -Xanalyzer -analyzer-disable-all-checks"; }; };
 		8B9A3741233AB46D0050D3B8 /* webpi_dec.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B9A363E233AB2040050D3B8 /* webpi_dec.h */; platformFilter = maccatalyst; };
 		8B9A3744233AB4B00050D3B8 /* webp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B9A369C233AB3A60050D3B8 /* webp.framework */; platformFilter = maccatalyst; };
-		8B9A3745233AB4C10050D3B8 /* webp.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8B9A369C233AB3A60050D3B8 /* webp.framework */; platformFilter = maccatalyst; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8B9B6C151E69EBEF00D9E590 /* TweetImageFetchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9B6C141E69EBEF00D9E590 /* TweetImageFetchRequest.swift */; };
 		8BA232711DD430D70097B1DE /* TIPXWebPCodec.h in Headers */ = {isa = PBXBuildFile; fileRef = 8BA2326F1DD430D60097B1DE /* TIPXWebPCodec.h */; };
 		8BA232721DD430D70097B1DE /* TIPXWebPCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 8BA232701DD430D70097B1DE /* TIPXWebPCodec.m */; };
@@ -727,10 +722,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				8B834B0924DC9B20007AE6EB /* WebPDemux.framework in Embed Frameworks */,
-				8B834B0724DC9B1E007AE6EB /* WebP.framework in Embed Frameworks */,
 				8BFF17721DF5B4AD005DE734 /* TwitterImagePipeline.framework in Embed Frameworks */,
-				8B9A3745233AB4C10050D3B8 /* webp.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -743,7 +735,6 @@
 		3D313823229A78BC0016F387 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CoreVideo.framework; sourceTree = "<group>"; };
 		3D313828229A79200016F387 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CoreMedia.framework; sourceTree = "<group>"; };
 		3D31382C229A794C0016F387 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AVFoundation.framework; sourceTree = "<group>"; };
-		3D313831229A7C720016F387 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = MobileCoreServices.framework; sourceTree = "<group>"; };
 		3D313836229A86190016F387 /* TwitterImagePipeline.Test.app.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = TwitterImagePipeline.Test.app.xcconfig; sourceTree = "<group>"; };
 		3D3139E4229B1FE00016F387 /* Accounts.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Accounts.framework; sourceTree = "<group>"; };
 		3D3139E6229B1FF00016F387 /* Social.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Social.framework; sourceTree = "<group>"; };
@@ -773,6 +764,7 @@
 		8B02CB1D1C51409900443AD3 /* TIPImageFetchRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageFetchRequest.h; sourceTree = "<group>"; };
 		8B02CB251C5142CB00443AD3 /* TIPImageStoreRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageStoreRequest.h; sourceTree = "<group>"; };
 		8B0D231F1B0307B300DD4C7B /* TIPUtilitiesTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPUtilitiesTests.m; sourceTree = "<group>"; };
+		8B1288C52542117800A57375 /* tenor_test.webp */ = {isa = PBXFileReference; lastKnownFileType = file; path = tenor_test.webp; sourceTree = "<group>"; };
 		8B129A161E519DC4009796AD /* placeholder.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = placeholder.jpg; sourceTree = "<group>"; };
 		8B198F2B1D7FD34C00122D83 /* UIImage+TIPAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImage+TIPAdditions.h"; sourceTree = "<group>"; };
 		8B198F2C1D7FD34C00122D83 /* UIImage+TIPAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImage+TIPAdditions.m"; sourceTree = "<group>"; };
@@ -1171,7 +1163,6 @@
 				3D313816229A76780016F387 /* CoreGraphics.framework in Frameworks */,
 				3D313814229A76780016F387 /* CoreImage.framework in Frameworks */,
 				3D313815229A76780016F387 /* ImageIO.framework in Frameworks */,
-				3D313832229A7C720016F387 /* MobileCoreServices.framework in Frameworks */,
 				3D313813229A76780016F387 /* QuartzCore.framework in Frameworks */,
 				3D313819229A76B10016F387 /* UIKit.framework in Frameworks */,
 			);
@@ -1188,7 +1179,6 @@
 				3D313820229A784A0016F387 /* CoreImage.framework in Frameworks */,
 				3D31382B229A79330016F387 /* CoreMedia.framework in Frameworks */,
 				3D31382F229A79710016F387 /* ImageIO.framework in Frameworks */,
-				3D313835229A7C940016F387 /* MobileCoreServices.framework in Frameworks */,
 				8B6512002135DFBD00ED057B /* TwitterImagePipeline.framework in Frameworks */,
 				3D31381C229A774B0016F387 /* UIKit.framework in Frameworks */,
 				8B6511F02135DEB400ED057B /* XCTest.framework in Frameworks */,
@@ -1236,7 +1226,6 @@
 				3D313829229A79200016F387 /* CoreMedia.framework in Frameworks */,
 				3D313824229A78BC0016F387 /* CoreVideo.framework in Frameworks */,
 				3D313830229A79710016F387 /* ImageIO.framework in Frameworks */,
-				3D313834229A7C930016F387 /* MobileCoreServices.framework in Frameworks */,
 				3D1659ED2073047700AA140A /* TwitterImagePipeline.framework in Frameworks */,
 				3D31381B229A774A0016F387 /* UIKit.framework in Frameworks */,
 				8B7D4D4B1FC0FBB000509463 /* XCTest.framework in Frameworks */,
@@ -1306,7 +1295,6 @@
 				3DEC0ABF229A75590053C279 /* CoreImage.framework in Frameworks */,
 				3DEC0ABB229A75050053C279 /* CoreGraphics.framework in Frameworks */,
 				3DEC0ABD229A75350053C279 /* ImageIO.framework in Frameworks */,
-				3D313833229A7C830016F387 /* MobileCoreServices.framework in Frameworks */,
 				3D31381A229A76B30016F387 /* UIKit.framework in Frameworks */,
 				3DEC0AC1229A75690053C279 /* QuartzCore.framework in Frameworks */,
 			);
@@ -1387,7 +1375,6 @@
 				3D313828229A79200016F387 /* CoreMedia.framework */,
 				3D313823229A78BC0016F387 /* CoreVideo.framework */,
 				3DEC0ABC229A75350053C279 /* ImageIO.framework */,
-				3D313831229A7C720016F387 /* MobileCoreServices.framework */,
 				3DEC0AC0229A75690053C279 /* QuartzCore.framework */,
 				3D3139E6229B1FF00016F387 /* Social.framework */,
 				8B96C09D1AA934C300C44222 /* SystemConfiguration.framework */,
@@ -1792,6 +1779,7 @@
 				8BE31C871B9A1BF5009BC0B2 /* main.m */,
 				8B76950A1D4824B9009091B5 /* no-interlace.png */,
 				8BC5875A24A4218A00F5C8AA /* starfield_animation.heic */,
+				8B1288C52542117800A57375 /* tenor_test.webp */,
 				8B62B66C21C313D300A1E4E4 /* twitterfied.heic */,
 				8BE31CAE1B9A276F009BC0B2 /* twitterfied.jp2 */,
 				8BE31CAF1B9A276F009BC0B2 /* twitterfied.jpg */,
@@ -2109,6 +2097,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8B1289282543352F00A57375 /* NSData+TIPAdditions.h in Headers */,
 				8BA9756A1D77E34D00601D70 /* TIPTestImageFetchDownloadInternalWithStubbing.h in Headers */,
 				8BB118FA1D834EC200E75CD9 /* TIPTestURLProtocol.h in Headers */,
 				8BA232711DD430D70097B1DE /* TIPXWebPCodec.h in Headers */,
@@ -2385,7 +2374,7 @@
 			attributes = {
 				DefaultBuildSystemTypeForWorkspace = Latest;
 				LastSwiftUpdateCheck = 0820;
-				LastUpgradeCheck = 1140;
+				LastUpgradeCheck = 1210;
 				ORGANIZATIONNAME = Twitter;
 				TargetAttributes = {
 					8B63017F1E68F9B400C9A86A = {
@@ -2526,6 +2515,7 @@
 			files = (
 				8B7695131D482A3A009091B5 /* interlace.png in Resources */,
 				8B47000924A2932200D7C123 /* fireworks_original.webp in Resources */,
+				8B1288C62542117800A57375 /* tenor_test.webp in Resources */,
 				8BAD1A271BBAFC44003395F3 /* twitterfied.RPCL.jp2 in Resources */,
 				8B62B66D21C313D300A1E4E4 /* twitterfied.heic in Resources */,
 				8B3B079B1DFE56B800174F40 /* twitterfied.tiff in Resources */,
