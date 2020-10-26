@@ -7,6 +7,7 @@
 //
 
 #import <objc/runtime.h>
+#import "NSData+TIPAdditions.h"
 #import "TIP_Project.h"
 #import "TIPError.h"
 #import "TIPImageCodecCatalogue.h"
@@ -38,7 +39,7 @@
 
 #if !TARGET_OS_TV
 #define PLUG_IN_WEBP() \
-TIPXWebPCodec *webpCodec = [[TIPXWebPCodec alloc] initPreservingDefaultCodecsIfPresent:NO]; \
+TIPXWebPCodec *webpCodec = [[TIPXWebPCodec alloc] initWithPreferredCodec:nil]; \
 [[TIPImageCodecCatalogue sharedInstance] setCodec:webpCodec forImageType:TIPImageTypeWEBP]; \
 tip_defer(^{ \
     [[TIPImageCodecCatalogue sharedInstance] removeCodecForImageType:TIPImageTypeWEBP]; \
@@ -871,6 +872,58 @@ static NSMutableDictionary<NSString *, NSMutableDictionary<NSString *, NSNumber 
     }];
 }
 #endif
+
+#if !TARGET_OS_TV
+- (void)testRobustnessWebP
+{
+    // Go through decoding the webp image 1 byte added at a time
+    // to ensure there is no bug in our decoder on any metadata boundaries
+
+    TIPXWebPCodec *webpCodec = [[TIPXWebPCodec alloc] initWithPreferredCodec:nil];
+    id<TIPImageDecoder> webpDecoder = webpCodec.tip_decoder;
+
+    NSData *imageData = [NSData dataWithContentsOfFile:[TIPTestsResourceBundle() pathForResource:@"tenor_test2" ofType:@"webp"]
+                                               options:0
+                                                 error:nil];
+    XCTAssertNotNil(imageData);
+
+    id<TIPImageDecoderContext> webpContext = [webpDecoder tip_initiateDecoding:nil
+                                                            expectedDataLength:imageData.length
+                                                                        buffer:nil];
+
+    TIPImageContainer *progressImage = nil;
+    for (NSRange range = NSMakeRange(0, 1); range.location < imageData.length; range.location++) {
+        @autoreleasepool {
+            NSData *nextByte = [imageData tip_safeSubdataNoCopyWithRange:range error:NULL];
+            XCTAssert(nextByte);
+
+            const TIPImageDecoderAppendResult result = [webpDecoder tip_append:webpContext
+                                                                          data:nextByte];
+            const NSUInteger priorFrameCount = progressImage.frameCount;
+            progressImage = [webpDecoder tip_renderImage:webpContext
+                                              renderMode:TIPImageDecoderRenderModeAnyProgress
+                                        targetDimensions:CGSizeMake(120, 120)
+                                       targetContentMode:UIViewContentModeScaleAspectFit];
+
+            XCTAssertGreaterThanOrEqual(progressImage.frameCount, priorFrameCount);
+            if (!progressImage) {
+                XCTAssertLessThan(result, TIPImageDecoderAppendResultDidLoadFrame);
+            } else if (priorFrameCount == 0) {
+                XCTAssertGreaterThan(progressImage.frameCount, priorFrameCount);
+            }
+        }
+    }
+
+    const TIPImageDecoderAppendResult finalizeResult = [webpDecoder tip_finalizeDecoding:webpContext];
+    XCTAssertEqual(finalizeResult, TIPImageDecoderAppendResultDidCompleteLoading);
+    TIPImageContainer *finalImage = [webpDecoder tip_renderImage:webpContext
+                                                      renderMode:TIPImageDecoderRenderModeAnyProgress
+                                                targetDimensions:CGSizeMake(120, 120)
+                                               targetContentMode:UIViewContentModeScaleAspectFit];
+    XCTAssertEqual(finalImage.frameCount, 20);
+}
+#endif
+
 
 #pragma mark Animated Formats R+W tests
 

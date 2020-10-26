@@ -1,5 +1,5 @@
 //
-//  TIP_Project.m
+//  TIP_ProjectCommon.m
 //  TwitterImagePipeline
 //
 //  Created on 3/5/15.

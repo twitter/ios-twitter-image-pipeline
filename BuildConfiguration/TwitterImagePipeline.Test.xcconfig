@@ -25,6 +25,14 @@ MACOSX_DEPLOYMENT_TARGET = 10.15
 // Linking
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/Frameworks @loader_path/Frameworks
 
+// 1. CoreServices is not available until iOS 12
+// 2. in Xcode11 going forward, including MobileCoreServices in the Build Phase
+//    `Link Binary With Libraries` results in a warning.
+//
+// workaround: remove from that Build Phase and link using this -framework MobileCoreServices arg
+// TODO: when min deployment target >= 12.0: delete this & place CoreServices in 'Link Binary With Libraries`
+OTHER_LDFLAGS = $(inherited) -framework MobileCoreServices
+
 // Packaging
 INFOPLIST_FILE = $(TARGET_NAME)/Info.plist
 PRODUCT_BUNDLE_IDENTIFIER = com.twitter.${PRODUCT_NAME:rfc1034identifier}

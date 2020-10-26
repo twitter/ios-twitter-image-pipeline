@@ -16,6 +16,10 @@
 
 #pragma mark WebP includes
 
+// TODO: remove this pushed diagnostic "ignored" when the modular closure of libwebp framework headers is completely fixed
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wquoted-include-in-framework-header"
+
 #if TARGET_OS_MACCATALYST
 #import <webp/webp.h>
 #if TIPX_WEBP_ANIMATION_DECODING_ENABLED
@@ -30,6 +34,9 @@
 #endif
 #endif
 
+#pragma clang diagnostic pop
+
+
 NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - Declarations
@@ -37,7 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 static UIImage * __nullable TIPXWebPRenderImage(NSData *dataBuffer,
                                                 CGSize sourceDimensions,
                                                 CGSize targetDimensions,
-                                                UIViewContentMode targetContentMode);
+                                                UIViewContentMode targetContentMode,
+                                                CGRect framingRect,
+                                                CGContextRef __nullable canvas);
 static UIImage * __nullable TIPXWebPConstructImage(CGDataProviderRef dataProvider,
                                                    const size_t width,
                                                    const size_t height,
@@ -84,20 +93,14 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 - (instancetype)init
 {
     // Shouldn't be called, but will permit in case of type erasure
-    return [self initPreservingDefaultCodecsIfPresent:NO];
+    return [self initWithPreferredCodec:nil];
 }
 
-- (instancetype)initPreservingDefaultCodecsIfPresent:(BOOL)preserve
+- (instancetype)initWithPreferredCodec:(nullable id<TIPImageCodec>)preferredCodec
 {
     if (self = [super init]) {
-        if (preserve) {
-            id<TIPImageCodec> webpCodec = [TIPImageCodecCatalogue defaultCodecs][TIPImageTypeWEBP];
-            _tip_decoder = webpCodec.tip_decoder ?: [[TIPXWebPDecoder alloc] init];
-            _tip_encoder = webpCodec.tip_encoder ?: [[TIPXWebPEncoder alloc] init];
-        } else {
-            _tip_decoder = [[TIPXWebPDecoder alloc] init];
-            _tip_encoder = [[TIPXWebPEncoder alloc] init];
-        }
+        _tip_decoder = preferredCodec.tip_decoder ?: [[TIPXWebPDecoder alloc] init];
+        _tip_encoder = preferredCodec.tip_encoder ?: [[TIPXWebPEncoder alloc] init];
     }
     return self;
 }
@@ -392,7 +395,9 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
         UIImage *image = TIPXWebPRenderImage(_dataBuffer,
                                              _tip_dimensions,
                                              targetDimensions,
-                                             targetContentMode);
+                                             targetContentMode,
+                                             CGRectZero,
+                                             NULL);
         if (image) {
             _cachedImageContainer = [[TIPImageContainer alloc] initWithImage:image];
             [self _cleanup];
@@ -463,6 +468,23 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
     // Go through the animation and pull out the frames (stopping after the first frame if `justFirstFrame` is `YES`)
     NSTimeInterval totalDuration = 0;
     const NSUInteger loopCount = (NSUInteger)WebPDemuxGetI(demuxer, WEBP_FF_LOOP_COUNT);
+#if DEBUG
+    const CGSize canvasDimensions = CGSizeMake(WebPDemuxGetI(demuxer, WEBP_FF_CANVAS_WIDTH), WebPDemuxGetI(demuxer, WEBP_FF_CANVAS_HEIGHT));
+    NSCParameterAssert(canvasDimensions.width == _tip_dimensions.width);
+    NSCParameterAssert(canvasDimensions.height == _tip_dimensions.height);
+#endif
+    const CGBitmapInfo bitmapInfo = kCGBitmapByteOrderDefault | kCGImageAlphaPremultipliedLast;
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    TIPXDeferRelease(colorSpace);
+    CGContextRef canvas = CGBitmapContextCreate(NULL /*data*/,
+                                                (size_t)_tip_dimensions.width,
+                                                (size_t)_tip_dimensions.height,
+                                                8,
+                                                4 * (size_t)_tip_dimensions.width,
+                                                colorSpace,
+                                                bitmapInfo);
+    TIPXDeferRelease(canvas);
+    CGContextClearRect(canvas, (CGRect){ .origin = CGPointZero, .size = _tip_dimensions });
     NSMutableArray<UIImage *> *frames = [[NSMutableArray alloc] initWithCapacity:(NSUInteger)iter->num_frames];
     NSMutableArray<NSNumber *> *frameDurations = [[NSMutableArray alloc] initWithCapacity:(NSUInteger)iter->num_frames];
     do {
@@ -470,10 +492,33 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
         NSData *fragment = [[NSData alloc] initWithBytesNoCopy:(void*)iter->fragment.bytes
                                                         length:iter->fragment.size
                                                   freeWhenDone:NO];
+        const CGRect framingRect = CGRectMake(iter->x_offset,
+                                              iter->y_offset,
+                                              iter->width,
+                                              iter->height);
+        // CGBitmapContext is bottem-left aligned instead of top-left aligned, so adjust the origin for that use case
+        const CGRect canvasFramingRect = CGRectMake(framingRect.origin.x,
+                                                    _tip_dimensions.height - framingRect.size.height - framingRect.origin.y,
+                                                    framingRect.size.width,
+                                                    framingRect.size.height);
+
+        const BOOL isSizedToCanvas = CGSizeEqualToSize(framingRect.size, _tip_dimensions) && CGPointEqualToPoint(framingRect.origin, CGPointZero);
+
+        if (iter->blend_method == WEBP_MUX_NO_BLEND) {
+            // clear the area we are about to draw to
+            CGContextClearRect(canvas, canvasFramingRect);
+        }
         UIImage *frame = TIPXWebPRenderImage(fragment,
                                              _tip_dimensions,
-                                             justFirstFrame ? targetDimensions : CGSizeZero,
-                                             targetContentMode);
+                                             (justFirstFrame && isSizedToCanvas) ? targetDimensions : CGSizeZero,
+                                             targetContentMode,
+                                             framingRect,
+                                             canvas);
+        if (iter->dispose_method == WEBP_MUX_DISPOSE_BACKGROUND) {
+            // clear the area we just finished drawing to
+            CGContextClearRect(canvas, canvasFramingRect);
+        }
+
         if (!frame) {
             return nil;
         }
@@ -546,7 +591,9 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 static UIImage *TIPXWebPRenderImage(NSData *dataBuffer,
                                     CGSize sourceDimensions,
                                     CGSize targetDimensions,
-                                    UIViewContentMode targetContentMode)
+                                    UIViewContentMode targetContentMode,
+                                    CGRect framingRect,
+                                    CGContextRef __nullable canvas)
 {
     __block WebPDecoderConfig* config = (WebPDecoderConfig*)WebPMalloc(sizeof(WebPDecoderConfig));
     tipx_defer(^{
@@ -558,15 +605,32 @@ static UIImage *TIPXWebPRenderImage(NSData *dataBuffer,
         return nil;
     }
 
-    const CGSize scaledDimensions = TIPDimensionsScaledToTargetSizing(sourceDimensions,
-                                                                      targetDimensions,
-                                                                      targetContentMode);
-    if (!CGSizeEqualToSize(scaledDimensions, sourceDimensions)) {
-        config->options.scaled_width = (int)scaledDimensions.width;
-        config->options.scaled_height = (int)scaledDimensions.height;
-        config->options.use_scaling = 1;
-        // should we stop fancy upscaling? config.options.no_fancy_upsampling = 1;
+    BOOL isAligned = canvas != NULL; // having a canvas indicates an animation, always treat fragment as being "aligned"
+    if (!isAligned) {
+        // is aligned if the origin is offset
+        isAligned = !CGPointEqualToPoint(framingRect.origin, CGPointZero);
+        if (!isAligned) {
+            // is aligned if the size is not the canvas size (nor zero size)
+            isAligned =     !CGSizeEqualToSize(framingRect.size, sourceDimensions)
+                        &&  !CGSizeEqualToSize(framingRect.size, CGSizeZero);
+        }
     }
+
+    if (!isAligned) {
+        const CGSize scaledDimensions = TIPDimensionsScaledToTargetSizing(sourceDimensions,
+                                                                          targetDimensions,
+                                                                          targetContentMode);
+        if (!CGSizeEqualToSize(scaledDimensions, sourceDimensions)) {
+            config->options.scaled_width = (int)scaledDimensions.width;
+            config->options.scaled_height = (int)scaledDimensions.height;
+            config->options.use_scaling = 1;
+            // should we stop fancy upscaling? config.options.no_fancy_upsampling = 1;
+        }
+        framingRect.origin = CGPointZero;
+        framingRect.size = scaledDimensions;
+    }
+
+    // Set the output colorspace as RGB (TODO: there might be a device optimization using BGRA or ABGR...)
     config->output.colorspace = MODE_RGBA;
 
     if (VP8_STATUS_OK != WebPDecode(dataBuffer.bytes, dataBuffer.length, config)) {
@@ -593,11 +657,31 @@ static UIImage *TIPXWebPRenderImage(NSData *dataBuffer,
         return nil;
     }
 
-    return TIPXWebPConstructImage(provider,
-                                  (size_t)configLongLived->output.width,
-                                  (size_t)configLongLived->output.height,
-                                  componentsPerPixel,
-                                  bytesPerPixel);
+    UIImage *image = TIPXWebPConstructImage(provider,
+                                            (size_t)configLongLived->output.width,
+                                            (size_t)configLongLived->output.height,
+                                            componentsPerPixel,
+                                            bytesPerPixel);
+    if (image && isAligned) {
+
+        if (canvas) {
+            framingRect.origin.y = sourceDimensions.height - framingRect.size.height - framingRect.origin.y;
+            CGContextDrawImage(canvas, framingRect, image.CGImage);
+            CGImageRef imageRef = CGBitmapContextCreateImage(canvas);
+            TIPXDeferRelease(imageRef);
+            image = [UIImage imageWithCGImage:imageRef];
+        } else {
+            UIGraphicsBeginImageContextWithOptions(sourceDimensions, !configLongLived->input.has_alpha, 1.0);
+            tipx_defer(^{
+                UIGraphicsEndImageContext();
+            });
+            CGContextClearRect(UIGraphicsGetCurrentContext(), (CGRect){ .origin = CGPointZero, .size = sourceDimensions });
+            [image drawInRect:framingRect];
+            image = UIGraphicsGetImageFromCurrentImageContext();
+        }
+
+    }
+    return image;
 }
 
 @end

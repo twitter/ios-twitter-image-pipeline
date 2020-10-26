@@ -1,5 +1,5 @@
 //
-//  TIPImageContext.m
+//  TIPImageCacheEntry.m
 //  TwitterImagePipeline
 //
 //  Created on 3/6/15.

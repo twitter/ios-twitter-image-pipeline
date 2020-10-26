@@ -22,7 +22,9 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     [TIPGlobalConfiguration sharedInstance].logger = self;
-    [TIPImageCodecCatalogue sharedInstance][TIPImageTypeWEBP] = [[TIPXWebPCodec alloc] initPreservingDefaultCodecsIfPresent:YES];
+    [[TIPImageCodecCatalogue sharedInstance] replaceCodecForImageType:TIPImageTypeWEBP usingBlock:^id<TIPImageCodec> _Nonnull(id<TIPImageCodec>  _Nullable existingCodec) {
+        return [[TIPXWebPCodec alloc] initWithPreferredCodec:nil];//existingCodec];
+    }];
     return YES;
 }
 

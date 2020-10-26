@@ -1,5 +1,5 @@
 //
-//  TIPImagePipelineTests.m
+//  TIPImagePipelineFetchingTests.m
 //  TwitterImagePipeline
 //
 //  Created on 4/27/15.

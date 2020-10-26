@@ -253,16 +253,6 @@ FOUNDATION_EXTERN SInt16 const TIPMaxCountForAllDiskCachesDefault;
  */
 @property (nonatomic, readwrite) BOOL loadCodecsAsync;
 
-/**
- Configure whether TIPImageViewFetchHelper should avoid registering and unregistering for notifications
- from an image pipeline, instead listening to all notifications and comparing the posting pipeline's
- identifier property against a saved NSString of the relevant pipeline's identifier.
-
- This is helpful in reducing total notification registrations. In applications with large numbers
- of NSNotification observers and posting objects, this may yield performance gains.
- */
-@property (nonatomic, readwrite) BOOL useInstancelessPipelineObserversInFetchHelpers;
-
 #pragma mark Singleton Accessor
 
 /**
