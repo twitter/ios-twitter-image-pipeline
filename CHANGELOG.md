@@ -2,13 +2,18 @@
 
 ## Info
 
-**Document version:** 2.24.2
+**Document version:** 2.24.3
 
-**Last updated:** 10/22/2020
+**Last updated:** 10/28/2020
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.24.3
+
+- Fix scaling logic to better preserve source size aspect ratio during scale
+  - For example: 800x800 scaled to fill 954x954 would yield a 953x954 size.  Now it will properly yield 954x954.
 
 ### 2.24.2
 

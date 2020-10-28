@@ -641,7 +641,7 @@ NS_ASSUME_NONNULL_BEGIN
             }
         } else {
             // Animated always updates the source as data flows in,
-            // so only update the source for progressive/normal
+            // so only update the source for progressive/normal static images
             [self _tip_updateImageSource:chunk didComplete:complete];
         }
 
@@ -742,7 +742,11 @@ NS_ASSUME_NONNULL_BEGIN
 {
     const NSUInteger lastFrameCount = _frameCount;
     if (_tip_isAnimated) {
-        [self _tip_updateImageSource:_data didComplete:complete];
+        if (!_flags.didMakeFinalUpdate || !complete) {
+            // If we can continue updating the image source w/ more recent data, do so
+            // i.e. avoid redundant updates with the completed image data which would log a warning
+            [self _tip_updateImageSource:_data didComplete:complete];
+        }
         BOOL canUpdateFrameCount;
         if (tip_available_ios_11) {
             // We want to avoid decoding the animation data here in case it conflicts with

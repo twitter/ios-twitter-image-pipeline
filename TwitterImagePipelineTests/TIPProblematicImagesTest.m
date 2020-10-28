@@ -113,14 +113,14 @@ static NSString *sProblematicAvatarPath = nil;
             .expectedScaledFitSizes = {
                 CGSizeMake(136, 154), // 0.5
                 CGSizeMake(135, 153), // 1.0
-                CGSizeMake(135, 153), // 2.0
+                CGSizeMake(134.5, 153), // 2.0
                 CGSizeMake(134.66666f, 153), // 3.0
             },
             .expectedScaledFillSizes = {
                 CGSizeMake(136, 154), // 0.5
-                CGSizeMake(135, 153), // 1.0
+                CGSizeMake(135, 154), // 1.0
                 CGSizeMake(135, 153.5f), // 2.0
-                CGSizeMake(135, 153.33333f), // 3.0
+                CGSizeMake(135, 153.6666f), // 3.0
             },
         },
         {
@@ -134,8 +134,8 @@ static NSString *sProblematicAvatarPath = nil;
             },
             .expectedScaledFillSizes = {
                 CGSizeMake(482, 546), // 0.5
-                CGSizeMake(481, 546), // 1.0
-                CGSizeMake(481.5f, 546), // 2.0
+                CGSizeMake(482, 546), // 1.0
+                CGSizeMake(482, 546), // 2.0
                 CGSizeMake(481.66666f, 546), // 3.0
             },
         },
@@ -145,14 +145,14 @@ static NSString *sProblematicAvatarPath = nil;
             .expectedScaledFitSizes = {
                 CGSizeMake(480, 544), // 0.5
                 CGSizeMake(479, 546), // 1.0
-                CGSizeMake(479, 546), // 2.0
+                CGSizeMake(478.5, 546), // 2.0
                 CGSizeMake(478.66666f, 546), // 3.0
             },
             .expectedScaledFillSizes = {
                 CGSizeMake(482, 546), // 0.5
-                CGSizeMake(480, 547), // 1.0
+                CGSizeMake(480, 548), // 1.0
                 CGSizeMake(480, 547.5f), // 2.0
-                CGSizeMake(480, 547.33333f), // 3.0
+                CGSizeMake(480, 547.6666f), // 3.0
             },
         },
     };
