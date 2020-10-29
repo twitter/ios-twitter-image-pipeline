@@ -6,7 +6,7 @@ To integrate TIP into your iOS project using CocoaPods, simply add the following
 
 ```ruby
 target 'MyApp' do
-  pod 'TwitterImagePipeline', '~> 2.24.2'
+  pod 'TwitterImagePipeline', '~> 2.25.0'
 end
 ```
 
@@ -23,13 +23,13 @@ If you wish to include these codecs, modify your **Podfile** to define the appro
 
 ```ruby
 target 'MyApp' do
-  pod 'TwitterImagePipeline', '~> 2.24.2', :subspecs => ['WebPCodec/Default']
+  pod 'TwitterImagePipeline', '~> 2.25.0', :subspecs => ['WebPCodec/Default']
 
-  pod 'TwitterImagePipeline', '~> 2.24.2', :subspecs => ['WebPCodec/Animated']
+  pod 'TwitterImagePipeline', '~> 2.25.0', :subspecs => ['WebPCodec/Animated']
 
-  pod 'TwitterImagePipeline', '~> 2.24.2', :subspecs => ['MP4Codec']
+  pod 'TwitterImagePipeline', '~> 2.25.0', :subspecs => ['MP4Codec']
 
-  pod 'TwitterImagePipeline', '~> 2.24.2', :subspecs => ['WebPCodec/Animated', 'MP4']
+  pod 'TwitterImagePipeline', '~> 2.25.0', :subspecs => ['WebPCodec/Animated', 'MP4']
 end
 ```
 

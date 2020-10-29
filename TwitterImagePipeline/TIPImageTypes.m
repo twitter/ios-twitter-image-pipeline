@@ -18,7 +18,11 @@ NS_ASSUME_NONNULL_BEGIN
 static const UInt8 kBMP1MagicNumbers[]      = { 0x42, 0x4D };
 static const UInt8 kJPEGMagicNumbers[]      = { 0xFF, 0xD8, 0xFF };
 static const UInt8 kGIFMagicNumbers[]       = { 0x47, 0x49, 0x46 };
-static const UInt8 kPNGMagicNumbers[]       = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+static const UInt8 kPNGMagicNumbers[]       = { 0x89, 0x50, 0x4E, 0x47,
+                                                0x0D, 0x0A, 0x1A, 0x0A };
+static const UInt8 kWEBPMagicNumbers[]      = { 'R', 'I', 'F', 'F',
+                                                '\0', '\0', '\0', '\0',
+                                                'W', 'E', 'B', 'P' };
 
 #define BIGGER(x, y) ((x) > (y) ? (x) : (y))
 
@@ -27,10 +31,11 @@ const NSUInteger TIPMagicNumbersForImageTypeMaximumLength =
 (NSUInteger)BIGGER(sizeof(kPNGMagicNumbers),
                    BIGGER(sizeof(kGIFMagicNumbers),
                           BIGGER(sizeof(kJPEGMagicNumbers),
-                                    sizeof(kBMP1MagicNumbers))));
+                                 BIGGER(sizeof(kBMP1MagicNumbers),
+                                        sizeof(kWEBPMagicNumbers)))));
 
-#define MAGIC_NUMBERS_ARE_EQUAL(bytes, magicNumber) \
-(memcmp(bytes, magicNumber, sizeof( magicNumber )) == 0)
+#define MAGIC_NUMBERS_ARE_EQUAL(bytes, len, magicNumber) \
+( (len >= sizeof( magicNumber )) && (memcmp(bytes, magicNumber, sizeof( magicNumber )) == 0) )
 
 #define TIPWorkAroundCoreGraphicsUTTypeLoadBug() \
 do { \
@@ -96,28 +101,54 @@ static NSSet<NSString *> *TIPWriteableImageTypes()
 
 #pragma mark - Functions
 
+NSSet<NSString *> * TIPDetectableImageTypesViaMagicNumbers(void)
+{
+    static NSSet<NSString *> *sTypes = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sTypes = [NSSet setWithObjects: TIPImageTypeBMP,
+                                        TIPImageTypeJPEG,
+                                        TIPImageTypeGIF,
+                                        TIPImageTypePNG,
+                                        TIPImageTypeWEBP,
+                                        nil];
+    });
+    return sTypes;
+}
+
 NSString * __nullable TIPDetectImageTypeViaMagicNumbers(NSData *dataObj)
 {
     CFDataRef data = (__bridge CFDataRef)dataObj;
-    const CFIndex length = (data) ? CFDataGetLength(data) : 0;
+    const size_t length = (data) ? (size_t)CFDataGetLength(data) : 0;
     const UInt8 *bytes = (data) ? CFDataGetBytePtr(data) : NULL;
 
-    if (length >= 2) {
-        if (MAGIC_NUMBERS_ARE_EQUAL(bytes, kBMP1MagicNumbers)) {
-            // kUTTypeBMP;
-            return TIPImageTypeBMP;
-        } else if (length >= 3) {
-            if (MAGIC_NUMBERS_ARE_EQUAL(bytes, kJPEGMagicNumbers)) {
-                // kUTTypeJPEG;
-                return TIPImageTypeJPEG;
-            } else if (MAGIC_NUMBERS_ARE_EQUAL(bytes, kGIFMagicNumbers)) {
-                // kUTTypeGIF;
-                return TIPImageTypeGIF;
-            } else if (length >= 8) {
-                if (MAGIC_NUMBERS_ARE_EQUAL(bytes, kPNGMagicNumbers)) {
-                    // kUTTypePNG;
-                    return TIPImageTypePNG;
-                }
+    if (MAGIC_NUMBERS_ARE_EQUAL(bytes, length, kJPEGMagicNumbers)) {
+        // kUTTypeJPEG;
+        return TIPImageTypeJPEG;
+    }
+
+    if (MAGIC_NUMBERS_ARE_EQUAL(bytes, length, kPNGMagicNumbers)) {
+        // kUTTypePNG;
+        return TIPImageTypePNG;
+    }
+
+    if (MAGIC_NUMBERS_ARE_EQUAL(bytes, length, kBMP1MagicNumbers)) {
+        // kUTTypeBMP;
+        return TIPImageTypeBMP;
+    }
+
+    if (MAGIC_NUMBERS_ARE_EQUAL(bytes, length, kGIFMagicNumbers)) {
+        // kUTTypeGIF;
+        return TIPImageTypeGIF;
+    }
+
+    if (length >= 12) {
+        // WebP has 2 magic numbers flanking real data,
+        // so we need to split the check.
+        if (0 == memcmp(bytes, kWEBPMagicNumbers, 4)) {
+            if (0 == memcmp(bytes + 8, kWEBPMagicNumbers + 8, 4)) {
+                // kUTTypeWEBP
+                return TIPImageTypeWEBP;
             }
         }
     }
@@ -406,15 +437,15 @@ NSString * __nullable TIPDetectImageType(NSData *data,
 
 NSUInteger TIPImageDetectProgressiveScanCount(NSData *data)
 {
-    NSUInteger byteIndex = 0;
-    NSUInteger length = data.length;
+    size_t byteIndex = 0;
+    size_t length = (size_t)data.length;
     const UInt8 *bytes = (const UInt8 *)data.bytes;
 
     if (length <= 10) {
         return 0;
     }
 
-    if (!MAGIC_NUMBERS_ARE_EQUAL(bytes, kJPEGMagicNumbers)) {
+    if (!MAGIC_NUMBERS_ARE_EQUAL(bytes, length, kJPEGMagicNumbers)) {
         return 0;
     }
 

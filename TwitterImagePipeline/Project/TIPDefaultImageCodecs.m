@@ -15,6 +15,7 @@
 #import "TIPDefaultImageCodecs.h"
 #import "TIPError.h"
 #import "TIPImageContainer.h"
+#import "TIPImageTypes.h"
 #import "UIImage+TIPAdditions.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -222,10 +223,11 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data
+                                           isCompleteData:(BOOL)complete
                                       earlyGuessImageType:(nullable NSString *)imageType
 {
     if (!imageType) {
-        imageType = TIPDetectImageType(data, NULL, NULL, NO);
+        imageType = TIPDetectImageType(data, NULL, NULL, complete);
     }
 
     NSString *UTType = TIPImageTypeToUTType(imageType);
@@ -233,7 +235,15 @@ NS_ASSUME_NONNULL_BEGIN
         return TIPImageDecoderDetectionResultMatch;
     }
 
-    return TIPImageDecoderDetectionResultNoMatch;
+    if (data.length >= TIPMagicNumbersForImageTypeMaximumLength) {
+        NSString *codecImageType = TIPImageTypeFromUTType(_UTType);
+        if ([TIPDetectableImageTypesViaMagicNumbers() containsObject:codecImageType]) {
+            // We have enough data but magic numbers didn't find it for this codec's well defined image type
+            return TIPImageDecoderDetectionResultNoMatch;
+        }
+    }
+
+    return (complete) ? TIPImageDecoderDetectionResultNoMatch : TIPImageDecoderDetectionResultNeedMoreData;
 }
 
 - (id<TIPImageDecoderContext>)tip_initiateDecoding:(nullable id __unused)config
@@ -641,7 +651,7 @@ NS_ASSUME_NONNULL_BEGIN
             }
         } else {
             // Animated always updates the source as data flows in,
-            // so only update the source for progressive/normal
+            // so only update the source for progressive/normal static images
             [self _tip_updateImageSource:chunk didComplete:complete];
         }
 
@@ -742,7 +752,11 @@ NS_ASSUME_NONNULL_BEGIN
 {
     const NSUInteger lastFrameCount = _frameCount;
     if (_tip_isAnimated) {
-        [self _tip_updateImageSource:_data didComplete:complete];
+        if (!_flags.didMakeFinalUpdate || !complete) {
+            // If we can continue updating the image source w/ more recent data, do so
+            // i.e. avoid redundant updates with the completed image data which would log a warning
+            [self _tip_updateImageSource:_data didComplete:complete];
+        }
         BOOL canUpdateFrameCount;
         if (tip_available_ios_11) {
             // We want to avoid decoding the animation data here in case it conflicts with

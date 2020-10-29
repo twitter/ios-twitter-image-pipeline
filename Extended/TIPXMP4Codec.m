@@ -398,6 +398,7 @@ static UIImage *TIPX_scaledImage(CGImageRef imageRef, CGSize naturalSize, CICont
 }
 
 - (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data
+                                           isCompleteData:(BOOL)complete
                                       earlyGuessImageType:(nullable NSString *)imageType
 {
     if (data.length < kSignatureDataRequiredToCheck) {

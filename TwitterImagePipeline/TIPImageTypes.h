@@ -263,6 +263,12 @@ FOUNDATION_EXTERN NSString * __nullable TIPDetectImageTypeFromFile(NSURL *filePa
 FOUNDATION_EXTERN NSString * __nullable TIPDetectImageTypeViaMagicNumbers(NSData *data);
 
 /**
+ What types are detectable via magic numbers?
+ @return the set of image types that can be detected via magic numbers.
+ */
+FOUNDATION_EXTERN NSSet<NSString *> * TIPDetectableImageTypesViaMagicNumbers(void);
+
+/**
  Detect the number of progressive scans in the provided `NSData`.
  Currently only supports progressive JPEG.
  */

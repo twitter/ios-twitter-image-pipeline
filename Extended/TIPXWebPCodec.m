@@ -119,6 +119,7 @@ static BOOL TIPXWebPCreateRGBADataForImage(CGImageRef sourceImage,
 @implementation TIPXWebPDecoder
 
 - (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data
+                                           isCompleteData:(BOOL)complete
                                       earlyGuessImageType:(nullable NSString *)imageType
 {
     // RIFF layout is:
