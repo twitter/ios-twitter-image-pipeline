@@ -203,10 +203,12 @@ typedef NS_ENUM(NSInteger, TIPImageDecoderRenderMode)
 /**
  Detect if the given _data_ can be decoded.
  @param data        the image data to decode (can be incomplete)
+ @param complete    `YES` if the image data to decode is complete, otherwise pass `NO`
  @param imageType   a guess as to the image type, can be `nil`
  @return `Match` if decodable, `NoMatch` if not decodable and `NeedMoreData` if inconclusive
  */
 - (TIPImageDecoderDetectionResult)tip_detectDecodableData:(NSData *)data
+                                           isCompleteData:(BOOL)complete
                                       earlyGuessImageType:(nullable NSString *)imageType;
 
 /**

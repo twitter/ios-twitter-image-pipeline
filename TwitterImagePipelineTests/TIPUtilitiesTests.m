@@ -333,4 +333,62 @@
     XCTAssertFalse([transparencyLimitedColorImage.image tip_canLosslesslyEncodeUsingIndexedPaletteWithOptions:TIPIndexedPaletteEncodingBitDepth6]);
 }
 
+typedef struct {
+    CGSize sourceSize;
+    CGSize targetSize;
+    CGSize expectedFillSize;
+    CGSize expectedFitSize;
+} PixelRoundingTest;
+
+- (void)testPixelRounding
+{
+    PixelRoundingTest tests[] = {
+        (PixelRoundingTest){    .sourceSize = CGSizeMake(800, 800),
+                                .targetSize = CGSizeMake(954, 954),
+                                .expectedFillSize = CGSizeMake(954, 954),
+                                .expectedFitSize = CGSizeMake(954, 954) },
+        (PixelRoundingTest){    .sourceSize = CGSizeMake(400, 800),
+                                .targetSize = CGSizeMake(954, 954),
+                                .expectedFillSize = CGSizeMake(954, 1908),
+                                .expectedFitSize = CGSizeMake(477, 954) },
+        (PixelRoundingTest){    .sourceSize = CGSizeMake(800, 400),
+                                .targetSize = CGSizeMake(954, 954),
+                                .expectedFillSize = CGSizeMake(1908, 954),
+                                .expectedFitSize = CGSizeMake(954, 477) },
+        (PixelRoundingTest){    .sourceSize = CGSizeMake(800, 777),
+                                .targetSize = CGSizeMake(954, 954),
+                                .expectedFillSize = CGSizeMake(982.239382239382233, 954),
+                                .expectedFitSize = CGSizeMake(954, 926.5724999999999) },
+        (PixelRoundingTest){    .sourceSize = CGSizeMake(777, 800),
+                                .targetSize = CGSizeMake(954, 954),
+                                .expectedFillSize = CGSizeMake(954, 982.239382239382233),
+                                .expectedFitSize = CGSizeMake(926.5724999999999, 954) },
+    };
+    const NSInteger testCount = sizeof(tests) / sizeof(tests[0]);
+    for (NSInteger testIdx = 0; testIdx < testCount; testIdx++) {
+        PixelRoundingTest test = tests[testIdx];
+
+        for (NSInteger i = 1; i <= 3; i++) {
+            const CGFloat scale = i;
+
+            CGSize expectedFillSize = test.expectedFillSize;
+            CGSize expectedFitSize = test.expectedFitSize;
+
+            expectedFillSize.width = round(expectedFillSize.width * scale) / scale;
+            expectedFillSize.height = round(expectedFillSize.height * scale) / scale;
+
+            expectedFitSize.width = round(expectedFitSize.width * scale) / scale;
+            expectedFitSize.height = round(expectedFitSize.height * scale) / scale;
+
+            const CGSize fillSize = TIPScaleToFillKeepingAspectRatio(test.sourceSize, test.targetSize, scale);
+            const CGSize fitSize = TIPScaleToFitKeepingAspectRatio(test.sourceSize, test.targetSize, scale);
+
+            XCTAssertEqualWithAccuracy(fillSize.width, expectedFillSize.width, 0.01, @"Test #%li, scale=%li, %@ != %@", testIdx, (long)scale, NSStringFromCGSize(fillSize), NSStringFromCGSize(expectedFillSize));
+            XCTAssertEqualWithAccuracy(fillSize.height, expectedFillSize.height, 0.01, @"Test #%li, scale=%li, %@ != %@", testIdx, (long)scale, NSStringFromCGSize(fillSize), NSStringFromCGSize(expectedFillSize));
+            XCTAssertEqualWithAccuracy(fitSize.width, expectedFitSize.width, 0.01, @"Test #%li, scale=%li, %@ != %@", testIdx, (long)scale, NSStringFromCGSize(fitSize), NSStringFromCGSize(expectedFitSize));
+            XCTAssertEqualWithAccuracy(fitSize.height, expectedFitSize.height, 0.01, @"Test #%li, scale=%li, %@ != %@", testIdx, (long)scale, NSStringFromCGSize(fitSize), NSStringFromCGSize(expectedFitSize));
+        }
+    }
+}
+
 @end

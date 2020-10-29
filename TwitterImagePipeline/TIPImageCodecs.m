@@ -47,6 +47,7 @@ TIPImageContainer * __nullable TIPDecodeImageFromData(id<TIPImageCodec> codec,
 #pragma clang diagnostic pop
     } else {
         const TIPImageDecoderDetectionResult result = [decoder tip_detectDecodableData:imageData
+                                                                        isCompleteData:YES
                                                                    earlyGuessImageType:earlyGuessImageType];
         if (TIPImageDecoderDetectionResultMatch == result) {
             id<TIPImageDecoderContext> context = [decoder tip_initiateDecoding:config

@@ -281,7 +281,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     if (!_codecDetectionImageSource) {
         TIPAssert(!_codecDetectionBuffer);
 
-        if ([self _quickDetectCodecFromData:data]) {
+        if ([self _quickDetectCodecFromData:data final:final]) {
             TIPAssert(_detectedCodec != nil);
             return YES;
         }
@@ -299,7 +299,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     }
     CGImageSourceUpdateData(_codecDetectionImageSource, (CFDataRef)_codecDetectionBuffer, final);
 
-    [self _fullDetectCodec];
+    [self _fullDetectCodec:final];
     return _detectedCodec != nil;
 }
 
@@ -310,13 +310,14 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     }
 }
 
-- (BOOL)_quickDetectCodecFromData:(NSData *)data TIP_OBJC_DIRECT
+- (BOOL)_quickDetectCodecFromData:(NSData *)data final:(BOOL)final TIP_OBJC_DIRECT
 {
     NSString *quickDetectType = TIPDetectImageTypeViaMagicNumbers(data);
     if (quickDetectType) {
         id<TIPImageCodec> quickCodec = [TIPImageCodecCatalogue sharedInstance][quickDetectType];
         if (quickCodec) {
             TIPImageDecoderDetectionResult result = [quickCodec.tip_decoder tip_detectDecodableData:data
+                                                                                     isCompleteData:final
                                                                                 earlyGuessImageType:quickDetectType];
             if (TIPImageDecoderDetectionResultMatch == result) {
                 _detectedCodec = quickCodec;
@@ -328,7 +329,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     return NO;
 }
 
-- (void)_fullDetectCodec TIP_OBJC_DIRECT
+- (void)_fullDetectCodec:(BOOL)final TIP_OBJC_DIRECT
 {
     TIPAssert(_codecDetectionImageSource != nil);
     if (_detectedCodec || _potentialCodecs.count == 0) {
@@ -345,6 +346,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     if (matchingImageTypeCodec) {
         TIPImageDecoderDetectionResult result;
         result = [matchingImageTypeCodec.tip_decoder tip_detectDecodableData:_codecDetectionBuffer
+                                                              isCompleteData:final
                                                          earlyGuessImageType:detectedImageType];
         if (TIPImageDecoderDetectionResultMatch == result) {
             _detectedCodec = matchingImageTypeCodec;
@@ -362,6 +364,7 @@ static const float kUnfinishedImageProgressCap = 0.999f;
     [_potentialCodecs enumerateKeysAndObjectsUsingBlock:^(NSString *imageType, id<TIPImageCodec> codec, BOOL *stop) {
         TIPImageDecoderDetectionResult result;
         result = [codec.tip_decoder tip_detectDecodableData:self->_codecDetectionBuffer
+                                             isCompleteData:final
                                         earlyGuessImageType:detectedImageType];
         if (TIPImageDecoderDetectionResultMatch == result) {
             self->_detectedCodec = codec;

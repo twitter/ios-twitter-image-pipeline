@@ -2,13 +2,28 @@
 
 ## Info
 
-**Document version:** 2.24.2
+**Document version:** 2.25.0
 
-**Last updated:** 10/22/2020
+**Last updated:** 10/29/2020
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.25.0
+
+- Fix codec detection for images that are not JPEG, PNG, GIF or BMP
+  - In more recent versions of iOS, more image types require the complete image data to detect the image type instead of just the headers
+    - This mostly just affects very small images, larger images generally were never affected
+  - This regressed our codec detection logic for images that do not also have TIPs "magic numbers" image type detection
+  - This fixes that by informing the codecs if the data being provided for detection is the complete image data or not
+  - Caveat: for images other than JPEG, PNG, GIF, BMP or WEBP, it is likely that it will take the complete image data to detect those images now which can lengthen the duration for book-keeping overhead as the image is being loaded
+    - If you want to have an image format detected faster than what Core Graphics detects (all data required for most formats), you can either provide a custom codec with better format detection logic or you can update the magic numbers APIs in `TIPImageTypes.m`
+
+### 2.24.3
+
+- Fix scaling logic to better preserve source size aspect ratio during scale
+  - For example: 800x800 scaled to fill 954x954 would yield a 953x954 size.  Now it will properly yield 954x954.
 
 ### 2.24.2
 

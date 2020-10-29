@@ -97,16 +97,30 @@ CGSize TIPScaleToFillKeepingAspectRatio(CGSize sourceSize, CGSize targetSize, CG
     const CGSize scaledSourceSize = CGSizeMake(__tg_ceil(sourceSize.width * scale), __tg_ceil(sourceSize.height * scale));
     const CGFloat rx = scaledTargetSize.width / scaledSourceSize.width;
     const CGFloat ry = scaledTargetSize.height / scaledSourceSize.height;
+
     CGSize size;
     if (rx > ry) {
-        // cap width to scaled target size's width
-        // and floor the larger dimension (height)
-        size = CGSizeMake((MIN(__tg_ceil(scaledSourceSize.width * rx), scaledTargetSize.width) / scale), (__tg_floor(scaledSourceSize.height * rx) / scale));
+        // Width will be the scaled target width
+        const CGFloat targetWidth = scaledTargetSize.width;
+
+        // get the height from the width preserving aspect-ratio of source
+        const CGFloat ar = scaledSourceSize.height / scaledSourceSize.width;
+        const CGFloat aspectHeight = targetWidth * ar;
+        const CGFloat targetHeight = round(aspectHeight);
+
+        size = CGSizeMake(targetWidth / scale, targetHeight / scale);
     } else {
-        // cap width to scaled target size's width
-        // and floor the larger dimension (height)
-        size = CGSizeMake((__tg_floor(scaledSourceSize.width * ry) / scale), (MIN(__tg_ceil(scaledSourceSize.height * ry), scaledTargetSize.height) / scale));
+        // Height will be the scaled target height
+        const CGFloat targetHeight = scaledTargetSize.height;
+
+        // get the width from the height preserving aspect-ratio of source
+        const CGFloat ar = scaledSourceSize.width / scaledSourceSize.height;
+        const CGFloat aspectWidth = targetHeight * ar;
+        const CGFloat targetWidth = round(aspectWidth);
+
+        size = CGSizeMake(targetWidth / scale, targetHeight / scale);
     }
+
     return size;
 }
 
@@ -116,8 +130,30 @@ CGSize TIPScaleToFitKeepingAspectRatio(CGSize sourceSize, CGSize targetSize, CGF
     const CGSize scaledSourceSize = CGSizeMake(__tg_ceil(sourceSize.width * scale), __tg_ceil(sourceSize.height * scale));
     const CGFloat rx = scaledTargetSize.width / scaledSourceSize.width;
     const CGFloat ry = scaledTargetSize.height / scaledSourceSize.height;
-    const CGFloat ratio = MIN(rx, ry);
-    const CGSize size = CGSizeMake((MIN(__tg_ceil(scaledSourceSize.width * ratio), scaledTargetSize.width) / scale), (MIN(__tg_ceil(scaledSourceSize.height * ratio), scaledTargetSize.height) / scale));
+
+    CGSize size;
+    if (rx < ry) {
+        // Width will be the scaled target width
+        const CGFloat targetWidth = scaledTargetSize.width;
+
+        // get the height from the width preserving aspect-ratio of source
+        const CGFloat ar = scaledSourceSize.height / scaledSourceSize.width;
+        const CGFloat aspectHeight = targetWidth * ar;
+        const CGFloat targetHeight = round(aspectHeight);
+
+        size = CGSizeMake(targetWidth / scale, targetHeight / scale);
+    } else {
+        // Height will be the scaled target height
+        const CGFloat targetHeight = scaledTargetSize.height;
+
+        // get the width from the height preserving aspect-ratio of source
+        const CGFloat ar = scaledSourceSize.width / scaledSourceSize.height;
+        const CGFloat aspectWidth = targetHeight * ar;
+        const CGFloat targetWidth = round(aspectWidth);
+
+        size = CGSizeMake(targetWidth / scale, targetHeight / scale);
+    }
+
     return size;
 }
 
