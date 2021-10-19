@@ -90,6 +90,16 @@
 		3DEC0ABF229A75590053C279 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DEC0ABE229A75590053C279 /* CoreImage.framework */; };
 		3DEC0AC1229A75690053C279 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DEC0AC0229A75690053C279 /* QuartzCore.framework */; };
 		3DEC0AC3229A758E0053C279 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DEC0AC2229A758E0053C279 /* Accelerate.framework */; };
+		5304BF66271F556C002EBD90 /* WebPDemux.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5304BF64271F556B002EBD90 /* WebPDemux.xcframework */; };
+		5304BF67271F556C002EBD90 /* WebPDemux.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5304BF64271F556B002EBD90 /* WebPDemux.xcframework */; };
+		5304BF68271F556C002EBD90 /* WebPDemux.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5304BF64271F556B002EBD90 /* WebPDemux.xcframework */; };
+		5304BF69271F556C002EBD90 /* WebPDemux.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5304BF64271F556B002EBD90 /* WebPDemux.xcframework */; };
+		5304BF6A271F556C002EBD90 /* WebPDemux.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5304BF64271F556B002EBD90 /* WebPDemux.xcframework */; };
+		5304BF6C271F556C002EBD90 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5304BF65271F556C002EBD90 /* WebP.xcframework */; };
+		5304BF6D271F556C002EBD90 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5304BF65271F556C002EBD90 /* WebP.xcframework */; };
+		5304BF6E271F556C002EBD90 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5304BF65271F556C002EBD90 /* WebP.xcframework */; };
+		5304BF6F271F556C002EBD90 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5304BF65271F556C002EBD90 /* WebP.xcframework */; };
+		5304BF70271F5A7E002EBD90 /* WebP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5304BF65271F556C002EBD90 /* WebP.xcframework */; };
 		8B0243721E5BF8380058D10A /* InspectorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0243711E5BF8380058D10A /* InspectorViewController.m */; };
 		8B0243751E5CBEB30058D10A /* PipelineInspectorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0243741E5CBEB30058D10A /* PipelineInspectorViewController.m */; };
 		8B0243781E5CC42A0058D10A /* PipelineCacheInspectionResultsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B0243771E5CC42A0058D10A /* PipelineCacheInspectionResultsViewController.m */; };
@@ -109,10 +119,6 @@
 		8B2031D41D6E36FF00E9E88F /* TIPImageFetchDownload.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B2031D21D6E36FF00E9E88F /* TIPImageFetchDownload.m */; };
 		8B228B551DD14D1E009E8F6F /* TIPImageCodecs.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B228B531DD14D1E009E8F6F /* TIPImageCodecs.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B228B561DD14D1E009E8F6F /* TIPImageCodecs.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B228B541DD14D1E009E8F6F /* TIPImageCodecs.m */; };
-		8B234F4024D4C05E00F257AC /* WebPDemux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B234F3F24D4C02E00F257AC /* WebPDemux.framework */; platformFilter = ios; };
-		8B234F4224D4C05F00F257AC /* WebPDemux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B234F3F24D4C02E00F257AC /* WebPDemux.framework */; platformFilter = ios; };
-		8B234F4324D4C06000F257AC /* WebPDemux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B234F3F24D4C02E00F257AC /* WebPDemux.framework */; platformFilter = ios; };
-		8B234F4424D4C06000F257AC /* WebPDemux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B234F3F24D4C02E00F257AC /* WebPDemux.framework */; platformFilter = ios; };
 		8B2547B61FCC70FF007EAAAA /* TIPImageFetchable.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B2547B51FCC70FF007EAAAA /* TIPImageFetchable.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B2547B71FCC74A6007EAAAA /* TIPImageFetchable.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B2547B51FCC70FF007EAAAA /* TIPImageFetchable.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B36938B1DD3B7A900285774 /* TIPImageCodecCatalogue.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B3693891DD3B7A900285774 /* TIPImageCodecCatalogue.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -251,12 +257,6 @@
 		8B7C4E4524B3741B00F6F88A /* TIPXUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B7C4E4024B3740A00F6F88A /* TIPXUtils.m */; };
 		8B7C4E4624B3741B00F6F88A /* TIPXUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B7C4E4024B3740A00F6F88A /* TIPXUtils.m */; };
 		8B7D4D4B1FC0FBB000509463 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BA9756F1D77E64B00601D70 /* XCTest.framework */; };
-		8B80DC4E233AF34900BAE571 /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B80DC4D233AF33D00BAE571 /* WebP.framework */; platformFilter = ios; };
-		8B80DC4F233AF34B00BAE571 /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B80DC4D233AF33D00BAE571 /* WebP.framework */; platformFilter = ios; };
-		8B80DC50233AF34B00BAE571 /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B80DC4D233AF33D00BAE571 /* WebP.framework */; platformFilter = ios; };
-		8B80DC52233AF34E00BAE571 /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B80DC4D233AF33D00BAE571 /* WebP.framework */; platformFilter = ios; };
-		8B834B0624DC9B1E007AE6EB /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B80DC4D233AF33D00BAE571 /* WebP.framework */; platformFilter = ios; };
-		8B834B0824DC9B20007AE6EB /* WebPDemux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B234F3F24D4C02E00F257AC /* WebPDemux.framework */; platformFilter = ios; };
 		8B894DD51D4FBA3D00FFB5F8 /* TIPImageTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B894DD31D4FBA3D00FFB5F8 /* TIPImageTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8B894DD81D4FBD7900FFB5F8 /* TIPImageTypes.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B894DD71D4FBD7900FFB5F8 /* TIPImageTypes.m */; };
 		8B8B72891EBC2B3A004E10BA /* TIPImageFetchTransformer.h in Headers */ = {isa = PBXBuildFile; fileRef = 8B8B72881EBC2B3A004E10BA /* TIPImageFetchTransformer.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -554,6 +554,8 @@
 		3DEC0ABE229A75590053C279 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CoreImage.framework; sourceTree = "<group>"; };
 		3DEC0AC0229A75690053C279 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = QuartzCore.framework; sourceTree = "<group>"; };
 		3DEC0AC2229A758E0053C279 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Accelerate.framework; sourceTree = "<group>"; };
+		5304BF64271F556B002EBD90 /* WebPDemux.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = WebPDemux.xcframework; sourceTree = "<group>"; };
+		5304BF65271F556C002EBD90 /* WebP.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = WebP.xcframework; sourceTree = "<group>"; };
 		8B00D5B71CFFDF0800D1728D /* TIPProblematicImagesTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPProblematicImagesTest.m; sourceTree = "<group>"; };
 		8B0243701E5BF8380058D10A /* InspectorViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InspectorViewController.h; sourceTree = "<group>"; };
 		8B0243711E5BF8380058D10A /* InspectorViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = InspectorViewController.m; sourceTree = "<group>"; };
@@ -577,7 +579,6 @@
 		8B2031D21D6E36FF00E9E88F /* TIPImageFetchDownload.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageFetchDownload.m; sourceTree = "<group>"; };
 		8B228B531DD14D1E009E8F6F /* TIPImageCodecs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageCodecs.h; sourceTree = "<group>"; };
 		8B228B541DD14D1E009E8F6F /* TIPImageCodecs.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageCodecs.m; sourceTree = "<group>"; };
-		8B234F3F24D4C02E00F257AC /* WebPDemux.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPDemux.framework; sourceTree = "<group>"; };
 		8B2547B51FCC70FF007EAAAA /* TIPImageFetchable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TIPImageFetchable.h; sourceTree = "<group>"; };
 		8B3693891DD3B7A900285774 /* TIPImageCodecCatalogue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TIPImageCodecCatalogue.h; sourceTree = "<group>"; };
 		8B36938A1DD3B7A900285774 /* TIPImageCodecCatalogue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TIPImageCodecCatalogue.m; sourceTree = "<group>"; };
@@ -626,7 +627,6 @@
 		8B76950A1D4824B9009091B5 /* no-interlace.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "no-interlace.png"; sourceTree = "<group>"; };
 		8B7C4E3F24B3740A00F6F88A /* TIPXUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TIPXUtils.h; sourceTree = "<group>"; };
 		8B7C4E4024B3740A00F6F88A /* TIPXUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TIPXUtils.m; sourceTree = "<group>"; };
-		8B80DC4D233AF33D00BAE571 /* WebP.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebP.framework; sourceTree = "<group>"; };
 		8B80DC60233AF76A00BAE571 /* WEBP_README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEBP_README.md; sourceTree = "<group>"; };
 		8B8607F11D90408700939554 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		8B8607F21D90415A00939554 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
@@ -782,15 +782,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5304BF6E271F556C002EBD90 /* WebP.xcframework in Frameworks */,
 				3D3139E8229B21130016F387 /* Accelerate.framework in Frameworks */,
 				3D3139EC229B21410016F387 /* Accounts.framework in Frameworks */,
 				3D3139EA229B212A0016F387 /* AVFoundation.framework in Frameworks */,
 				3D3139EB229B21380016F387 /* CoreMedia.framework in Frameworks */,
 				3D3139E9229B211F0016F387 /* Social.framework in Frameworks */,
+				5304BF69271F556C002EBD90 /* WebPDemux.xcframework in Frameworks */,
 				8BE0268E2092F7EE00396E9A /* TwitterImagePipeline.framework in Frameworks */,
 				8B63019B1E69224C00C9A86A /* UIKit.framework in Frameworks */,
-				8B80DC4F233AF34B00BAE571 /* WebP.framework in Frameworks */,
-				8B234F4324D4C06000F257AC /* WebPDemux.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -839,10 +839,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D1EE7E5229B5F5A00C2B273 /* CoreGraphics.framework in Frameworks */,
+				5304BF6A271F556C002EBD90 /* WebPDemux.xcframework in Frameworks */,
+				5304BF6F271F556C002EBD90 /* WebP.xcframework in Frameworks */,
 				8B93D90120865E0100CFB01A /* TwitterImagePipeline.framework in Frameworks */,
 				3D1EE7E4229B5F4900C2B273 /* UIKit.framework in Frameworks */,
-				8B80DC4E233AF34900BAE571 /* WebP.framework in Frameworks */,
-				8B234F4424D4C06000F257AC /* WebPDemux.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -852,16 +852,16 @@
 			files = (
 				3D313826229A79060016F387 /* Accelerate.framework in Frameworks */,
 				3D31382D229A794C0016F387 /* AVFoundation.framework in Frameworks */,
+				5304BF66271F556C002EBD90 /* WebPDemux.xcframework in Frameworks */,
 				3D31381D229A783F0016F387 /* CoreGraphics.framework in Frameworks */,
 				3D31381F229A78490016F387 /* CoreImage.framework in Frameworks */,
 				3D313829229A79200016F387 /* CoreMedia.framework in Frameworks */,
 				3D313824229A78BC0016F387 /* CoreVideo.framework in Frameworks */,
 				3D313830229A79710016F387 /* ImageIO.framework in Frameworks */,
 				3D1659ED2073047700AA140A /* TwitterImagePipeline.framework in Frameworks */,
+				5304BF70271F5A7E002EBD90 /* WebP.xcframework in Frameworks */,
 				3D31381B229A774A0016F387 /* UIKit.framework in Frameworks */,
 				8B7D4D4B1FC0FBB000509463 /* XCTest.framework in Frameworks */,
-				8B80DC52233AF34E00BAE571 /* WebP.framework in Frameworks */,
-				8B234F4024D4C05E00F257AC /* WebPDemux.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -871,16 +871,16 @@
 			files = (
 				3D3139E2229B1FAC0016F387 /* Accelerate.framework in Frameworks */,
 				3D3139E5229B1FE00016F387 /* Accounts.framework in Frameworks */,
+				5304BF68271F556C002EBD90 /* WebPDemux.xcframework in Frameworks */,
 				3D3139DF229B1F0B0016F387 /* AVFoundation.framework in Frameworks */,
 				3D3139DE229B1EEA0016F387 /* CoreGraphics.framework in Frameworks */,
 				3D3139E0229B1F440016F387 /* CoreImage.framework in Frameworks */,
 				3D3139E3229B1FCA0016F387 /* CoreMedia.framework in Frameworks */,
 				3D3139E1229B1F880016F387 /* CoreVideo.framework in Frameworks */,
 				3D3139E7229B1FF00016F387 /* Social.framework in Frameworks */,
+				5304BF6D271F556C002EBD90 /* WebP.xcframework in Frameworks */,
 				8BE0268C2092F79000396E9A /* TwitterImagePipeline.framework in Frameworks */,
 				8BB66A2D1E450F6200A8F241 /* UIKit.framework in Frameworks */,
-				8B80DC50233AF34B00BAE571 /* WebP.framework in Frameworks */,
-				8B234F4224D4C05F00F257AC /* WebPDemux.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -888,11 +888,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8B834B0824DC9B20007AE6EB /* WebPDemux.framework in Frameworks */,
-				8B834B0624DC9B1E007AE6EB /* WebP.framework in Frameworks */,
 				3D1EE7E3229B5F0700C2B273 /* Accelerate.framework in Frameworks */,
 				3D1EE7E2229B5EF900C2B273 /* CoreGraphics.framework in Frameworks */,
 				8BFF17711DF5B4AD005DE734 /* TwitterImagePipeline.framework in Frameworks */,
+				5304BF67271F556C002EBD90 /* WebPDemux.xcframework in Frameworks */,
+				5304BF6C271F556C002EBD90 /* WebP.xcframework in Frameworks */,
 				8BE31CB91B9A27EB009BC0B2 /* SystemConfiguration.framework in Frameworks */,
 				8BFB15001C6F80DB00A4DB02 /* UIKit.framework in Frameworks */,
 			);
@@ -985,8 +985,8 @@
 				8BA2326F1DD430D60097B1DE /* TIPXWebPCodec.h */,
 				8BA232701DD430D70097B1DE /* TIPXWebPCodec.m */,
 				8B80DC60233AF76A00BAE571 /* WEBP_README.md */,
-				8B234F3F24D4C02E00F257AC /* WebPDemux.framework */,
-				8B80DC4D233AF33D00BAE571 /* WebP.framework */,
+				5304BF65271F556C002EBD90 /* WebP.xcframework */,
+				5304BF64271F556B002EBD90 /* WebPDemux.xcframework */,
 			);
 			path = Extended;
 			sourceTree = "<group>";

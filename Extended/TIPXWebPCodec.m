@@ -16,26 +16,12 @@
 
 #pragma mark WebP includes
 
-// TODO: remove this pushed diagnostic "ignored" when the modular closure of libwebp framework headers is completely fixed
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wquoted-include-in-framework-header"
-
-#if TARGET_OS_MACCATALYST
-#import <webp/webp.h>
-#if TIPX_WEBP_ANIMATION_DECODING_ENABLED
-#define WEBP_HAS_DEMUX 1
-#endif
-#else
 #import <WebP/decode.h>
 #import <WebP/encode.h>
 #if TIPX_WEBP_ANIMATION_DECODING_ENABLED
 #import <WebPDemux/demux.h>
 #define WEBP_HAS_DEMUX 1
 #endif
-#endif
-
-#pragma clang diagnostic pop
-
 
 NS_ASSUME_NONNULL_BEGIN
 
