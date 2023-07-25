@@ -1,0 +1,39 @@
+name: "Tests"
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  run-tests:
+    name: Xcode ${{ matrix.xcode }}
+    strategy:
+      fail-fast: false
+      matrix:
+        xcode:
+        # - "15.0"
+        - "14.3.1"
+        - "14.1"
+        include:
+        # - xcode: "15.0"
+        #   macos: macOS-13
+        #   destination: "platform=iOS Simulator,name=iPhone 14,OS=17.0"
+        - xcode: "14.3.1"
+          macos: macOS-13
+          destination: "platform=iOS Simulator,name=iPhone 14,OS=16.4"
+        - xcode: "14.1"
+          macos: macOS-12
+          destination: "platform=iOS Simulator,name=iPhone 14,OS=16.1"
+    runs-on: ${{ matrix.macos }}
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v3
+    - name: Run Tests
+      run: xcodebuild clean test -scheme TwitterImagePipeline-Package -destination '${{ matrix.destination }}'
+

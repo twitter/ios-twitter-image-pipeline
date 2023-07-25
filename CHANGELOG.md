@@ -2,13 +2,18 @@
 
 ## Info
 
-**Document version:** 2.25.0
+**Document version:** 2.25.01
 
-**Last updated:** 10/29/2020
+**Last updated:** 07/25/2023
 
 **Author:** Nolan O'Brien
 
 ## History
+
+### 2.25.1 - Liam Nichols
+
+- Support Swift Package Manager for distribution
+- Update WebP dependency to 1.2.4 using XCFrameworks
 
 ### 2.25.0
 
@@ -120,7 +125,7 @@
       - Less RAM is used when decoding the image to serve as a response
       - No more scaling the image from full size to the size to serve as a response (for core image codecs)
 - Given how substantial this change is, we are bumping from version `2.13` to `2.20`
-  - In particular, custom codecs will need to be updated to support the new `targetDimensions` and `targetContentMode` arguments 
+  - In particular, custom codecs will need to be updated to support the new `targetDimensions` and `targetContentMode` arguments
 
 ### 2.13.5
 
@@ -225,7 +230,7 @@
 ### 2.9.3
 
 - Add `notifyAllFetchHelpersToRetryFailedLoads` class method to `TIPImageViewFetchHelper`
-  - This will offer an easy way for consuming apps to trigger a reload of failed image fetches when the network conditions change 
+  - This will offer an easy way for consuming apps to trigger a reload of failed image fetches when the network conditions change
 
 ### 2.9.2
 

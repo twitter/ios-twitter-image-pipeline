@@ -1,8 +1,0 @@
-module TwitterImagePipeline {
-    umbrella "."
-
-    export *
-    module * {
-        export *
-    }
-}

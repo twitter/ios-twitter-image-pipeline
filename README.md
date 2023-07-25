@@ -1,5 +1,7 @@
 # Twitter Image Pipeline (a.k.a. TIP)
 
+> **Note**: This is a fork of [twitter/ios-twitter-image-pipeline](https://github.com/twitter/ios-twitter-image-pipeline). Please consult the [changelog](./CHANGELOG.md) for more information.
+
 ## Background
 
 The __Twitter Image Pipeline__ is a streamlined framework for _fetching_ and
