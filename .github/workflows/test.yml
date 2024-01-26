@@ -15,13 +15,17 @@ jobs:
       fail-fast: false
       matrix:
         xcode:
-        # - "15.0"
+        - "15.2"
+        - "15.0.1"
         - "14.3.1"
         - "14.1"
         include:
-        # - xcode: "15.0"
-        #   macos: macOS-13
-        #   destination: "platform=iOS Simulator,name=iPhone 14,OS=17.0"
+        - xcode: "15.2"
+          macos: macOS-13
+          destination: "platform=iOS Simulator,name=iPhone 14,OS=17.2"
+        - xcode: "15.0.1"
+          macos: macOS-13
+          destination: "platform=iOS Simulator,name=iPhone 14,OS=17.0.1"
         - xcode: "14.3.1"
           macos: macOS-13
           destination: "platform=iOS Simulator,name=iPhone 14,OS=16.4"
